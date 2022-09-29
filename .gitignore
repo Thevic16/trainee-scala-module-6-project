@@ -179,5 +179,5 @@ project/plugins/project/
 # End of https://www.toptal.com/developers/gitignore/api/linux,scala,java,intellij,sbt
 
 # Remove all intellij setting files
-.idea/*
+.idea
 
