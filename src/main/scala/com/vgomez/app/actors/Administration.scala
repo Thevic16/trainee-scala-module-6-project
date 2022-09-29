@@ -165,5 +165,5 @@ class Administration extends PersistentActor{
     case UserCreated(administrationState) =>
       context.become(state(administrationState))
   }
-  
+
 }
