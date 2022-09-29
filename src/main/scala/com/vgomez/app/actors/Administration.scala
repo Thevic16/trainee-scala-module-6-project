@@ -11,17 +11,10 @@ object Administration {
                                  users: Map[String, ActorRef])
 
   // events
-  case class RestaurantCreated(idRestaurant: String)
-  case class ReviewCreated(idReview: String)
-  case class UserCreated(username: String)
+  case class RestaurantCreated(administrationState: AdministrationState)
+  case class ReviewCreated(administrationState: AdministrationState)
+  case class UserCreated(administrationState: AdministrationState)
 
-  case class RestaurantUpdated(idRestaurant: String)
-  case class ReviewUpdated(idReview: String)
-  case class UserUpdated(username: String)
-
-  case class RestaurantDeleted(idRestaurant: String)
-  case class ReviewDeleted(idReview: String)
-  case class UserDeleted(username: String)
 }
 
 class Administration extends PersistentActor{
@@ -52,21 +45,19 @@ class Administration extends PersistentActor{
     case createCommand@CreateRestaurant(_) =>
       val id = UUID.randomUUID().toString
       val newRestaurant = context.actorOf(Restaurant.props(id), id)
+      val newState = administrationState.copy(restaurants =
+        administrationState.restaurants + (id, newRestaurant))
 
-      persist(RestaurantCreated(id)){ _ =>
+      persist(RestaurantCreated(newState)){ _ =>
         newRestaurant.forward(createCommand)
-        context.become(state(administrationState.copy(restaurants =
-          administrationState.restaurants + (id, newRestaurant))))
+        context.become(state(newState))
       }
 
     case updateCommand@UpdateRestaurant(id, _) =>
        administrationState.restaurants.get(id) match {
         case Some(restaurant) =>
-          persist(RestaurantUpdated(id)) { _ =>
-            restaurant.forward(updateCommand)
-//            context.become(state(administrationState.copy(restaurants =
-//              administrationState.restaurants + (id, restaurant))))
-          }
+          restaurant.forward(updateCommand)
+
         case None =>
           sender() ! UpdateRestaurantResponse(Failure(IdentifierNotFoundException))
       }
@@ -74,11 +65,8 @@ class Administration extends PersistentActor{
     case deleteCommand@DeleteRestaurant(id) =>
       administrationState.restaurants.get(id) match {
         case Some(restaurant) =>
-          persist(RestaurantDeleted(id)) { _ =>
             restaurant.forward(deleteCommand)
-//            context.become(state(administrationState.copy(restaurants =
-//              administrationState.restaurants + (id, restaurant))))
-          }
+
         case None =>
           sender() ! UpdateRestaurantResponse(Failure(IdentifierNotFoundException))
       }
@@ -95,21 +83,19 @@ class Administration extends PersistentActor{
     case createCommand@CreateReview(_) =>
       val id = UUID.randomUUID().toString
       val newReview = context.actorOf(Review.props(id), id)
+      val newState = administrationState.copy(reviews =
+        administrationState.reviews + (id, newReview))
 
-      persist(ReviewCreated(id)) { _ =>
+      persist(ReviewCreated(newState)) { _ =>
         newReview.forward(createCommand)
-        context.become(state(administrationState.copy(reviews =
-          administrationState.reviews + (id, newReview))))
+        context.become(state(newState))
       }
 
     case updateCommand@UpdateReview(id, _) =>
       administrationState.reviews.get(id) match {
         case Some(review) =>
-          persist(ReviewUpdated(id)) { _ =>
-            review.forward(updateCommand)
-//            context.become(state(administrationState.copy(reviews =
-//              administrationState.reviews + (id, review))))
-          }
+          review.forward(updateCommand)
+
         case None =>
           sender() ! UpdateReviewResponse(Failure(IdentifierNotFoundException))
       }
@@ -117,11 +103,8 @@ class Administration extends PersistentActor{
     case deleteCommand@DeleteReview(id) =>
       administrationState.reviews.get(id) match {
         case Some(review) =>
-          persist(ReviewDeleted(id)) { _ =>
-            review.forward(deleteCommand)
-//            context.become(state(administrationState.copy(reviews =
-//              administrationState.reviews + (id, review))))
-          }
+          review.forward(deleteCommand)
+
         case None =>
           sender() ! UpdateReviewResponse(Failure(IdentifierNotFoundException))
       }
@@ -141,23 +124,20 @@ class Administration extends PersistentActor{
           sender() ! CreateUserResponse(Failure(UsernameExistsException))
         case None =>
           val newUser = context.actorOf(User.props(userInfo.username), userInfo.username)
+          val newState = administrationState.copy(users =
+            administrationState.users + (userInfo.username, newUser))
 
-          persist(UserCreated(userInfo.username)) { _ =>
+          persist(UserCreated(newState)) { _ =>
             newUser.forward(createCommand)
-            context.become(state(administrationState.copy(users =
-              administrationState.users + (userInfo.username, newUser))))
+            context.become(state(newState))
           }
       }
-
 
     case updateCommand@UpdateUser(userInfo) =>
       administrationState.users.get(userInfo.username) match {
         case Some(user) =>
-          persist(UserUpdated(userInfo.username)) { _ =>
-            user.forward(updateCommand)
-//            context.become(state(administrationState.copy(users =
-//              administrationState.users + (userInfo.username, user))))
-          }
+          user.forward(updateCommand)
+
         case None =>
           sender() ! UpdateUserResponse(Failure(IdentifierNotFoundException))
       }
@@ -165,11 +145,8 @@ class Administration extends PersistentActor{
     case deleteCommand@DeleteUser(username) =>
       administrationState.users.get(username) match {
         case Some(user) =>
-          persist(UserDeleted(username)) { _ =>
-            user.forward(deleteCommand)
-//            context.become(state(administrationState.copy(users =
-//              administrationState.users + (username, user))))
-          }
+          user.forward(deleteCommand)
+
         case None =>
           sender() ! UpdateReviewResponse(Failure(IdentifierNotFoundException))
       }
@@ -179,10 +156,14 @@ class Administration extends PersistentActor{
   override def receiveCommand: Receive = state(AdministrationState(Map(), Map(), Map()))
 
   override def receiveRecover: Receive = {
-    case RestaurantCreated(idRestaurant) =>
+    case RestaurantCreated(administrationState) =>
+        context.become(state(administrationState))
 
-      //context.become(state(restaurantState))
+    case ReviewCreated(administrationState) =>
+      context.become(state(administrationState))
+
+    case UserCreated(administrationState) =>
+      context.become(state(administrationState))
   }
-
-
+  
 }
