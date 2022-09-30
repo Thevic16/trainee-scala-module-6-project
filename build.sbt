@@ -21,7 +21,11 @@ ThisBuild / libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.3.0",
   "com.typesafe.akka" %% "akka-http-testkit" % "10.2.10" % Test,
   "com.typesafe.akka" %% "akka-testkit" % "2.6.20" % Test,
-  "org.scalatest" %% "scalatest" % "3.2.12" % Test
+  "org.scalatest" %% "scalatest" % "3.2.12" % Test,
+
+    // local levelDB stores
+    "org.iq80.leveldb" % "leveldb" % "0.7",
+    "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
 )
 
 lazy val root = (project in file("."))
