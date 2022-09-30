@@ -1,8 +1,11 @@
 package com.vgomez.app.actors
-import akka.actor.ActorRef
+import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.PersistentActor
+import com.vgomez.app.actors.User.UserInfo
+
 import java.util.UUID
 import com.vgomez.app.erros.CustomError._
+
 import scala.util.Failure
 
 object Administration {
@@ -11,13 +14,13 @@ object Administration {
                                  users: Map[String, ActorRef])
 
   // events
-  case class RestaurantCreated(administrationState: AdministrationState)
-  case class ReviewCreated(administrationState: AdministrationState)
-  case class UserCreated(administrationState: AdministrationState)
+  case class RestaurantCreated(id: String)
+  case class ReviewCreated(id: String)
+  case class UserCreated(username: String)
 
 }
 
-class Administration extends PersistentActor{
+class Administration extends PersistentActor with ActorLogging{
   import Administration._
 
   // Commands
@@ -29,6 +32,9 @@ class Administration extends PersistentActor{
   import Restaurant.Response._
   import Review.Response._
   import User.Response._
+
+  // state
+  var administrationRecoveryState = AdministrationState(Map(), Map(), Map())
 
   override def persistenceId: String = "administration"
 
@@ -46,9 +52,9 @@ class Administration extends PersistentActor{
       val id = UUID.randomUUID().toString
       val newRestaurant = context.actorOf(Restaurant.props(id), id)
       val newState = administrationState.copy(restaurants =
-        administrationState.restaurants + (id, newRestaurant))
+        administrationState.restaurants + (id -> newRestaurant))
 
-      persist(RestaurantCreated(newState)){ _ =>
+      persist(RestaurantCreated(id)){ _ =>
         newRestaurant.forward(createCommand)
         context.become(state(newState))
       }
@@ -84,9 +90,9 @@ class Administration extends PersistentActor{
       val id = UUID.randomUUID().toString
       val newReview = context.actorOf(Review.props(id), id)
       val newState = administrationState.copy(reviews =
-        administrationState.reviews + (id, newReview))
+        administrationState.reviews + (id -> newReview))
 
-      persist(ReviewCreated(newState)) { _ =>
+      persist(ReviewCreated(id)) { _ =>
         newReview.forward(createCommand)
         context.become(state(newState))
       }
@@ -111,6 +117,8 @@ class Administration extends PersistentActor{
 
     // Users Commands
     case getCommand@GetUser(username) =>
+      log.info(s"Administration receive a GetUser Command")
+
       administrationState.users.get(username) match {
         case Some(user) =>
           user.forward(getCommand)
@@ -125,9 +133,9 @@ class Administration extends PersistentActor{
         case None =>
           val newUser = context.actorOf(User.props(userInfo.username), userInfo.username)
           val newState = administrationState.copy(users =
-            administrationState.users + (userInfo.username, newUser))
+            administrationState.users + (userInfo.username -> newUser))
 
-          persist(UserCreated(newState)) { _ =>
+          persist(UserCreated(userInfo.username)) { _ =>
             newUser.forward(createCommand)
             context.become(state(newState))
           }
@@ -153,17 +161,41 @@ class Administration extends PersistentActor{
 
   }
 
-  override def receiveCommand: Receive = state(AdministrationState(Map(), Map(), Map()))
+  override def receiveCommand: Receive = state(administrationRecoveryState)
 
   override def receiveRecover: Receive = {
-    case RestaurantCreated(administrationState) =>
-        context.become(state(administrationState))
+    case RestaurantCreated(id) =>
+        log.info(s"I have recovered a restaurant with id: $id")
+        val restaurant = context.child(id).getOrElse(context.actorOf(Restaurant.props(id), id))
 
-    case ReviewCreated(administrationState) =>
-      context.become(state(administrationState))
+      administrationRecoveryState = administrationRecoveryState.copy(
+          restaurants = administrationRecoveryState.restaurants + (id -> restaurant))
 
-    case UserCreated(administrationState) =>
-      context.become(state(administrationState))
+        context.become(state(administrationRecoveryState))
+
+    case ReviewCreated(id) =>
+      log.info(s"I have recovered a review with id: $id")
+      val review = context.child(id).getOrElse(context.actorOf(Review.props(id), id))
+
+      administrationRecoveryState = administrationRecoveryState.copy(
+        reviews = administrationRecoveryState.reviews + (id -> review))
+
+      context.become(state(administrationRecoveryState))
+
+
+    case UserCreated(username) =>
+      log.info(s"I have recovered a user with username: $username")
+      val user = context.child(username).getOrElse(context.actorOf(User.props(username), username))
+
+      administrationRecoveryState = administrationRecoveryState.copy(
+        users = administrationRecoveryState.users + (username -> user))
+
+      context.become(state(administrationRecoveryState))
+  }
+
+  override def onRecoveryFailure(cause: Throwable, event: Option[Any]): Unit = {
+    log.error("Administration failed at recovery")
+    super.onRecoveryFailure(cause, event)
   }
 
 }

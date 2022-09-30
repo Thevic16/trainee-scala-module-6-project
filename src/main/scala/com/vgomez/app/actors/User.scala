@@ -1,5 +1,5 @@
 package com.vgomez.app.actors
-import akka.actor.Props
+import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 
 import scala.util.{Success, Try}
@@ -43,7 +43,7 @@ object User {
 
 }
 
-class User(username: String) extends PersistentActor{
+class User(username: String) extends PersistentActor with ActorLogging{
   import User._
   import Command._
   import Response._
@@ -52,9 +52,11 @@ class User(username: String) extends PersistentActor{
 
   def state(userState: UserState): Receive = {
     case GetUser(_) =>
+      log.info(s"User with username $username receive a GetUser Command")
       sender() ! GetUserResponse(Some(userState))
 
     case CreateUser(userInfo) =>
+      log.info(s"User with username $username receive a CreateUser Command")
       val newState: UserState = getNewState(userInfo)
 
       persist(UserCreated(newState)) { _ =>
