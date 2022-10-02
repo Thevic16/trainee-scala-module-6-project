@@ -4,14 +4,14 @@ import spray.json._
 import scala.collection.immutable.HashMap
 
 
-case class FromJsonScheduler(monday: String, tuesday: String, wednesday: String, thursday: String,
+case class SimpleScheduler(monday: String, tuesday: String, wednesday: String, thursday: String,
                              friday: String = "", saturday: String, sunday: String)
 
-trait FromJsonSchedulerJsonProtocol extends DefaultJsonProtocol {
-  implicit val fromJsonSchedulerFormat = jsonFormat7(FromJsonScheduler)
+trait SimpleSchedulerJsonProtocol extends DefaultJsonProtocol {
+  implicit val SimpleSchedulerFormat = jsonFormat7(SimpleScheduler)
 }
 
-object Transformers extends FromJsonSchedulerJsonProtocol{
+object Transformers extends SimpleSchedulerJsonProtocol{
   import DomainModel._
 
   def transformHourStringToHour(hours: String): Hour = {
@@ -54,10 +54,7 @@ object Transformers extends FromJsonSchedulerJsonProtocol{
     go(dayWeekList, scheduleStringJsonFormat)
   }
 
-  def transformScheduleStringToSchedule(scheduleString: String): Schedule = {
-    val scheduleStringFormatted = scheduleStringFormatter(scheduleString)
-    val fromJsonScheduler = scheduleStringFormatted.parseJson.convertTo[FromJsonScheduler]
-
+  def transformSimpleSchedulerToSchedule(fromJsonScheduler: SimpleScheduler): Schedule = {
     Schedule(Map(Monday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.monday, Monday),
       Tuesday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.tuesday, Tuesday),
       Wednesday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.wednesday, Wednesday),
@@ -66,6 +63,29 @@ object Transformers extends FromJsonSchedulerJsonProtocol{
       Saturday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.saturday, Saturday),
       Sunday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.sunday, Sunday),
     ))
+  }
+
+  def transformScheduleStringToSchedule(scheduleString: String): Schedule = {
+    val scheduleStringFormatted = scheduleStringFormatter(scheduleString)
+    val fromJsonScheduler = scheduleStringFormatted.parseJson.convertTo[SimpleScheduler]
+
+    transformSimpleSchedulerToSchedule(fromJsonScheduler)
+  }
+
+  // From Scheduler to JsonScheduler
+  def transformScheduleDayWeekToString(schedule: Schedule, dayWeek: DayWeek): String = {
+    val startHour: Hour = schedule.schedulesForDays(dayWeek).startHour
+    val endHour: Hour = schedule.schedulesForDays(dayWeek).endHour
+    s"${startHour.hr}:${startHour.minutes}-${endHour.hr}:${endHour.minutes}"
+  }
+  def transformScheduleToSimpleScheduler(schedule: Schedule): SimpleScheduler = {
+    SimpleScheduler(monday = transformScheduleDayWeekToString(schedule,Monday),
+      tuesday = transformScheduleDayWeekToString(schedule, Tuesday),
+      wednesday = transformScheduleDayWeekToString(schedule, Wednesday),
+      thursday = transformScheduleDayWeekToString(schedule, Thursday),
+      friday = transformScheduleDayWeekToString(schedule, Friday),
+      saturday = transformScheduleDayWeekToString(schedule, Saturday),
+      sunday = transformScheduleDayWeekToString(schedule, Sunday))
   }
 
 }
@@ -78,6 +98,8 @@ object TransformersPlayground extends App {
 //  println(transformHourStringToHour("1:15"))
 //  println(transformHourStringToHour("11:30"))
 
-  println(transformScheduleStringToSchedule("{'Monday': '1:0-5:0'}"))
+  //println(transformScheduleStringToSchedule("{'Monday': '1:0-5:0'}, 'Tuesday': '1:0-5:0'}"))
+
+  println(transformScheduleStringToSchedule("{\"Monday\": \"1:0-5:0\"}, \"Tuesday\": \"1:0-5:0\"}"))
 
 }
