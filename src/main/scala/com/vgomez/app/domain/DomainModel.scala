@@ -12,7 +12,8 @@ object DomainModel {
   case object Saturday extends DayWeek
   case object Sunday extends DayWeek
 
-  case class ScheduleDay(dayWeek: DayWeek, startHour: Int, endHour: Int)
+  case class Hour(hr: Int, minutes: Int)
+  case class ScheduleDay(dayWeek: DayWeek, startHour: Hour, endHour: Hour)
   case class Schedule(schedulesForDays: Map[DayWeek, ScheduleDay])
 
   sealed class Role
@@ -24,7 +25,7 @@ object DomainModelFactory {
   import DomainModel._
 
   def generateSchedulesForDaysElement(dayWeek: DayWeek): (DayWeek, ScheduleDay) = {
-    (dayWeek, ScheduleDay(dayWeek, 0, 0))
+    (dayWeek, ScheduleDay(dayWeek, Hour(0,0), Hour(0,0)))
   }
 
   def generateNewEmptySchedule(): Schedule = {

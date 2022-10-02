@@ -16,7 +16,7 @@ object Review {
   // commands
   object Command {
     case class GetReview(id: String)
-    case class CreateReview(reviewInfo: ReviewInfo)
+    case class CreateReview(maybeId: Option[String], reviewInfo: ReviewInfo)
     case class UpdateReview(id: String, reviewInfo: ReviewInfo)
     case class DeleteReview(id: String)
   }
@@ -53,7 +53,7 @@ class Review(id: String) extends PersistentActor{
     case GetReview(_) =>
       sender() ! GetReviewResponse(Some(reviewState))
 
-    case CreateReview(reviewInfo) =>
+    case CreateReview(_, reviewInfo) =>
       val newState: ReviewState = getNewState(reviewInfo)
 
       persist(ReviewCreated(newState)) { _ =>

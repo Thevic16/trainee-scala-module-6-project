@@ -5,6 +5,7 @@ ThisBuild / scalaVersion := "2.13.9"
 ThisBuild / libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.6.20",
   "com.typesafe.akka" %% "akka-http" % "10.2.10",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.2.10",
   "com.typesafe.akka" %% "akka-stream" % "2.6.20",
   "com.typesafe.akka" %% "akka-coordination" % "2.6.20",
   "com.typesafe.akka" %% "akka-remote" % "2.6.20",
@@ -26,6 +27,9 @@ ThisBuild / libraryDependencies ++= Seq(
     // local levelDB stores
     "org.iq80.leveldb" % "leveldb" % "0.7",
     "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
+
+  // Spark
+  "com.github.tototoshi" %% "scala-csv" % "1.3.10"
 )
 
 lazy val root = (project in file("."))

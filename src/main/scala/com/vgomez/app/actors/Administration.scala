@@ -48,8 +48,9 @@ class Administration extends PersistentActor with ActorLogging{
           sender() ! GetRestaurantResponse(None, None)
       }
 
-    case createCommand@CreateRestaurant(_) =>
-      val id = UUID.randomUUID().toString
+    case createCommand@CreateRestaurant(maybeId, _) =>
+      log.info("Receiving CreateRestaurant command")
+      val id = maybeId.getOrElse(UUID.randomUUID().toString)
       val newRestaurant = context.actorOf(Restaurant.props(id), id)
       val newState = administrationState.copy(restaurants =
         administrationState.restaurants + (id -> newRestaurant))
@@ -86,8 +87,9 @@ class Administration extends PersistentActor with ActorLogging{
           sender() ! GetReviewResponse(None)
       }
 
-    case createCommand@CreateReview(_) =>
-      val id = UUID.randomUUID().toString
+    case createCommand@CreateReview(maybeId, _) =>
+      log.info("Receiving CreateReview command")
+      val id = maybeId.getOrElse(UUID.randomUUID().toString)
       val newReview = context.actorOf(Review.props(id), id)
       val newState = administrationState.copy(reviews =
         administrationState.reviews + (id -> newReview))
@@ -127,6 +129,7 @@ class Administration extends PersistentActor with ActorLogging{
       }
 
     case createCommand@CreateUser(userInfo) =>
+      log.info("Receiving CreateUser command")
       administrationState.users.get(userInfo.username) match {
         case Some(_) =>
           sender() ! CreateUserResponse(Failure(UsernameExistsException))

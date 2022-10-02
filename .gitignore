@@ -181,3 +181,6 @@ project/plugins/project/
 # Remove all intellij setting files
 .idea
 
+# Remove CSV files
+*.csv
+

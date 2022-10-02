@@ -85,9 +85,10 @@ object AdministrationPlayground extends App {
   // Review
   // (administration ? CreateReview(ReviewInfo("admin",restaurantId, 5, "", "09-31-2022"))).pipeTo(simpleActor)
 
-  (administration ? UpdateReview(reviewId ,ReviewInfo("admin",restaurantId, 4, "", "09-30-2022"))).pipeTo(simpleActor)
+//  (administration ? UpdateReview(reviewId ,ReviewInfo("admin",restaurantId, 4, "", "09-30-2022"))).pipeTo(simpleActor)
+//
+//  (administration ? DeleteReview(reviewId)).pipeTo(simpleActor)
+//
+//  (administration ? GetReview(reviewId)).pipeTo(simpleActor)
 
-  (administration ? DeleteReview(reviewId)).pipeTo(simpleActor)
-
-  (administration ? GetReview(reviewId)).pipeTo(simpleActor)
 }
