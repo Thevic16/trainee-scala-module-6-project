@@ -1,31 +1,44 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-ThisBuild / scalaVersion := "2.13.9"
+ThisBuild / scalaVersion := "2.12.8"
+
+val akkaVersion = "2.5.20"
+val akkaHttpVersion = "10.1.7"
+val scalaTestVersion = "3.0.5"
+val cassandraVersion = "0.91"
+val leveldbVersion = "0.7"
+val leveldbjniVersion = "1.8"
 
 ThisBuild / libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.6.20",
-  "com.typesafe.akka" %% "akka-http" % "10.2.10",
-  "com.typesafe.akka" %% "akka-stream" % "2.6.20",
-  "com.typesafe.akka" %% "akka-coordination" % "2.6.20",
-  "com.typesafe.akka" %% "akka-remote" % "2.6.20",
-  "com.typesafe.akka" %% "akka-cluster" % "2.6.20",
-  "com.typesafe.akka" %% "akka-cluster-tools" % "2.6.20",
-  "com.typesafe.akka" %% "akka-pki" % "2.6.20",
-  "com.typesafe.akka" %% "akka-persistence" % "2.6.20",
-  "com.typesafe.akka" %% "akka-persistence-query" % "2.6.20",
-  "com.typesafe.akka" %% "akka-persistence-cassandra" % "1.0.6",
-  "io.circe" %% "circe-core" % "0.14.2",
-  "io.circe" %% "circe-generic" % "0.14.2",
-  "io.circe" %% "circe-parser" % "0.14.2",
-  "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
-  "ch.qos.logback" % "logback-classic" % "1.3.0",
-  "com.typesafe.akka" %% "akka-http-testkit" % "10.2.10" % Test,
-  "com.typesafe.akka" %% "akka-testkit" % "2.6.20" % Test,
+  // akka
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
+
+  // akka stream
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+
+  // akka http
+  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
+
+
+  // akka persistence
+  "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
+
+  // akka persistence cassandra
+  "com.typesafe.akka" %% "akka-persistence-cassandra" % cassandraVersion,
+  "com.typesafe.akka" %% "akka-persistence-cassandra-launcher" % cassandraVersion % Test,
+
+  // akka persistence local levelDB stores
+  "org.iq80.leveldb" % "leveldb" % leveldbVersion,
+  "org.fusesource.leveldbjni" % "leveldbjni-all" % leveldbjniVersion,
+
   "org.scalatest" %% "scalatest" % "3.2.12" % Test,
 
-    // local levelDB stores
-    "org.iq80.leveldb" % "leveldb" % "0.7",
-    "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
+  // Scala CSV
+  "com.github.tototoshi" %% "scala-csv" % "1.3.10"
 )
 
 lazy val root = (project in file("."))

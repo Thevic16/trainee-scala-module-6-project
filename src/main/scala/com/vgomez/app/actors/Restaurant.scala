@@ -19,7 +19,7 @@ object Restaurant {
   // commands
   object Command {
     case class GetRestaurant(id: String)
-    case class CreateRestaurant(restaurantInfo: RestaurantInfo)
+    case class CreateRestaurant(maybeId: Option[String], restaurantInfo: RestaurantInfo)
     case class UpdateRestaurant(id: String, restaurantInfo: RestaurantInfo)
     case class DeleteRestaurant(id: String)
   }
@@ -59,7 +59,7 @@ class Restaurant(id: String) extends PersistentActor{
       **/
       sender() ! GetRestaurantResponse(Some(restaurantState), Some(5))
 
-    case CreateRestaurant(restaurantInfo) =>
+    case CreateRestaurant(_, restaurantInfo) =>
       val newState: RestaurantState = getNewState(restaurantInfo)
 
       persist(RestaurantCreated(newState)){_ =>
