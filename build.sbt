@@ -38,7 +38,10 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.12" % Test,
 
   // Scala CSV
-  "com.github.tototoshi" %% "scala-csv" % "1.3.10"
+  "com.github.tototoshi" %% "scala-csv" % "1.3.10",
+
+  // Config
+  "com.github.andyglow" %% "typesafe-config-scala" % "2.0.0"
 )
 
 lazy val root = (project in file("."))

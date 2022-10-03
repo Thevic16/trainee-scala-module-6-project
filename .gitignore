@@ -187,3 +187,6 @@ project/plugins/project/
 # Ignoring Playground files
 *Playground.scala
 
+# Ignore Application.conf
+application.conf
+

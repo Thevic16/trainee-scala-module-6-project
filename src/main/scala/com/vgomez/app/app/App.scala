@@ -12,6 +12,8 @@ import com.vgomez.app.actors.Administration
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.server.Directives._
+import com.typesafe.config.ConfigFactory
+import com.vgomez.app.loadDataset.RunLoadDataSetGraph
 
 object App {
 
@@ -48,6 +50,14 @@ object App {
     implicit val timeout: Timeout = Timeout(2.seconds)
 
     val administration = system.actorOf(Props[Administration], "administration-system")
+
+    val conf = ConfigFactory.load()
+    val runLoadDataSetGraph: Boolean = conf.getBoolean("load-dataset.run")
+
+    if(runLoadDataSetGraph){
+      val filePath = conf.getString("load-dataset.path-csv")
+      new RunLoadDataSetGraph(filePath, administration, system).run()
+    }
 
     startHttpServer(administration)
   }
