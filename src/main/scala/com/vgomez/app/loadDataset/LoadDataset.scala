@@ -1,7 +1,6 @@
 package com.vgomez.app.loadDataset
 import com.github.tototoshi.csv._
 import akka.actor.{ActorSystem, Props}
-import akka.pattern.{ask, pipe}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.Timeout
@@ -32,7 +31,7 @@ object LoadDataset extends App{
 
     val reader = CSVReader.open(new File("target/storage/dataset/postcovid_reviews.csv"))
     val readerStream = reader.toStreamWithHeaders
-    //println(readerStream.head)
+    println(readerStream.head)
 
     val readerStreamtakeTen = readerStream.take(10)
 //    readerStreamtakeTen.foreach{row =>
@@ -65,7 +64,7 @@ object LoadDataset extends App{
 
     val sink = Sink.foreach(println)
 
-    val graph = source.via(flow).to(sink).run()
+    //val graph = source.via(flow).to(sink).run()
 
     // Test that the graph save it the events.
 

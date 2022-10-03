@@ -1,7 +1,7 @@
 package com.vgomez.app.app
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import com.vgomez.app.http.RestaurantRouter
+import com.vgomez.app.http.{RestaurantRouter, ReviewRouter, UserRouter}
 
 import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.Http
@@ -11,6 +11,7 @@ import com.vgomez.app.actors.Administration
 
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
+import akka.http.scaladsl.server.Directives._
 
 object App {
 
@@ -21,7 +22,15 @@ object App {
     val restaurantRouter = new RestaurantRouter(administration)
     val restaurantRoutes = restaurantRouter.routes
 
-    val bindingFuture = Http().bindAndHandle(restaurantRoutes, "localhost", 8080)
+    val reviewRouter = new ReviewRouter(administration)
+    val reviewRoutes = reviewRouter.routes
+
+    val userRouter = new UserRouter(administration)
+    val userRoutes = userRouter.routes
+
+    val allRoutes = restaurantRoutes ~ reviewRoutes ~ userRoutes
+
+    val bindingFuture = Http().bindAndHandle(allRoutes, "localhost", 8080)
 
     bindingFuture.onComplete {
       case Success(binding) =>

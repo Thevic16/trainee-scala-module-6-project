@@ -88,6 +88,21 @@ object Transformers extends SimpleSchedulerJsonProtocol{
       sunday = transformScheduleDayWeekToString(schedule, Sunday))
   }
 
+  def transformStringRoleToRole(stringRole: String): Role = {
+    stringRole match {
+      case "admin" => Admin
+      case "normal" => Normal
+      case _ => Normal
+    }
+  }
+
+  def transformRoleToStringRole(role: Role): String = {
+    role match {
+      case Admin => "admin"
+      case Normal => "normal"
+    }
+  }
+
 }
 
 object TransformersPlayground extends App {

@@ -95,8 +95,8 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
           }
         } ~
           put {
-            entity(as[RestaurantUpdateRequest]) { resquest =>
-              onSuccess(updateRestaurant(id, resquest)) {
+            entity(as[RestaurantUpdateRequest]) { request =>
+              onSuccess(updateRestaurant(id, request)) {
                 case UpdateRestaurantResponse(Success(_)) =>
                   respondWithHeader(Location(s"/restaurants/$id")) {
                     complete(StatusCodes.OK)
@@ -110,15 +110,15 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
             onSuccess(deleteRestaurant(id)) {
               case DeleteRestaurantResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case _ =>
+              case DeleteRestaurantResponse(Failure(IdentifierNotFoundException)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
             }
           }
       }~
       pathEndOrSingleSlash {
         post {
-          entity(as[RestaurantCreationRequest]){ resquest =>
-            onSuccess(createRestaurant(resquest)){
+          entity(as[RestaurantCreationRequest]){ request =>
+            onSuccess(createRestaurant(request)){
               case CreateRestaurantResponse(id) =>
                 respondWithHeader(Location(s"/restaurants/$id")){
                   complete(StatusCodes.Created)
