@@ -1,6 +1,6 @@
-package com.vgomez.app.erros
+package com.vgomez.app.exception
 
-object CustomError {
+object CustomException {
   case object IdentifierNotFoundException extends
     RuntimeException("The provided identifier was not found in the system.")
 

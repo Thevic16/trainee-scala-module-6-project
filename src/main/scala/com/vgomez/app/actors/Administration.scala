@@ -4,7 +4,7 @@ import akka.persistence.PersistentActor
 
 
 import java.util.UUID
-import com.vgomez.app.erros.CustomError._
+import com.vgomez.app.exception.CustomException._
 
 import scala.util.{Failure, Success}
 

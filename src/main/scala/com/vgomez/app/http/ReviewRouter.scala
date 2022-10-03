@@ -16,7 +16,7 @@ import com.vgomez.app.actors.Review.Response._
 import com.vgomez.app.http.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.vgomez.app.erros.CustomError.IdentifierNotFoundException
+import com.vgomez.app.exception.CustomException.IdentifierNotFoundException
 
 import scala.util.{Failure, Success}
 
