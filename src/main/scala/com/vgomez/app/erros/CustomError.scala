@@ -7,4 +7,6 @@ object CustomError {
   case object UsernameExistsException extends
     RuntimeException("This username already exists in the system.")
 
+  case object IdentifierExistsException extends
+    RuntimeException("This Identifier already exists in the system.")
 }

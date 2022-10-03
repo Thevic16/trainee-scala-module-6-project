@@ -31,7 +31,7 @@ object Review {
   object Response {
     case class GetReviewResponse(maybeReviewState: Option[ReviewState])
 
-    case class CreateReviewResponse(id: String)
+    case class CreateReviewResponse(maybeId: Try[String])
 
     case class UpdateReviewResponse(maybeReviewState: Try[ReviewState])
 
@@ -57,7 +57,7 @@ class Review(id: String) extends PersistentActor{
       val newState: ReviewState = getNewState(reviewInfo)
 
       persist(ReviewCreated(newState)) { _ =>
-        sender() ! CreateReviewResponse(id)
+        sender() ! CreateReviewResponse(Success(id))
         context.become(state(newState))
       }
 

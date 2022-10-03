@@ -34,7 +34,7 @@ object Restaurant {
   object Response {
     case class GetRestaurantResponse(maybeRestaurantState: Option[RestaurantState], maybeStarts: Option[Int])
 
-    case class CreateRestaurantResponse(id: String)
+    case class CreateRestaurantResponse(maybeId: Try[String])
 
     case class UpdateRestaurantResponse(maybeRestaurantState: Try[RestaurantState])
 
@@ -63,7 +63,7 @@ class Restaurant(id: String) extends PersistentActor{
       val newState: RestaurantState = getNewState(restaurantInfo)
 
       persist(RestaurantCreated(newState)){_ =>
-        sender() ! CreateRestaurantResponse(id)
+        sender() ! CreateRestaurantResponse(Success(id))
         context.become(state(newState))
       }
 
