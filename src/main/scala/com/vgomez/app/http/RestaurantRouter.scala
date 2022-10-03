@@ -18,6 +18,9 @@ import com.vgomez.app.domain.Transformers._
 import com.vgomez.app.http.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import com.vgomez.app.erros.CustomError.IdentifierNotFoundException
+
+import scala.util.{Failure, Success}
 
 // Resquest clases
 case class RestaurantCreationRequest(userId: String , name: String, state: String, city: String, postalCode: String,
@@ -32,10 +35,15 @@ trait RestaurantCreationRequestJsonProtocol extends DefaultJsonProtocol {
   implicit val restaurantCreationRequestJson = jsonFormat9(RestaurantCreationRequest)
 }
 
-/** Todo Replace restaurantInfo like in RestaurantCreationRequest
- * */
-case class RestaurantUpdateRequest(restaurantInfo: RestaurantInfo) {
-  def toCommand(id: String): UpdateRestaurant = UpdateRestaurant(id, restaurantInfo)
+case class RestaurantUpdateRequest(userId: String , name: String, state: String, city: String, postalCode: String,
+                                   latitude: Double, longitude: Double, categories: Set[String],
+                                   schedule: SimpleScheduler) {
+  def toCommand(id: String): UpdateRestaurant = UpdateRestaurant(id, RestaurantInfo(userId, name, state, city, postalCode,
+    DomainModel.Location(latitude, longitude), categories: Set[String], transformSimpleSchedulerToSchedule(schedule)))
+}
+
+trait RestaurantUpdateRequestJsonProtocol extends DefaultJsonProtocol {
+  implicit val restaurantUpdateRequestJson = jsonFormat9(RestaurantUpdateRequest)
 }
 
 // Response class
@@ -50,8 +58,8 @@ trait RestaurantResponseJsonProtocol extends DefaultJsonProtocol {
 
 // Restaurant Router.
 class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
-  extends RestaurantCreationRequestJsonProtocol with RestaurantResponseJsonProtocol
-    with FailureResponseJsonProtocol with SprayJsonSupport{
+  extends RestaurantCreationRequestJsonProtocol with RestaurantUpdateRequestJsonProtocol
+    with RestaurantResponseJsonProtocol with FailureResponseJsonProtocol with SprayJsonSupport{
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val timeout: Timeout = Timeout(5.seconds)
@@ -71,7 +79,42 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
 
   val routes: Route =
     pathPrefix("api" / "restaurants"){
+      path(Segment) { id =>
+        get {
+          onSuccess(getRestaurant(id)) {
+            case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
+              complete {
+                RestaurantResponse(restaurantState.userId, restaurantState.name, restaurantState.state,
+                  restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
+                  restaurantState.location.longitude, restaurantState.categories,
+                  transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
+              }
 
+            case _ =>
+              complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
+          }
+        } ~
+          put {
+            entity(as[RestaurantUpdateRequest]) { resquest =>
+              onSuccess(updateRestaurant(id, resquest)) {
+                case UpdateRestaurantResponse(Success(_)) =>
+                  respondWithHeader(Location(s"/restaurants/$id")) {
+                    complete(StatusCodes.OK)
+                  }
+                case UpdateRestaurantResponse(Failure(IdentifierNotFoundException)) =>
+                  complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
+              }
+            }
+          } ~
+          delete {
+            onSuccess(deleteRestaurant(id)) {
+              case DeleteRestaurantResponse(Success(_)) =>
+                complete(StatusCodes.NoContent)
+              case _ =>
+                complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
+            }
+          }
+      }~
       pathEndOrSingleSlash {
         post {
           entity(as[RestaurantCreationRequest]){ resquest =>
@@ -81,22 +124,6 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
                   complete(StatusCodes.Created)
                 }
             }
-          }
-        }
-      } ~
-      path(Segment) { id =>
-        get {
-          onSuccess(getRestaurant(id)){
-            case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
-                complete{
-                  RestaurantResponse(restaurantState.userId, restaurantState.name, restaurantState.state,
-                    restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
-                    restaurantState.location.longitude, restaurantState.categories,
-                    transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
-                }
-
-            case _ =>
-              complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
           }
         }
       }
