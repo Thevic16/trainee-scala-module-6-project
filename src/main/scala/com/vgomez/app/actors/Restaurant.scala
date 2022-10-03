@@ -4,7 +4,7 @@ import akka.persistence.PersistentActor
 
 import scala.util.{Success, Try}
 import com.vgomez.app.domain.DomainModel._
-import com.vgomez.app.domain.DomainModelFactory.{generateNewEmptySchedule, updateSchedule}
+import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
 
 object Restaurant {
 

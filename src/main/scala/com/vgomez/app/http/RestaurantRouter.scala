@@ -14,11 +14,11 @@ import com.vgomez.app.actors.Restaurant._
 import com.vgomez.app.actors.Restaurant.Command._
 import com.vgomez.app.actors.Restaurant.Response._
 import com.vgomez.app.domain.{DomainModel, SimpleScheduler}
-import com.vgomez.app.domain.Transformers._
+import com.vgomez.app.domain.Transformer._
 import com.vgomez.app.http.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.vgomez.app.erros.CustomError.IdentifierNotFoundException
+import com.vgomez.app.exception.CustomException.IdentifierNotFoundException
 
 import scala.util.{Failure, Success}
 
