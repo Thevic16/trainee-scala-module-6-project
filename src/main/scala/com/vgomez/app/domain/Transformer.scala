@@ -5,13 +5,13 @@ import scala.collection.immutable.HashMap
 
 
 case class SimpleScheduler(monday: String, tuesday: String, wednesday: String, thursday: String,
-                             friday: String = "", saturday: String, sunday: String)
+                             friday: String, saturday: String, sunday: String)
 
 trait SimpleSchedulerJsonProtocol extends DefaultJsonProtocol {
   implicit val SimpleSchedulerFormat = jsonFormat7(SimpleScheduler)
 }
 
-object Transformers extends SimpleSchedulerJsonProtocol{
+object Transformer extends SimpleSchedulerJsonProtocol{
   import DomainModel._
 
   def transformHourStringToHour(hours: String): Hour = {
@@ -102,19 +102,5 @@ object Transformers extends SimpleSchedulerJsonProtocol{
       case Normal => "normal"
     }
   }
-
-}
-
-object TransformersPlayground extends App {
-  import Transformers._
-
-//  println(transformHourStringToHour("0:0"))
-//  println(transformHourStringToHour("22:0"))
-//  println(transformHourStringToHour("1:15"))
-//  println(transformHourStringToHour("11:30"))
-
-  //println(transformScheduleStringToSchedule("{'Monday': '1:0-5:0'}, 'Tuesday': '1:0-5:0'}"))
-
-  println(transformScheduleStringToSchedule("{\"Monday\": \"1:0-5:0\"}, \"Tuesday\": \"1:0-5:0\"}"))
 
 }

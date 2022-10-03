@@ -184,3 +184,6 @@ project/plugins/project/
 # Remove CSV files
 *.csv
 
+# Ignoring Playground files
+*Playground.scala
+
