@@ -4,6 +4,9 @@ import akka.persistence.PersistentActor
 
 import scala.util.{Success, Try}
 import com.vgomez.app.domain.DomainModel._
+import com.vgomez.app.actors.commands.Abstract.Command._
+import com.vgomez.app.actors.commands.Abstract.Response._
+
 
 object User {
 
@@ -16,10 +19,10 @@ object User {
 
   // commands
   object Command {
-    case class GetUser(username: String)
-    case class CreateUser(userInfo: UserInfo)
-    case class UpdateUser(userInfo: UserInfo)
-    case class DeleteUser(username: String)
+    case class GetUser(username: String) extends GetCommand
+    case class CreateUser(userInfo: UserInfo) extends CreateCommand
+    case class UpdateUser(userInfo: UserInfo) extends UpdateCommand
+    case class DeleteUser(username: String) extends DeleteCommand
   }
 
   // events
@@ -30,13 +33,10 @@ object User {
 
   // responses
   object Response {
-    case class GetUserResponse(maybeUserState: Option[UserState])
+    case class GetUserResponse(maybeUserState: Option[UserState]) extends GetResponse
 
-    case class CreateUserResponse(maybeUsername: Try[String])
+    case class UpdateUserResponse(maybeUserState: Try[UserState]) extends UpdateResponse
 
-    case class UpdateUserResponse(maybeUserState: Try[UserState])
-
-    case class DeleteUserResponse(maybeUsername: Try[String])
   }
 
   def props(username: String): Props =  Props(new User(username))
@@ -60,7 +60,7 @@ class User(username: String) extends PersistentActor with ActorLogging{
       val newState: UserState = getNewState(userInfo)
 
       persist(UserCreated(newState)) { _ =>
-        sender() ! CreateUserResponse(Success(username))
+        sender() ! CreateResponse(Success(username))
         context.become(state(newState))
       }
 
@@ -76,7 +76,7 @@ class User(username: String) extends PersistentActor with ActorLogging{
       val newState: UserState = userState.copy(isDeleted = true)
 
       persist(UserDeleted(newState)) { _ =>
-        sender() ! DeleteUserResponse(Success(id))
+        sender() ! DeleteResponse(Success(id))
         context.become(state(newState))
       }
   }

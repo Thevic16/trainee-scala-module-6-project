@@ -3,6 +3,8 @@ import akka.actor.Props
 import akka.persistence.PersistentActor
 
 import scala.util.{Success, Try}
+import com.vgomez.app.actors.commands.Abstract.Command._
+import com.vgomez.app.actors.commands.Abstract.Response._
 
 
 object Review {
@@ -15,10 +17,10 @@ object Review {
 
   // commands
   object Command {
-    case class GetReview(id: String)
-    case class CreateReview(maybeId: Option[String], reviewInfo: ReviewInfo)
-    case class UpdateReview(id: String, reviewInfo: ReviewInfo)
-    case class DeleteReview(id: String)
+    case class GetReview(id: String) extends GetCommand
+    case class CreateReview(maybeId: Option[String], reviewInfo: ReviewInfo) extends CreateCommand
+    case class UpdateReview(id: String, reviewInfo: ReviewInfo) extends UpdateCommand
+    case class DeleteReview(id: String) extends DeleteCommand
   }
 
   // events
@@ -29,13 +31,9 @@ object Review {
 
   // responses
   object Response {
-    case class GetReviewResponse(maybeReviewState: Option[ReviewState])
+    case class GetReviewResponse(maybeReviewState: Option[ReviewState]) extends GetResponse
 
-    case class CreateReviewResponse(maybeId: Try[String])
-
-    case class UpdateReviewResponse(maybeReviewState: Try[ReviewState])
-
-    case class DeleteReviewResponse(maybeId: Try[String])
+    case class UpdateReviewResponse(maybeReviewState: Try[ReviewState]) extends UpdateResponse
   }
 
   def props(id: String): Props =  Props(new Review(id))
@@ -57,7 +55,7 @@ class Review(id: String) extends PersistentActor{
       val newState: ReviewState = getNewState(reviewInfo)
 
       persist(ReviewCreated(newState)) { _ =>
-        sender() ! CreateReviewResponse(Success(id))
+        sender() ! CreateResponse(Success(id))
         context.become(state(newState))
       }
 
@@ -73,7 +71,7 @@ class Review(id: String) extends PersistentActor{
       val newState: ReviewState = reviewState.copy(isDeleted = true)
 
       persist(ReviewDeleted(newState)) { _ =>
-        sender() ! DeleteReviewResponse(Success(id))
+        sender() ! DeleteResponse(Success(id))
         context.become(state(newState))
       }
   }

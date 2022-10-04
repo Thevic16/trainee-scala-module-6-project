@@ -17,26 +17,33 @@ import java.io.File
 import java.util.UUID
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.DurationInt
 
-class LoadDataset(filePath: String, administration: ActorRef, implicit val system: ActorSystem) {
+class LoadDataset(filePath: String, administration: ActorRef, implicit val system: ActorSystem,
+                  implicit val timeout: Timeout) {
     // Use Akka Stream to process the data
     implicit val materializer = ActorMaterializer()
-    implicit val timeout: Timeout = Timeout(5.seconds)
     implicit val scheduler: ExecutionContext = system.dispatcher
 
 
   def runLoadDataSetGraph() = {
-    val readerStream = getReaderStream().take(10)
+    /*
+    Todo ask about why it only process a maximum of 15 row.
+    * */
+    val readerStream = getReaderStream().take(15)
+    println(s"readerStream size: ${readerStream.size}")
     // Graph
     val source = Source(readerStream)
     val flow = Flow[Map[String, String]].map(row => convertRowToMapCommands(row))
-        val sink = Sink.foreach[Map[String, Product]](commandsMap => {
-            administration ! commandsMap("createUserCommand")
+    val sink = Sink.foreach[Map[String, Product]](commandsMap => {
+           administration ! commandsMap("createUserCommand")
            administration ! commandsMap("createRestaurantCommand")
            administration ! commandsMap("createReviewCommand")
         })
-    //val sink = Sink.foreach(println)
+//    var i = 0
+//    val sink = Sink.foreach{_: Map[String, Product] => {
+//      i = i + 1
+//      println(i)
+//    }}
     source.via(flow).to(sink).run()
   }
 

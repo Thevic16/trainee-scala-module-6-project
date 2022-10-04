@@ -19,6 +19,7 @@ import com.vgomez.app.http.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.exception.CustomException.IdentifierNotFoundException
+import com.vgomez.app.actors.commands.Abstract.Response._
 
 import scala.util.{Failure, Success}
 
@@ -67,15 +68,15 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
   def getRestaurant(id: String): Future[GetRestaurantResponse] =
     (administration ? GetRestaurant(id)).mapTo[GetRestaurantResponse]
 
-  def createRestaurant(restaurantCreationRequest: RestaurantCreationRequest): Future[CreateRestaurantResponse] =
-    (administration ? restaurantCreationRequest.toCommand).mapTo[CreateRestaurantResponse]
+  def createRestaurant(restaurantCreationRequest: RestaurantCreationRequest): Future[CreateResponse] =
+    (administration ? restaurantCreationRequest.toCommand).mapTo[CreateResponse]
 
   def updateRestaurant(id: String,
                        restaurantUpdateRequest: RestaurantUpdateRequest): Future[UpdateRestaurantResponse] =
     (administration ? restaurantUpdateRequest.toCommand(id)).mapTo[UpdateRestaurantResponse]
 
-  def deleteRestaurant(id: String): Future[DeleteRestaurantResponse] =
-    (administration ? DeleteRestaurant(id)).mapTo[DeleteRestaurantResponse]
+  def deleteRestaurant(id: String): Future[DeleteResponse] =
+    (administration ? DeleteRestaurant(id)).mapTo[DeleteResponse]
 
   val routes: Route =
     pathPrefix("api" / "restaurants"){
@@ -108,9 +109,9 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
           } ~
           delete {
             onSuccess(deleteRestaurant(id)) {
-              case DeleteRestaurantResponse(Success(_)) =>
+              case DeleteResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteRestaurantResponse(Failure(IdentifierNotFoundException)) =>
+              case DeleteResponse(Failure(IdentifierNotFoundException)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
             }
           }
@@ -119,7 +120,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
         post {
           entity(as[RestaurantCreationRequest]){ request =>
             onSuccess(createRestaurant(request)){
-              case CreateRestaurantResponse(id) =>
+              case CreateResponse(id) =>
                 respondWithHeader(Location(s"/restaurants/$id")){
                   complete(StatusCodes.Created)
                 }

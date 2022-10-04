@@ -17,6 +17,7 @@ import com.vgomez.app.http.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.exception.CustomException.IdentifierNotFoundException
+import com.vgomez.app.actors.commands.Abstract.Response._
 
 import scala.util.{Failure, Success}
 
@@ -56,15 +57,15 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
   def getReview(id: String): Future[GetReviewResponse] =
     (administration ? GetReview(id)).mapTo[GetReviewResponse]
 
-  def createReview(reviewCreationRequest: ReviewCreationRequest): Future[CreateReviewResponse] =
-    (administration ? reviewCreationRequest.toCommand).mapTo[CreateReviewResponse]
+  def createReview(reviewCreationRequest: ReviewCreationRequest): Future[CreateResponse] =
+    (administration ? reviewCreationRequest.toCommand).mapTo[CreateResponse]
 
   def updateReview(id: String,
                    reviewUpdateRequest: ReviewUpdateRequest): Future[UpdateReviewResponse] =
     (administration ? reviewUpdateRequest.toCommand(id)).mapTo[UpdateReviewResponse]
 
-  def deleteReview(id: String): Future[DeleteReviewResponse] =
-    (administration ? DeleteReview(id)).mapTo[DeleteReviewResponse]
+  def deleteReview(id: String): Future[DeleteResponse] =
+    (administration ? DeleteReview(id)).mapTo[DeleteResponse]
 
   val routes: Route =
     pathPrefix("api" / "reviews"){
@@ -95,9 +96,9 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
           } ~
           delete {
             onSuccess(deleteReview(id)) {
-              case DeleteReviewResponse(Success(_)) =>
+              case DeleteResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteReviewResponse(Failure(IdentifierNotFoundException)) =>
+              case DeleteResponse(Failure(IdentifierNotFoundException)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
             }
           }
@@ -106,7 +107,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
           post {
             entity(as[ReviewCreationRequest]){ request =>
               onSuccess(createReview(request)){
-                case CreateReviewResponse(id) =>
+                case CreateResponse(id) =>
                   respondWithHeader(Location(s"/reviews/$id")){
                     complete(StatusCodes.Created)
                   }
