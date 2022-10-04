@@ -47,7 +47,7 @@ object App {
 
   def main(args: Array[String]): Unit = {
     implicit val system: ActorSystem = ActorSystem("RestaurantReviewsApp")
-    implicit val timeout: Timeout = Timeout(2.seconds)
+    val timeout: Timeout = Timeout(2.seconds)
 
     val administration = system.actorOf(Props[Administration], "administration-system")
 
@@ -56,7 +56,7 @@ object App {
 
     if(runLoadDataSetGraph){
       val filePath = conf.getString("load-dataset.path-csv")
-      new RunLoadDataSetGraph(filePath, administration, system).run()
+      new RunLoadDataSetGraph(filePath, administration, system, timeout).run()
     }
 
     startHttpServer(administration)

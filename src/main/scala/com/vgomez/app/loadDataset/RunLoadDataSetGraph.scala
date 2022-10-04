@@ -1,11 +1,11 @@
 package com.vgomez.app.loadDataset
 import akka.actor.{ActorRef, ActorSystem}
-import com.typesafe.config.ConfigFactory
+import akka.util.Timeout
 
 
-class RunLoadDataSetGraph(filePath: String, administration: ActorRef, system: ActorSystem){
+class RunLoadDataSetGraph(filePath: String, administration: ActorRef, system: ActorSystem, timeout: Timeout){
   def run() = {
-    val loadDataset = new LoadDataset(filePath, administration, system)
+    val loadDataset = new LoadDataset(filePath, administration, system, timeout)
     loadDataset.runLoadDataSetGraph()
   }
 }

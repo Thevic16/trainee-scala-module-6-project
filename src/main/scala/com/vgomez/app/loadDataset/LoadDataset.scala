@@ -17,12 +17,11 @@ import java.io.File
 import java.util.UUID
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.DurationInt
 
-class LoadDataset(filePath: String, administration: ActorRef, implicit val system: ActorSystem) {
+class LoadDataset(filePath: String, administration: ActorRef, implicit val system: ActorSystem,
+                  implicit val timeout: Timeout) {
     // Use Akka Stream to process the data
     implicit val materializer = ActorMaterializer()
-    implicit val timeout: Timeout = Timeout(5.seconds)
     implicit val scheduler: ExecutionContext = system.dispatcher
 
 
