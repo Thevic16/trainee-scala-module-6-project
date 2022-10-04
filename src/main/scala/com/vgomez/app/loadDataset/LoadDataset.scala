@@ -27,16 +27,24 @@ class LoadDataset(filePath: String, administration: ActorRef, implicit val syste
 
 
   def runLoadDataSetGraph() = {
-    val readerStream = getReaderStream().take(10)
+    /*
+    Todo ask about why it only process a maximum of 15 row.
+    * */
+    val readerStream = getReaderStream().take(15)
+    println(s"readerStream size: ${readerStream.size}")
     // Graph
     val source = Source(readerStream)
     val flow = Flow[Map[String, String]].map(row => convertRowToMapCommands(row))
-        val sink = Sink.foreach[Map[String, Product]](commandsMap => {
-            administration ! commandsMap("createUserCommand")
+    val sink = Sink.foreach[Map[String, Product]](commandsMap => {
+           administration ! commandsMap("createUserCommand")
            administration ! commandsMap("createRestaurantCommand")
            administration ! commandsMap("createReviewCommand")
         })
-    //val sink = Sink.foreach(println)
+//    var i = 0
+//    val sink = Sink.foreach{_: Map[String, Product] => {
+//      i = i + 1
+//      println(i)
+//    }}
     source.via(flow).to(sink).run()
   }
 

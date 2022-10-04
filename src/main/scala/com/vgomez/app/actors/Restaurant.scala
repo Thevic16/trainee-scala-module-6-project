@@ -5,6 +5,9 @@ import akka.persistence.PersistentActor
 import scala.util.{Success, Try}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
+import com.vgomez.app.actors.commands.Abstract.Command._
+import com.vgomez.app.actors.commands.Abstract.Response._
+
 
 object Restaurant {
 
@@ -18,10 +21,10 @@ object Restaurant {
 
   // commands
   object Command {
-    case class GetRestaurant(id: String)
-    case class CreateRestaurant(maybeId: Option[String], restaurantInfo: RestaurantInfo)
-    case class UpdateRestaurant(id: String, restaurantInfo: RestaurantInfo)
-    case class DeleteRestaurant(id: String)
+    case class GetRestaurant(id: String) extends GetCommand
+    case class CreateRestaurant(maybeId: Option[String], restaurantInfo: RestaurantInfo) extends CreateCommand
+    case class UpdateRestaurant(id: String, restaurantInfo: RestaurantInfo) extends UpdateCommand
+    case class DeleteRestaurant(id: String) extends DeleteCommand
   }
 
   // events
@@ -33,12 +36,9 @@ object Restaurant {
   // responses
   object Response {
     case class GetRestaurantResponse(maybeRestaurantState: Option[RestaurantState], maybeStarts: Option[Int])
+      extends GetResponse
 
-    case class CreateRestaurantResponse(maybeId: Try[String])
-
-    case class UpdateRestaurantResponse(maybeRestaurantState: Try[RestaurantState])
-
-    case class DeleteRestaurantResponse(maybeId: Try[String])
+    case class UpdateRestaurantResponse(maybeRestaurantState: Try[RestaurantState]) extends UpdateResponse
   }
 
   def props(id: String): Props =  Props(new Restaurant(id))
@@ -63,7 +63,7 @@ class Restaurant(id: String) extends PersistentActor{
       val newState: RestaurantState = getNewState(restaurantInfo)
 
       persist(RestaurantCreated(newState)){_ =>
-        sender() ! CreateRestaurantResponse(Success(id))
+        sender() ! CreateResponse(Success(id))
         context.become(state(newState))
       }
 
@@ -79,7 +79,7 @@ class Restaurant(id: String) extends PersistentActor{
       val newState: RestaurantState = restaurantState.copy(isDeleted = true)
 
       persist(RestaurantDeleted(newState)) { _ =>
-        sender() ! DeleteRestaurantResponse(Success(id))
+        sender() ! DeleteResponse(Success(id))
         context.become(state(newState))
       }
   }

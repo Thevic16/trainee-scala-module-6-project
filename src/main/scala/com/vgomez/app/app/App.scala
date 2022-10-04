@@ -46,7 +46,7 @@ object App {
   }
 
   def main(args: Array[String]): Unit = {
-    implicit val system: ActorSystem = ActorSystem("BankApp")
+    implicit val system: ActorSystem = ActorSystem("RestaurantReviewsApp")
     implicit val timeout: Timeout = Timeout(2.seconds)
 
     val administration = system.actorOf(Props[Administration], "administration-system")

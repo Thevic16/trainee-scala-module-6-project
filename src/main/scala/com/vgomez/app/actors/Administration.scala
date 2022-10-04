@@ -3,10 +3,12 @@ import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.PersistentActor
 
 
-import java.util.UUID
 import com.vgomez.app.exception.CustomException._
-
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import com.vgomez.app.actors.commands.Abstract.Command._
+import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.actors.commands.Abstract.Event._
+import com.vgomez.app.actors.AdministrationUtility._
 
 object Administration {
   // state
@@ -22,9 +24,9 @@ object Administration {
 
 
   // events
-  case class RestaurantCreated(id: String)
-  case class ReviewCreated(id: String)
-  case class UserCreated(username: String)
+  case class RestaurantCreated(id: String) extends Event
+  case class ReviewCreated(id: String) extends Event
+  case class UserCreated(username: String) extends Event
 
 }
 
@@ -48,143 +50,44 @@ class Administration extends PersistentActor with ActorLogging{
 
   def state(administrationState: AdministrationState): Receive = {
     // Restaurants Commands
-    case getCommand@GetRestaurant(id) =>
-      administrationState.restaurants.get(id) match {
-        case Some(restaurant) =>
-          restaurant.forward(getCommand)
-        case None =>
-          sender() ! GetRestaurantResponse(None, None)
-      }
+    case getCommand@GetRestaurant(_) =>
+      processGetCommand(getCommand, administrationState)
 
-    case createCommand@CreateRestaurant(maybeId, _) =>
-      val id = maybeId.getOrElse(UUID.randomUUID().toString)
+    case createCommand@CreateRestaurant(_, _) =>
+      processCreateCommand(createCommand, administrationState)
 
-      administrationState.restaurants.get(id) match {
-        case Some(_) =>
-          sender() ! CreateRestaurantResponse(Failure(IdentifierExistsException))
+    case updateCommand@UpdateRestaurant(_, _) =>
+      processUpdateCommand(updateCommand, administrationState)
 
-        case None =>
-          val newRestaurant = context.actorOf(Restaurant.props(id), id)
-          val newState = administrationState.copy(restaurants =
-            administrationState.restaurants + (id -> newRestaurant))
-
-          persist(RestaurantCreated(id)) { _ =>
-            log.info(s"Administration has created a restaurant with id: $id")
-            newRestaurant.forward(createCommand)
-            context.become(state(newState))
-          }
-      }
-
-
-    case updateCommand@UpdateRestaurant(id, _) =>
-       administrationState.restaurants.get(id) match {
-        case Some(restaurant) =>
-          restaurant.forward(updateCommand)
-
-        case None =>
-          sender() ! UpdateRestaurantResponse(Failure(IdentifierNotFoundException))
-      }
-
-    case deleteCommand@DeleteRestaurant(id) =>
-      administrationState.restaurants.get(id) match {
-        case Some(restaurant) =>
-            restaurant.forward(deleteCommand)
-
-        case None =>
-          sender() ! UpdateRestaurantResponse(Failure(IdentifierNotFoundException))
-      }
+    case deleteCommand@DeleteRestaurant(_) =>
+      processDeleteCommand(deleteCommand, administrationState)
 
     // Reviews Commands
-    case getCommand@GetReview(id) =>
-      administrationState.reviews.get(id) match {
-        case Some(review) =>
-          review.forward(getCommand)
-        case None =>
-          sender() ! GetReviewResponse(None)
-      }
+    case getCommand@GetReview(_) =>
+      processGetCommand(getCommand, administrationState)
 
-    case createCommand@CreateReview(maybeId, _) =>
-      val id = maybeId.getOrElse(UUID.randomUUID().toString)
-
-      administrationState.reviews.get(id) match {
-        case Some(_) =>
-          sender() ! CreateReviewResponse(Failure(IdentifierExistsException))
-        case None =>
-          val newReview = context.actorOf(Review.props(id), id)
-          val newState = administrationState.copy(reviews =
-            administrationState.reviews + (id -> newReview))
-
-          persist(ReviewCreated(id)) { _ =>
-            log.info(s"Administration has created a review with id: $id")
-            newReview.forward(createCommand)
-            context.become(state(newState))
-          }
-      }
+    case createCommand@CreateReview(_, _) =>
+      processCreateCommand(createCommand, administrationState)
 
 
-    case updateCommand@UpdateReview(id, _) =>
-      administrationState.reviews.get(id) match {
-        case Some(review) =>
-          review.forward(updateCommand)
+    case updateCommand@UpdateReview(_, _) =>
+      processUpdateCommand(updateCommand, administrationState)
 
-        case None =>
-          sender() ! UpdateReviewResponse(Failure(IdentifierNotFoundException))
-      }
-
-    case deleteCommand@DeleteReview(id) =>
-      administrationState.reviews.get(id) match {
-        case Some(review) =>
-          review.forward(deleteCommand)
-
-        case None =>
-          sender() ! UpdateReviewResponse(Failure(IdentifierNotFoundException))
-      }
+    case deleteCommand@DeleteReview(_) =>
+      processDeleteCommand(deleteCommand, administrationState)
 
     // Users Commands
-    case getCommand@GetUser(username) =>
-      log.info(s"Administration receive a GetUser Command")
+    case getCommand@GetUser(_) =>
+      processGetCommand(getCommand, administrationState)
 
-      administrationState.users.get(username) match {
-        case Some(user) =>
-          user.forward(getCommand)
-        case None =>
-          sender() ! GetUserResponse(None)
-      }
+    case createCommand@CreateUser(_) =>
+      processCreateCommand(createCommand, administrationState)
 
-    case createCommand@CreateUser(userInfo) =>
-      administrationState.users.get(userInfo.username) match {
-        case Some(_) =>
-          sender() ! CreateUserResponse(Failure(UsernameExistsException))
-        case None =>
-          val newUser = context.actorOf(User.props(userInfo.username), userInfo.username)
-          val newState = administrationState.copy(users =
-            administrationState.users + (userInfo.username -> newUser))
+    case updateCommand@UpdateUser(_) =>
+      processUpdateCommand(updateCommand, administrationState)
 
-          persist(UserCreated(userInfo.username)) { _ =>
-            log.info(s"Administration has created a user with username: ${userInfo.username}")
-            newUser.forward(createCommand)
-            context.become(state(newState))
-          }
-      }
-
-    case updateCommand@UpdateUser(userInfo) =>
-      administrationState.users.get(userInfo.username) match {
-        case Some(user) =>
-          user.forward(updateCommand)
-
-        case None =>
-          sender() ! UpdateUserResponse(Failure(IdentifierNotFoundException))
-      }
-
-    case deleteCommand@DeleteUser(username) =>
-      administrationState.users.get(username) match {
-        case Some(user) =>
-          user.forward(deleteCommand)
-
-        case None =>
-          sender() ! UpdateReviewResponse(Failure(IdentifierNotFoundException))
-      }
-
+    case deleteCommand@DeleteUser(_) =>
+      processDeleteCommand(deleteCommand, administrationState)
   }
 
   override def receiveCommand: Receive = state(administrationRecoveryState)
@@ -224,10 +127,95 @@ class Administration extends PersistentActor with ActorLogging{
     super.onRecoveryFailure(cause, event)
   }
 
-//  def getAllRestaurants(restaurants: List[ActorRef]): List[GetRestaurantResponse] = {
-//    def go(restaurants: List[ActorRef], acc: List[GetRestaurantResponse]) = {
-//
-//    }
-//  }
+  // Auxiliary methods
+
+  // Process CRUD Commands
+  def processGetCommand(getCommand: GetCommand, administrationState: AdministrationState) = {
+    val actorRefOption: Option[ActorRef] = getActorRefOptionByGetCommand(getCommand, administrationState)
+
+    actorRefOption match {
+      case Some(actorRef) =>
+        actorRef.forward(getCommand)
+      case None =>
+        val getResponse: GetResponse = getGetResponseByGetCommand(getCommand)
+        sender() ! getResponse
+    }
+  }
+
+  def processCreateCommand(createCommand: CreateCommand, administrationState: AdministrationState) = {
+    val identifier: String = getIdentifierByCreateCommand(createCommand)
+    val actorRefOption: Option[ActorRef] = getActorRefOptionByCreateCommand(createCommand, identifier,
+                                                                            administrationState)
+    actorRefOption match {
+      case Some(_) =>
+        sender() ! CreateResponse(Failure(IdentifierExistsException))
+      case None =>
+        val newActorRef: ActorRef = getNewActorRefByCreateCommand(createCommand, identifier)
+        val newStateAdministrationState: AdministrationState = getNewStateByCreateCommand(createCommand, newActorRef,
+                                                                                        identifier, administrationState)
+
+        persistCreateCommand(createCommand, newActorRef, identifier, newStateAdministrationState)
+    }
+  }
+
+  def getNewActorRefByCreateCommand(createCommand: CreateCommand, identifier: String): ActorRef = {
+    createCommand match {
+      case CreateRestaurant(_, _) => context.actorOf(Restaurant.props(identifier), identifier)
+      case CreateReview(_, _) => context.actorOf(Review.props(identifier), identifier)
+      case CreateUser(_) => context.actorOf(User.props(identifier), identifier)
+    }
+  }
+
+  def persistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
+                           newStateAdministrationState: AdministrationState) = {
+    createCommand match {
+      case CreateRestaurant(_, _) =>
+        helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
+          newStateAdministrationState: AdministrationState, "restaurant", RestaurantCreated(identifier))
+
+      case CreateReview(_, _) =>
+        helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
+          newStateAdministrationState: AdministrationState, "review", ReviewCreated(identifier))
+
+      case CreateUser(_) =>
+        helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
+          newStateAdministrationState: AdministrationState, "user", UserCreated(identifier))
+    }
+  }
+
+  def helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
+                                 newStateAdministrationState: AdministrationState , actorName: String,
+                                 event: Event) = {
+    persist(event) { _ =>
+      log.info(s"Administration has created a $actorName with id: ${identifier}")
+      newActorRef.forward(createCommand)
+      context.become(state(newStateAdministrationState))
+    }
+  }
+
+  def processUpdateCommand(updateCommand: UpdateCommand, administrationState: AdministrationState) = {
+    val identifier: String = getIdentifierByUpdateCommand(updateCommand)
+
+    val actorRefOption: Option[ActorRef] = getActorRefOptionByUpdateCommand(updateCommand, identifier,
+                                                                            administrationState)
+    actorRefOption match {
+      case Some(actorRef) =>
+        actorRef.forward(updateCommand)
+      case None =>
+        val updateResponse: UpdateResponse = getUpdateResponseByUpdateCommand(updateCommand)
+        sender() ! updateResponse
+    }
+  }
+
+  def processDeleteCommand(deleteCommand: DeleteCommand, administrationState: AdministrationState) = {
+    val actorRefOption: Option[ActorRef] = getActorRefOptionByDeleteCommand(deleteCommand,
+      administrationState)
+    actorRefOption match {
+      case Some(actorRef) =>
+        actorRef.forward(deleteCommand)
+      case None =>
+        sender() ! DeleteResponse(Failure(IdentifierNotFoundException))
+    }
+  }
 
 }

@@ -19,6 +19,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.domain.DomainModel
 import com.vgomez.app.domain.Transformer.{transformRoleToStringRole, transformStringRoleToRole}
 import com.vgomez.app.exception.CustomException.IdentifierNotFoundException
+import com.vgomez.app.actors.commands.Abstract.Response._
 
 import scala.util.{Failure, Success}
 
@@ -63,14 +64,14 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
   def getUser(username: String): Future[GetUserResponse] =
     (administration ? GetUser(username)).mapTo[GetUserResponse]
 
-  def createUser(userCreationRequest: UserCreationRequest): Future[CreateUserResponse] =
-    (administration ? userCreationRequest.toCommand).mapTo[CreateUserResponse]
+  def createUser(userCreationRequest: UserCreationRequest): Future[CreateResponse] =
+    (administration ? userCreationRequest.toCommand).mapTo[CreateResponse]
 
   def updateUser(userUpdateRequest: UserUpdateRequest): Future[UpdateUserResponse] =
     (administration ? userUpdateRequest.toCommand).mapTo[UpdateUserResponse]
 
-  def deleteUser(username: String): Future[DeleteUserResponse] =
-    (administration ? DeleteUser(username)).mapTo[DeleteUserResponse]
+  def deleteUser(username: String): Future[DeleteResponse] =
+    (administration ? DeleteUser(username)).mapTo[DeleteResponse]
 
   val routes: Route =
     pathPrefix("api" / "users"){
@@ -101,9 +102,9 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
           } ~
           delete {
             onSuccess(deleteUser(username)) {
-              case DeleteUserResponse(Success(_)) =>
+              case DeleteResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteUserResponse(Failure(IdentifierNotFoundException)) =>
+              case DeleteResponse(Failure(IdentifierNotFoundException)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
             }
           }
@@ -112,7 +113,7 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
           post {
             entity(as[UserCreationRequest]){ request =>
               onSuccess(createUser(request)){
-                case CreateUserResponse(id) =>
+                case CreateResponse(id) =>
                   respondWithHeader(Location(s"/users/$id")){
                     complete(StatusCodes.Created)
                   }
