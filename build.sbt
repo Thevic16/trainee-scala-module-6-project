@@ -41,7 +41,10 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.github.tototoshi" %% "scala-csv" % "1.3.10",
 
   // Config
-  "com.github.andyglow" %% "typesafe-config-scala" % "2.0.0"
+  "com.github.andyglow" %% "typesafe-config-scala" % "2.0.0",
+
+  // Swagger
+  "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.4.0"
 )
 
 lazy val root = (project in file("."))
