@@ -15,11 +15,12 @@ import com.vgomez.app.actors.Restaurant.Command._
 import com.vgomez.app.actors.Restaurant.Response._
 import com.vgomez.app.domain.{DomainModel, SimpleScheduler}
 import com.vgomez.app.domain.Transformer._
-import com.vgomez.app.http.HttpResponse._
+import com.vgomez.app.http.messages.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.vgomez.app.exception.CustomException.IdentifierNotFoundException
+import com.vgomez.app.exception.CustomException.{IdentifierNotFoundException, ValidationFailException}
 import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.http.validators._
 
 import scala.util.{Failure, Success}
 
@@ -38,7 +39,7 @@ trait RestaurantCreationRequestJsonProtocol extends DefaultJsonProtocol {
 
 case class RestaurantUpdateRequest(userId: String , name: String, state: String, city: String, postalCode: String,
                                    latitude: Double, longitude: Double, categories: Set[String],
-                                   schedule: SimpleScheduler) {
+                                   schedule: SimpleScheduler)  {
   def toCommand(id: String): UpdateRestaurant = UpdateRestaurant(id, RestaurantInfo(userId, name, state, city, postalCode,
     DomainModel.Location(latitude, longitude), categories: Set[String], transformSimpleSchedulerToSchedule(schedule)))
 }
@@ -97,13 +98,20 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
         } ~
           put {
             entity(as[RestaurantUpdateRequest]) { request =>
-              onSuccess(updateRestaurant(id, request)) {
-                case UpdateRestaurantResponse(Success(_)) =>
-                  respondWithHeader(Location(s"/restaurants/$id")) {
-                    complete(StatusCodes.OK)
+              ValidatorRestaurantRequest(request.userId, request.name, request.state, request.city, request.postalCode,
+                                          request.latitude, request.longitude, request.categories,
+                                            request.schedule).run() match {
+                case Success(_) =>
+                  onSuccess(updateRestaurant(id, request)) {
+                    case UpdateRestaurantResponse(Success(_)) =>
+                      respondWithHeader(Location(s"/restaurants/$id")) {
+                        complete(StatusCodes.OK)
+                      }
+                    case UpdateRestaurantResponse(Failure(IdentifierNotFoundException)) =>
+                      complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
                   }
-                case UpdateRestaurantResponse(Failure(IdentifierNotFoundException)) =>
-                  complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
+                case Failure(e: ValidationFailException) =>
+                  complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
             }
           } ~
@@ -119,11 +127,18 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
       pathEndOrSingleSlash {
         post {
           entity(as[RestaurantCreationRequest]){ request =>
-            onSuccess(createRestaurant(request)){
-              case CreateResponse(id) =>
-                respondWithHeader(Location(s"/restaurants/$id")){
-                  complete(StatusCodes.Created)
+            ValidatorRestaurantRequest(request.userId, request.name, request.state, request.city, request.postalCode,
+              request.latitude, request.longitude, request.categories,
+              request.schedule).run() match {
+              case Success(_) =>
+                onSuccess(createRestaurant(request)) {
+                  case CreateResponse(id) =>
+                    respondWithHeader(Location(s"/restaurants/$id")) {
+                      complete(StatusCodes.Created)
+                    }
                 }
+              case Failure(e: ValidationFailException) =>
+                complete(StatusCodes.BadRequest, FailureResponse(e.message))
             }
           }
         }

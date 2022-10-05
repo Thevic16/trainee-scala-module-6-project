@@ -9,4 +9,6 @@ object CustomException {
 
   case object IdentifierExistsException extends
     RuntimeException("This Identifier already exists in the system.")
+
+  case class ValidationFailException(message: String) extends IllegalArgumentException(message)
 }

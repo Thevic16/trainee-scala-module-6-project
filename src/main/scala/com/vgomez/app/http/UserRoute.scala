@@ -6,20 +6,21 @@ import scala.concurrent.duration._
 import akka.util.Timeout
 import akka.http.scaladsl.model.headers.Location
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, duration}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.vgomez.app.actors.User._
 import com.vgomez.app.actors.User.Command._
 import com.vgomez.app.actors.User.Response._
-import com.vgomez.app.http.HttpResponse._
+import com.vgomez.app.http.messages.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.domain.DomainModel
 import com.vgomez.app.domain.Transformer.{transformRoleToStringRole, transformStringRoleToRole}
-import com.vgomez.app.exception.CustomException.IdentifierNotFoundException
+import com.vgomez.app.exception.CustomException.{IdentifierNotFoundException, ValidationFailException}
 import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.http.validators._
 
 import scala.util.{Failure, Success}
 
@@ -83,20 +84,25 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
                 UserResponse(userState.username,userState.password, transformRoleToStringRole(userState.role),
                   userState.location.latitude,  userState.location.longitude,userState.favoriteCategories)
               }
-
             case _ =>
               complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
           }
         } ~
           put {
             entity(as[UserUpdateRequest]) { request =>
-              onSuccess(updateUser(request)) {
-                case UpdateUserResponse(Success(_)) =>
-                  respondWithHeader(Location(s"/users/$username")) {
-                    complete(StatusCodes.OK)
+              ValidatorUserRequest(request.username, request.password, request.role, request.latitude, request.longitude,
+                request.favoriteCategories).run() match {
+                case Success(_) =>
+                  onSuccess(updateUser(request)) {
+                    case UpdateUserResponse(Success(_)) =>
+                      respondWithHeader(Location(s"/users/$username")) {
+                        complete(StatusCodes.OK)
+                      }
+                    case UpdateUserResponse(Failure(IdentifierNotFoundException)) =>
+                      complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
                   }
-                case UpdateUserResponse(Failure(IdentifierNotFoundException)) =>
-                  complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
+                case Failure(e: ValidationFailException) =>
+                  complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
             }
           } ~
@@ -112,11 +118,17 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
         pathEndOrSingleSlash {
           post {
             entity(as[UserCreationRequest]){ request =>
-              onSuccess(createUser(request)){
-                case CreateResponse(id) =>
-                  respondWithHeader(Location(s"/users/$id")){
-                    complete(StatusCodes.Created)
+              ValidatorUserRequest(request.username, request.password, request.role, request.latitude, request.longitude,
+                request.favoriteCategories).run() match {
+                case Success(_) =>
+                  onSuccess(createUser(request)) {
+                    case CreateResponse(id) =>
+                      respondWithHeader(Location(s"/users/$id")) {
+                        complete(StatusCodes.Created)
+                      }
                   }
+                case Failure(e: ValidationFailException) =>
+                  complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
             }
           }

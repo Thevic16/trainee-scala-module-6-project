@@ -190,3 +190,5 @@ project/plugins/project/
 # Ignore Application.conf
 application.conf
 
+.attach_pid*
+

@@ -13,11 +13,12 @@ import akka.http.scaladsl.server.Route
 import com.vgomez.app.actors.Review._
 import com.vgomez.app.actors.Review.Command._
 import com.vgomez.app.actors.Review.Response._
-import com.vgomez.app.http.HttpResponse._
+import com.vgomez.app.http.messages.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.vgomez.app.exception.CustomException.IdentifierNotFoundException
+import com.vgomez.app.exception.CustomException.{IdentifierNotFoundException, ValidationFailException}
 import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.http.validators._
 
 import scala.util.{Failure, Success}
 
@@ -84,14 +85,21 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
         } ~
           put {
             entity(as[ReviewUpdateRequest]) { request =>
-              onSuccess(updateReview(id, request)) {
-                case UpdateReviewResponse(Success(_)) =>
-                  respondWithHeader(Location(s"/reviews/$id")) {
-                    complete(StatusCodes.OK)
+              ValidatorReviewRequest(request.userId, request.restaurantId, request.stars,
+                request.text, request.date).run() match {
+                case Success(_) =>
+                  onSuccess(updateReview(id, request)) {
+                    case UpdateReviewResponse(Success(_)) =>
+                      respondWithHeader(Location(s"/reviews/$id")) {
+                        complete(StatusCodes.OK)
+                      }
+                    case UpdateReviewResponse(Failure(IdentifierNotFoundException)) =>
+                      complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
                   }
-                case UpdateReviewResponse(Failure(IdentifierNotFoundException)) =>
-                  complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
+                case Failure(e: ValidationFailException) =>
+                  complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
+
             }
           } ~
           delete {
@@ -106,11 +114,17 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
         pathEndOrSingleSlash {
           post {
             entity(as[ReviewCreationRequest]){ request =>
-              onSuccess(createReview(request)){
-                case CreateResponse(id) =>
-                  respondWithHeader(Location(s"/reviews/$id")){
-                    complete(StatusCodes.Created)
+              ValidatorReviewRequest(request.userId, request.restaurantId, request.stars,
+                request.text, request.date).run() match {
+                case Success(_) =>
+                  onSuccess(createReview(request)) {
+                    case CreateResponse(id) =>
+                      respondWithHeader(Location(s"/reviews/$id")) {
+                        complete(StatusCodes.Created)
+                      }
                   }
+                case Failure(e: ValidationFailException) =>
+                  complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
             }
           }
