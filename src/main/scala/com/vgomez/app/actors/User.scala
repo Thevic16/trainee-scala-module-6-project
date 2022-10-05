@@ -2,10 +2,11 @@ package com.vgomez.app.actors
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.actors.commands.Abstract.Command._
 import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.exception.CustomException.EntityIsDeletedException
 
 
 object User {
@@ -52,11 +53,13 @@ class User(username: String) extends PersistentActor with ActorLogging{
 
   def state(userState: UserState): Receive = {
     case GetUser(_) =>
-      log.info(s"User with username $username receive a GetUser Command")
-      sender() ! GetUserResponse(Some(userState))
+      if(userState.isDeleted){
+        sender() ! GetUserResponse(None)
+      }
+      else
+        sender() ! GetUserResponse(Some(userState))
 
     case CreateUser(userInfo) =>
-      log.info(s"User with username $username receive a CreateUser Command")
       val newState: UserState = getNewState(userInfo)
 
       persist(UserCreated(newState)) { _ =>
@@ -65,19 +68,27 @@ class User(username: String) extends PersistentActor with ActorLogging{
       }
 
     case UpdateUser(userInfo) =>
-      val newState: UserState = getNewState(userInfo)
+      if(userState.isDeleted)
+        sender() ! UpdateUserResponse(Failure(EntityIsDeletedException))
+      else {
+        val newState: UserState = getNewState(userInfo)
 
-      persist(UserUpdated(newState)) { _ =>
-        sender() ! UpdateUserResponse(Success(newState))
-        context.become(state(newState))
+        persist(UserUpdated(newState)) { _ =>
+          sender() ! UpdateUserResponse(Success(newState))
+          context.become(state(newState))
+        }
       }
 
     case DeleteUser(id) =>
-      val newState: UserState = userState.copy(isDeleted = true)
+      if(userState.isDeleted)
+        sender() ! DeleteResponse(Failure(EntityIsDeletedException))
+      else {
+        val newState: UserState = userState.copy(isDeleted = true)
 
-      persist(UserDeleted(newState)) { _ =>
-        sender() ! DeleteResponse(Success(id))
-        context.become(state(newState))
+        persist(UserDeleted(newState)) { _ =>
+          sender() ! DeleteResponse(Success(id))
+          context.become(state(newState))
+        }
       }
   }
 

@@ -84,7 +84,7 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
                 UserResponse(userState.username,userState.password, transformRoleToStringRole(userState.role),
                   userState.location.latitude,  userState.location.longitude,userState.favoriteCategories)
               }
-            case _ =>
+            case GetUserResponse(None) =>
               complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
           }
         } ~
@@ -98,7 +98,7 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
                       respondWithHeader(Location(s"/users/$username")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateUserResponse(Failure(IdentifierNotFoundException)) =>
+                    case UpdateUserResponse(Failure(_)) =>
                       complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
                   }
                 case Failure(e: ValidationFailException) =>
@@ -110,7 +110,7 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
             onSuccess(deleteUser(username)) {
               case DeleteResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteResponse(Failure(IdentifierNotFoundException)) =>
+              case DeleteResponse(Failure(_)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
             }
           }

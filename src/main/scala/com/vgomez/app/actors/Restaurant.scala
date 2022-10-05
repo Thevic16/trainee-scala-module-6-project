@@ -2,11 +2,12 @@ package com.vgomez.app.actors
 import akka.actor.Props
 import akka.persistence.PersistentActor
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
 import com.vgomez.app.actors.commands.Abstract.Command._
 import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.exception.CustomException.EntityIsDeletedException
 
 
 object Restaurant {
@@ -55,9 +56,12 @@ class Restaurant(id: String) extends PersistentActor{
   def state(restaurantState: RestaurantState): Receive = {
     case GetRestaurant(_) =>
       /*
-      * Todo implement starts in GetRestaurantResponse
+      Todo implement starts in GetRestaurantResponse
       **/
-      sender() ! GetRestaurantResponse(Some(restaurantState), Some(5))
+      if(restaurantState.isDeleted)
+        sender() ! GetRestaurantResponse(None, None)
+      else
+        sender() ! GetRestaurantResponse(Some(restaurantState), Some(5))
 
     case CreateRestaurant(_, restaurantInfo) =>
       val newState: RestaurantState = getNewState(restaurantInfo)
@@ -68,19 +72,27 @@ class Restaurant(id: String) extends PersistentActor{
       }
 
     case UpdateRestaurant(_, restaurantInfo) =>
-      val newState: RestaurantState = getNewState(restaurantInfo)
+      if(restaurantState.isDeleted)
+        sender() ! UpdateRestaurantResponse(Failure(EntityIsDeletedException))
+      else{
+        val newState: RestaurantState = getNewState(restaurantInfo)
 
-      persist(RestaurantUpdated(newState)) { _ =>
-        sender() ! UpdateRestaurantResponse(Success(newState))
-        context.become(state(newState))
+        persist(RestaurantUpdated(newState)) { _ =>
+          sender() ! UpdateRestaurantResponse(Success(newState))
+          context.become(state(newState))
+        }
       }
 
     case DeleteRestaurant(id) =>
-      val newState: RestaurantState = restaurantState.copy(isDeleted = true)
+      if (restaurantState.isDeleted)
+        sender() ! DeleteResponse(Failure(EntityIsDeletedException))
+      else {
+        val newState: RestaurantState = restaurantState.copy(isDeleted = true)
 
-      persist(RestaurantDeleted(newState)) { _ =>
-        sender() ! DeleteResponse(Success(id))
-        context.become(state(newState))
+        persist(RestaurantDeleted(newState)) { _ =>
+          sender() ! DeleteResponse(Success(id))
+          context.become(state(newState))
+        }
       }
   }
 

@@ -79,7 +79,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                   reviewState.date)
               }
 
-            case _ =>
+            case GetReviewResponse(None) =>
               complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
           }
         } ~
@@ -93,7 +93,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateReviewResponse(Failure(IdentifierNotFoundException)) =>
+                    case UpdateReviewResponse(Failure(_)) =>
                       complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
                   }
                 case Failure(e: ValidationFailException) =>
@@ -106,7 +106,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
             onSuccess(deleteReview(id)) {
               case DeleteResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteResponse(Failure(IdentifierNotFoundException)) =>
+              case DeleteResponse(Failure(_)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
             }
           }

@@ -92,7 +92,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
                   transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
               }
 
-            case _ =>
+            case GetRestaurantResponse(None, None) =>
               complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
           }
         } ~
@@ -107,7 +107,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
                       respondWithHeader(Location(s"/restaurants/$id")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateRestaurantResponse(Failure(IdentifierNotFoundException)) =>
+                    case UpdateRestaurantResponse(Failure(_)) =>
                       complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
                   }
                 case Failure(e: ValidationFailException) =>
@@ -119,7 +119,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
             onSuccess(deleteRestaurant(id)) {
               case DeleteResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteResponse(Failure(IdentifierNotFoundException)) =>
+              case DeleteResponse(Failure(_)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
             }
           }

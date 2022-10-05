@@ -10,5 +10,8 @@ object CustomException {
   case object IdentifierExistsException extends
     RuntimeException("This Identifier already exists in the system.")
 
+  case object EntityIsDeletedException extends
+    RuntimeException("This entity is delete in the system.")
+
   case class ValidationFailException(message: String) extends IllegalArgumentException(message)
 }
