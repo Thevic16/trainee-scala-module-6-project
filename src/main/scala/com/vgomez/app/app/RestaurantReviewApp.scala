@@ -15,7 +15,7 @@ import akka.http.scaladsl.server.Directives._
 import com.typesafe.config.ConfigFactory
 import com.vgomez.app.loadDataset.RunLoadDataSetGraph
 
-object App {
+object RestaurantReviewApp {
 
   def startHttpServer(administration: ActorRef)(implicit system: ActorSystem): Unit = {
     implicit val scheduler: ExecutionContext = system.dispatcher
