@@ -16,10 +16,12 @@ import com.vgomez.app.actors.User.Response._
 import com.vgomez.app.http.messages.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import com.vgomez.app.actors.Administration.Command.GetAllUser
 import com.vgomez.app.domain.DomainModel
 import com.vgomez.app.domain.Transformer.{transformRoleToStringRole, transformStringRoleToRole}
 import com.vgomez.app.exception.CustomException.{IdentifierNotFoundException, ValidationFailException}
-import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.actors.abtractions.Abstract.Response._
+import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllUserResponse
 import com.vgomez.app.http.validators._
 
 import scala.util.{Failure, Success}
@@ -73,6 +75,9 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
 
   def deleteUser(username: String): Future[DeleteResponse] =
     (administration ? DeleteUser(username)).mapTo[DeleteResponse]
+
+  def getAllUser(pageNumber: Long): Future[GetAllUserResponse] =
+    (administration ? GetAllUser(pageNumber)).mapTo[GetAllUserResponse]
 
   val routes: Route =
     pathPrefix("api" / "users"){
@@ -133,5 +138,27 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
             }
           }
         }
+    }~
+      get {
+        parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
+          onSuccess(getAllUser(pageNumber)) {
+            case GetAllUserResponse(Some(getUserResponses)) => complete {
+              getUserResponses.map(getUserResponseByGetUserResponse)
+            }
+
+            case GetAllUserResponse(None) =>
+              complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+          }
+
+        }
+      }
+
+  def getUserResponseByGetUserResponse(getUserResponse: GetUserResponse): UserResponse = {
+    getUserResponse match {
+      case GetUserResponse(Some(userState)) =>
+        UserResponse(userState.username, userState.password, transformRoleToStringRole(userState.role),
+          userState.location.latitude, userState.location.longitude, userState.favoriteCategories)
     }
+  }
+
 }

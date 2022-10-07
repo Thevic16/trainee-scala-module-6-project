@@ -15,7 +15,7 @@ import akka.http.scaladsl.server.Directives._
 import com.typesafe.config.ConfigFactory
 import com.vgomez.app.loadDataset.RunLoadDataSetGraph
 
-object App {
+object RestaurantReviewApp {
 
   def startHttpServer(administration: ActorRef)(implicit system: ActorSystem): Unit = {
     implicit val scheduler: ExecutionContext = system.dispatcher
@@ -49,7 +49,7 @@ object App {
     implicit val system: ActorSystem = ActorSystem("RestaurantReviewsApp")
     val timeout: Timeout = Timeout(2.seconds)
 
-    val administration = system.actorOf(Props[Administration], "administration-system")
+    val administration = system.actorOf(Administration.props(system), "administration-system")
 
     val conf = ConfigFactory.load()
     val runLoadDataSetGraph: Boolean = conf.getBoolean("load-dataset.run")
