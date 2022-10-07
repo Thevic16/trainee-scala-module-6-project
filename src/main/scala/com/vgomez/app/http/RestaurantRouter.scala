@@ -15,6 +15,7 @@ import com.vgomez.app.actors.Restaurant.Command._
 import com.vgomez.app.actors.Restaurant.Response._
 import com.vgomez.app.domain.{DomainModel, SimpleScheduler}
 import com.vgomez.app.domain.Transformer._
+import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -25,40 +26,6 @@ import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllRestaurantRespo
 import com.vgomez.app.http.validators._
 
 import scala.util.{Failure, Success}
-
-// Resquest clases
-case class RestaurantCreationRequest(userId: String , name: String, state: String, city: String, postalCode: String,
-                                     latitude: Double, longitude: Double, categories: Set[String],
-                                     schedule: SimpleScheduler) {
-
-  def toCommand: CreateRestaurant = CreateRestaurant(None, RestaurantInfo(userId, name, state, city, postalCode,
-    DomainModel.Location(latitude, longitude), categories: Set[String], transformSimpleSchedulerToSchedule(schedule)))
-}
-
-trait RestaurantCreationRequestJsonProtocol extends DefaultJsonProtocol {
-  implicit val restaurantCreationRequestJson = jsonFormat9(RestaurantCreationRequest)
-}
-
-case class RestaurantUpdateRequest(userId: String , name: String, state: String, city: String, postalCode: String,
-                                   latitude: Double, longitude: Double, categories: Set[String],
-                                   schedule: SimpleScheduler)  {
-  def toCommand(id: String): UpdateRestaurant = UpdateRestaurant(id, RestaurantInfo(userId, name, state, city, postalCode,
-    DomainModel.Location(latitude, longitude), categories: Set[String], transformSimpleSchedulerToSchedule(schedule)))
-}
-
-trait RestaurantUpdateRequestJsonProtocol extends DefaultJsonProtocol {
-  implicit val restaurantUpdateRequestJson = jsonFormat9(RestaurantUpdateRequest)
-}
-
-// Response class
-case class RestaurantResponse(userId: String , name: String, state: String, city: String, postalCode: String,
-                              latitude: Double, longitude: Double, categories: Set[String],
-                              schedule: SimpleScheduler, starts: Int)
-
-trait RestaurantResponseJsonProtocol extends DefaultJsonProtocol {
-  implicit val restaurantResponseJson = jsonFormat10(RestaurantResponse)
-}
-
 
 // Restaurant Router.
 class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)

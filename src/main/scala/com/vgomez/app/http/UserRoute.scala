@@ -13,6 +13,7 @@ import akka.http.scaladsl.server.Route
 import com.vgomez.app.actors.User._
 import com.vgomez.app.actors.User.Command._
 import com.vgomez.app.actors.User.Response._
+import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -24,37 +25,8 @@ import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllUserResponse
 import com.vgomez.app.http.validators._
 
+
 import scala.util.{Failure, Success}
-
-// Resquest clases
-case class UserCreationRequest(username: String, password: String, role: String, latitude: Double, longitude: Double,
-                               favoriteCategories: Set[String]) {
-  def toCommand: CreateUser = CreateUser(UserInfo(username, password, transformStringRoleToRole(role),
-    DomainModel.Location(latitude, longitude), favoriteCategories))
-}
-
-trait UserCreationRequestJsonProtocol extends DefaultJsonProtocol {
-  implicit val userCreationRequestJson = jsonFormat6(UserCreationRequest)
-}
-
-case class UserUpdateRequest(username: String, password: String, role: String, latitude: Double, longitude: Double,
-                             favoriteCategories: Set[String]) {
-  def toCommand: UpdateUser = UpdateUser(UserInfo(username, password, transformStringRoleToRole(role),
-    DomainModel.Location(latitude, longitude), favoriteCategories))
-}
-
-trait UserUpdateRequestJsonProtocol extends DefaultJsonProtocol {
-  implicit val userUpdateRequestJson = jsonFormat6(UserUpdateRequest)
-}
-
-// Response class
-case class UserResponse(username: String, password: String, role: String, latitude: Double, longitude: Double,
-                        favoriteCategories: Set[String])
-
-trait UserResponseJsonProtocol extends DefaultJsonProtocol {
-  implicit val userResponseJson = jsonFormat6(UserResponse)
-}
-
 
 // User Router.
 class UserRouter(administration: ActorRef)(implicit system: ActorSystem)

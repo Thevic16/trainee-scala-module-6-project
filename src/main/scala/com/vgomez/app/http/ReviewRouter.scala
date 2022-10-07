@@ -13,6 +13,7 @@ import akka.http.scaladsl.server.Route
 import com.vgomez.app.actors.Review._
 import com.vgomez.app.actors.Review.Command._
 import com.vgomez.app.actors.Review.Response._
+import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -23,31 +24,6 @@ import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllReviewResponse
 import com.vgomez.app.http.validators._
 
 import scala.util.{Failure, Success}
-
-// Resquest clases
-case class ReviewCreationRequest(userId: String, restaurantId: String, stars: Int, text: String, date: String) {
-  def toCommand: CreateReview = CreateReview(None, ReviewInfo(userId, restaurantId, stars, text, date))
-}
-
-trait ReviewCreationRequestJsonProtocol extends DefaultJsonProtocol {
-  implicit val reviewCreationRequestJson = jsonFormat5(ReviewCreationRequest)
-}
-
-case class ReviewUpdateRequest(userId: String, restaurantId: String, stars: Int, text: String, date: String) {
-  def toCommand(id: String): UpdateReview = UpdateReview(id, ReviewInfo(userId, restaurantId, stars, text, date))
-}
-
-trait ReviewUpdateRequestJsonProtocol extends DefaultJsonProtocol {
-  implicit val reviewUpdateRequestJson = jsonFormat5(ReviewUpdateRequest)
-}
-
-// Response class
-case class ReviewResponse(userId: String, restaurantId: String, stars: Int, text: String, date: String)
-
-trait ReviewResponseJsonProtocol extends DefaultJsonProtocol {
-  implicit val reviewResponseJson = jsonFormat5(ReviewResponse)
-}
-
 
 // Review Router.
 class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
@@ -104,7 +80,6 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
-
             }
           } ~
           delete {
