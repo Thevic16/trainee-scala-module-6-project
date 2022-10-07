@@ -4,8 +4,8 @@ import akka.persistence.PersistentActor
 
 import scala.util.{Failure, Success, Try}
 import com.vgomez.app.domain.DomainModel._
-import com.vgomez.app.actors.commands.Abstract.Command._
-import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.actors.abtractions.Abstract.Command._
+import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.exception.CustomException.EntityIsDeletedException
 
 

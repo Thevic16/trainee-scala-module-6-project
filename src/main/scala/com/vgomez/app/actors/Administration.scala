@@ -1,14 +1,14 @@
 package com.vgomez.app.actors
-import akka.actor.{ActorLogging, ActorRef}
+import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props}
 import akka.persistence.PersistentActor
-
-
 import com.vgomez.app.exception.CustomException._
+
 import scala.util.Failure
-import com.vgomez.app.actors.commands.Abstract.Command._
-import com.vgomez.app.actors.commands.Abstract.Response._
-import com.vgomez.app.actors.commands.Abstract.Event._
+import com.vgomez.app.actors.abtractions.Abstract.Command._
+import com.vgomez.app.actors.abtractions.Abstract.Response._
+import com.vgomez.app.actors.abtractions.Abstract.Event._
 import com.vgomez.app.actors.AdministrationUtility._
+import com.vgomez.app.actors.readers.ReaderGetAll
 
 object Administration {
   // state
@@ -17,31 +17,34 @@ object Administration {
 
   // commands
   object Command {
-    case object GetAllRestaurants
-    case object GetAllReviews
-    case object GetAllUsers
+    case class GetAllRestaurant(pageNumber: Long)
+    case class GetAllReview(pageNumber: Long)
+    case class GetAllUser(pageNumber: Long)
   }
-
 
   // events
   case class RestaurantCreated(id: String) extends Event
   case class ReviewCreated(id: String) extends Event
   case class UserCreated(username: String) extends Event
-
+  def props(system: ActorSystem): Props =  Props(new Administration(system))
 }
 
-class Administration extends PersistentActor with ActorLogging{
+class Administration(system: ActorSystem) extends PersistentActor with ActorLogging{
   import Administration._
 
   // Commands
   import Restaurant.Command._
   import Review.Command._
   import User.Command._
+  import Command._
 
   // Responses
   import Restaurant.Response._
   import Review.Response._
   import User.Response._
+
+  // Readers
+  val readerGetAll = context.actorOf(ReaderGetAll.props(system), "reader-get-all")
 
   // state
   var administrationRecoveryState = AdministrationState(Map(), Map(), Map())
@@ -88,6 +91,19 @@ class Administration extends PersistentActor with ActorLogging{
 
     case deleteCommand@DeleteUser(_) =>
       processDeleteCommand(deleteCommand, administrationState)
+
+      // GetAllCases
+    case GetAllRestaurant(pageNumber) =>
+      log.info("Administration has receive a GetAllRestaurant command.")
+      readerGetAll.forward(ReaderGetAll.Command.GetAllRestaurant(pageNumber))
+
+    case GetAllReview(pageNumber) =>
+      log.info("Administration has receive a GetAllReview command.")
+      readerGetAll.forward(ReaderGetAll.Command.GetAllReview(pageNumber))
+
+    case GetAllUser(pageNumber) =>
+      log.info("Administration has receive a GetAllUser command.")
+      readerGetAll.forward(ReaderGetAll.Command.GetAllUser(pageNumber))
   }
 
   override def receiveCommand: Receive = state(administrationRecoveryState)
@@ -169,15 +185,21 @@ class Administration extends PersistentActor with ActorLogging{
   def persistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
                            newStateAdministrationState: AdministrationState) = {
     createCommand match {
-      case CreateRestaurant(_, _) =>
+      case CreateRestaurant(Some(id), _) =>
+        readerGetAll ! ReaderGetAll.Command.CreateRestaurant(id)
+
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "restaurant", RestaurantCreated(identifier))
 
-      case CreateReview(_, _) =>
+      case CreateReview(Some(id), _) =>
+        readerGetAll ! ReaderGetAll.Command.CreateReview(id)
+
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "review", ReviewCreated(identifier))
 
-      case CreateUser(_) =>
+      case CreateUser(userInfo) =>
+        readerGetAll ! ReaderGetAll.Command.CreateUser(userInfo.username)
+
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "user", UserCreated(identifier))
     }

@@ -9,8 +9,8 @@ import com.vgomez.app.actors.Review.Command._
 import com.vgomez.app.actors.Review.Response._
 import com.vgomez.app.actors.User.Command._
 import com.vgomez.app.actors.User.Response._
-import com.vgomez.app.actors.commands.Abstract.Command._
-import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.actors.abtractions.Abstract.Command._
+import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.exception.CustomException._
 
 import java.util.UUID

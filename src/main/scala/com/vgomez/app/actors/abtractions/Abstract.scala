@@ -1,4 +1,4 @@
-package com.vgomez.app.actors.commands
+package com.vgomez.app.actors.abtractions
 
 import scala.util.Try
 

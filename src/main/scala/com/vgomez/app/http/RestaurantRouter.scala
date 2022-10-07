@@ -18,8 +18,10 @@ import com.vgomez.app.domain.Transformer._
 import com.vgomez.app.http.messages.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import com.vgomez.app.actors.Administration.Command.GetAllRestaurant
 import com.vgomez.app.exception.CustomException.{IdentifierNotFoundException, ValidationFailException}
-import com.vgomez.app.actors.commands.Abstract.Response._
+import com.vgomez.app.actors.abtractions.Abstract.Response._
+import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllRestaurantResponse
 import com.vgomez.app.http.validators._
 
 import scala.util.{Failure, Success}
@@ -78,6 +80,10 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
 
   def deleteRestaurant(id: String): Future[DeleteResponse] =
     (administration ? DeleteRestaurant(id)).mapTo[DeleteResponse]
+
+  def getAllRestaurant(pageNumber: Long): Future[GetAllRestaurantResponse] =
+    (administration ? GetAllRestaurant(pageNumber)).mapTo[GetAllRestaurantResponse]
+
 
   val routes: Route =
     pathPrefix("api" / "restaurants"){
@@ -141,7 +147,31 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
                 complete(StatusCodes.BadRequest, FailureResponse(e.message))
             }
           }
-        }
+        }~
+          get {
+            parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
+              onSuccess(getAllRestaurant(pageNumber)) {
+                case GetAllRestaurantResponse(Some(getRestaurantResponses)) => complete {
+                  getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                }
+
+                case GetAllRestaurantResponse(None) =>
+                  complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+              }
+
+            }
+          }
       }
     }
+
+
+  def getRestaurantResponseByGetRestaurantResponse(getRestaurantResponse: GetRestaurantResponse): RestaurantResponse = {
+    getRestaurantResponse match {
+      case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
+        RestaurantResponse(restaurantState.userId, restaurantState.name, restaurantState.state,
+          restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
+          restaurantState.location.longitude, restaurantState.categories,
+          transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
+    }
+  }
 }
