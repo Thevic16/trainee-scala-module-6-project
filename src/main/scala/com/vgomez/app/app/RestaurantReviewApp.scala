@@ -1,7 +1,7 @@
 package com.vgomez.app.app
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import com.vgomez.app.http.{RestaurantRouter, ReviewRouter, UserRouter}
+import com.vgomez.app.http.{RecommendationFilterByCategoriesRouter, RestaurantRouter, ReviewRouter, UserRouter}
 
 import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.Http
@@ -30,7 +30,10 @@ object RestaurantReviewApp {
     val userRouter = new UserRouter(administration)
     val userRoutes = userRouter.routes
 
-    val allRoutes = restaurantRoutes ~ reviewRoutes ~ userRoutes
+    val recommendationFilterByCategoriesRouter = new RecommendationFilterByCategoriesRouter(administration)
+    val recommendationFilterByCategoriesRoutes = recommendationFilterByCategoriesRouter.routes
+
+    val allRoutes = restaurantRoutes ~ reviewRoutes ~ userRoutes ~ recommendationFilterByCategoriesRoutes
 
     val bindingFuture = Http().bindAndHandle(allRoutes, "localhost", 8080)
 

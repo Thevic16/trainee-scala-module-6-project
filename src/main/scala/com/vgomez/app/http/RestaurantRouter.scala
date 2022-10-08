@@ -59,10 +59,10 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
           onSuccess(getRestaurant(id)) {
             case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
               complete {
-                RestaurantResponse(restaurantState.userId, restaurantState.name, restaurantState.state,
-                  restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
-                  restaurantState.location.longitude, restaurantState.categories,
-                  transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
+                RestaurantResponse(restaurantState.id, restaurantState.userId, restaurantState.name,
+                  restaurantState.state, restaurantState.city, restaurantState.postalCode,
+                  restaurantState.location.latitude, restaurantState.location.longitude,
+                  restaurantState.categories, transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
               }
 
             case GetRestaurantResponse(None, None) =>
@@ -135,7 +135,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
   def getRestaurantResponseByGetRestaurantResponse(getRestaurantResponse: GetRestaurantResponse): RestaurantResponse = {
     getRestaurantResponse match {
       case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
-        RestaurantResponse(restaurantState.userId, restaurantState.name, restaurantState.state,
+        RestaurantResponse(restaurantState.id, restaurantState.userId, restaurantState.name, restaurantState.state,
           restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
           restaurantState.location.longitude, restaurantState.categories,
           transformScheduleToSimpleScheduler(restaurantState.schedule), starts)

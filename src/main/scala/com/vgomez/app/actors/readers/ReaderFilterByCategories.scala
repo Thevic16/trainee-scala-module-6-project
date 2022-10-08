@@ -31,7 +31,7 @@ object ReaderFilterByCategories {
 
     // Recommendations Categories
     case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String])
-    case class GetRecommendationFilterByUserFavoriteCategories(idUser: String)
+    case class GetRecommendationFilterByUserFavoriteCategories(username: String)
   }
 
   object Response {
@@ -122,9 +122,9 @@ class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with
       unstashAll()
       context.become(getAllRestaurant(readerFilterByCategoriesState, sender(),favoriteCategories, Int.MaxValue))
 
-    case GetRecommendationFilterByUserFavoriteCategories(idUser) =>
+    case GetRecommendationFilterByUserFavoriteCategories(username) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByUserFavoriteCategories command.")
-      context.parent ! GetUser(idUser)
+      context.parent ! GetUser(username)
       unstashAll()
       context.become(halfwayGetRecommendationFilterByUserFavoriteCategories(readerFilterByCategoriesRecoveryState,
                                                                             sender()))

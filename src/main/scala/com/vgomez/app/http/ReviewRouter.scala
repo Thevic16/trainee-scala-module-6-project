@@ -56,8 +56,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
           onSuccess(getReview(id)) {
             case GetReviewResponse(Some(reviewState)) =>
               complete {
-                ReviewResponse(reviewState.userId, reviewState.restaurantId, reviewState.stars, reviewState.text,
-                  reviewState.date)
+                ReviewResponse(reviewState.id, reviewState.userId, reviewState.restaurantId, reviewState.stars,
+                  reviewState.text, reviewState.date)
               }
 
             case GetReviewResponse(None) =>
@@ -127,7 +127,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
   def getReviewResponseByGetReviewResponse(getReviewResponse: GetReviewResponse): ReviewResponse = {
     getReviewResponse match {
       case GetReviewResponse(Some(reviewState)) =>
-          ReviewResponse(reviewState.userId, reviewState.restaurantId, reviewState.stars, reviewState.text,
+          ReviewResponse(reviewState.id, reviewState.userId, reviewState.restaurantId, reviewState.stars, reviewState.text,
             reviewState.date)
     }
   }

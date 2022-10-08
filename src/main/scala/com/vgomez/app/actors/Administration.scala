@@ -23,7 +23,7 @@ object Administration {
 
     // Recommendations Categories
     case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String])
-    case class GetRecommendationFilterByUserFavoriteCategories(idUser: String)
+    case class GetRecommendationFilterByUserFavoriteCategories(username: String)
   }
 
   // events
@@ -115,10 +115,10 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByFavoriteCategories(
                                                                           favoriteCategories))
-    case GetRecommendationFilterByUserFavoriteCategories(idUser) =>
+    case GetRecommendationFilterByUserFavoriteCategories(username) =>
       log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByUserFavoriteCategories(
-        idUser))
+        username))
   }
 
   override def receiveCommand: Receive = state(administrationRecoveryState)
@@ -200,21 +200,21 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   def persistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
                            newStateAdministrationState: AdministrationState) = {
     createCommand match {
-      case CreateRestaurant(Some(id), restaurantInfo) =>
-        readerGetAll ! ReaderGetAll.Command.CreateRestaurant(id)
-        readerFilterByCategories ! ReaderFilterByCategories.Command.CreateRestaurant(id, restaurantInfo.categories)
+      case CreateRestaurant(_, restaurantInfo) =>
+        readerGetAll ! ReaderGetAll.Command.CreateRestaurant(identifier)
+        readerFilterByCategories ! ReaderFilterByCategories.Command.CreateRestaurant(identifier, restaurantInfo.categories)
 
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "restaurant", RestaurantCreated(identifier))
 
-      case CreateReview(Some(id), _) =>
-        readerGetAll ! ReaderGetAll.Command.CreateReview(id)
+      case CreateReview(_, _) =>
+        readerGetAll ! ReaderGetAll.Command.CreateReview(identifier)
 
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "review", ReviewCreated(identifier))
 
-      case CreateUser(userInfo) =>
-        readerGetAll ! ReaderGetAll.Command.CreateUser(userInfo.username)
+      case CreateUser(_) =>
+        readerGetAll ! ReaderGetAll.Command.CreateUser(identifier)
 
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "user", UserCreated(identifier))

@@ -69,20 +69,34 @@ object HttpRequest{
     implicit val userUpdateRequestJson = jsonFormat6(UserUpdateRequest)
   }
 
+  case class GetRecommendationFilterByFavoriteCategoriesRequest(favoriteCategories: Set[String])
+
+  trait GetRecommendationFilterByFavoriteCategoriesRequestJsonProtocol extends DefaultJsonProtocol {
+    implicit val getRecommendationFilterByFavoriteCategoriesRequestJsonProtocol =
+                                                         jsonFormat1(GetRecommendationFilterByFavoriteCategoriesRequest)
+  }
+
+  case class GetRecommendationFilterByUserFavoriteCategoriesRequest(username: String)
+
+  trait GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol extends DefaultJsonProtocol {
+    implicit val GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol =
+      jsonFormat1(GetRecommendationFilterByUserFavoriteCategoriesRequest)
+  }
+
 }
 object HttpResponse{
   // Resquest clases
-  case class RestaurantResponse(userId: String, name: String, state: String, city: String, postalCode: String,
+  case class RestaurantResponse(id: String, userId: String, name: String, state: String, city: String, postalCode: String,
                                 latitude: Double, longitude: Double, categories: Set[String],
                                 schedule: SimpleScheduler, starts: Int)
   trait RestaurantResponseJsonProtocol extends DefaultJsonProtocol {
-    implicit val restaurantResponseJson = jsonFormat10(RestaurantResponse)
+    implicit val restaurantResponseJson = jsonFormat11(RestaurantResponse)
   }
 
-  case class ReviewResponse(userId: String, restaurantId: String, stars: Int, text: String, date: String)
+  case class ReviewResponse(id: String, userId: String, restaurantId: String, stars: Int, text: String, date: String)
 
   trait ReviewResponseJsonProtocol extends DefaultJsonProtocol {
-    implicit val reviewResponseJson = jsonFormat5(ReviewResponse)
+    implicit val reviewResponseJson = jsonFormat6(ReviewResponse)
   }
 
   case class UserResponse(username: String, password: String, role: String, latitude: Double, longitude: Double,
