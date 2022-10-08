@@ -13,6 +13,7 @@ import akka.http.scaladsl.server.Route
 import com.vgomez.app.actors.Review._
 import com.vgomez.app.actors.Review.Command._
 import com.vgomez.app.actors.Review.Response._
+import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -23,31 +24,6 @@ import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllReviewResponse
 import com.vgomez.app.http.validators._
 
 import scala.util.{Failure, Success}
-
-// Resquest clases
-case class ReviewCreationRequest(userId: String, restaurantId: String, stars: Int, text: String, date: String) {
-  def toCommand: CreateReview = CreateReview(None, ReviewInfo(userId, restaurantId, stars, text, date))
-}
-
-trait ReviewCreationRequestJsonProtocol extends DefaultJsonProtocol {
-  implicit val reviewCreationRequestJson = jsonFormat5(ReviewCreationRequest)
-}
-
-case class ReviewUpdateRequest(userId: String, restaurantId: String, stars: Int, text: String, date: String) {
-  def toCommand(id: String): UpdateReview = UpdateReview(id, ReviewInfo(userId, restaurantId, stars, text, date))
-}
-
-trait ReviewUpdateRequestJsonProtocol extends DefaultJsonProtocol {
-  implicit val reviewUpdateRequestJson = jsonFormat5(ReviewUpdateRequest)
-}
-
-// Response class
-case class ReviewResponse(userId: String, restaurantId: String, stars: Int, text: String, date: String)
-
-trait ReviewResponseJsonProtocol extends DefaultJsonProtocol {
-  implicit val reviewResponseJson = jsonFormat5(ReviewResponse)
-}
-
 
 // Review Router.
 class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
@@ -80,8 +56,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
           onSuccess(getReview(id)) {
             case GetReviewResponse(Some(reviewState)) =>
               complete {
-                ReviewResponse(reviewState.userId, reviewState.restaurantId, reviewState.stars, reviewState.text,
-                  reviewState.date)
+                ReviewResponse(reviewState.id, reviewState.userId, reviewState.restaurantId, reviewState.stars,
+                  reviewState.text, reviewState.date)
               }
 
             case GetReviewResponse(None) =>
@@ -104,7 +80,6 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
-
             }
           } ~
           delete {
@@ -132,27 +107,27 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
             }
-          }
-        }
-    } ~
-      get {
-        parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
-          onSuccess(getAllReview(pageNumber)) {
-            case GetAllReviewResponse(Some(getRestaurantResponses)) => complete {
-              getRestaurantResponses.map(getReviewResponseByGetReviewResponse)
+          } ~
+            get {
+              parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
+                onSuccess(getAllReview(pageNumber)) {
+                  case GetAllReviewResponse(Some(getRestaurantResponses)) => complete {
+                    getRestaurantResponses.map(getReviewResponseByGetReviewResponse)
+                  }
+
+                  case GetAllReviewResponse(None) =>
+                    complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                }
+
+              }
             }
-
-            case GetAllReviewResponse(None) =>
-              complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
-          }
-
         }
-      }
+    }
 
   def getReviewResponseByGetReviewResponse(getReviewResponse: GetReviewResponse): ReviewResponse = {
     getReviewResponse match {
       case GetReviewResponse(Some(reviewState)) =>
-          ReviewResponse(reviewState.userId, reviewState.restaurantId, reviewState.stars, reviewState.text,
+          ReviewResponse(reviewState.id, reviewState.userId, reviewState.restaurantId, reviewState.stars, reviewState.text,
             reviewState.date)
     }
   }

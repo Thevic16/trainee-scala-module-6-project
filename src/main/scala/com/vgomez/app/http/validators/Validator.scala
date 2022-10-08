@@ -103,3 +103,24 @@ case class ValidatorUserRequest(username: String, password: String, role: String
     Success(Valid("User Request has been validated"))
   }
 }
+
+case class ValidatorGetRecommendationFilterByFavoriteCategoriesRequest(favoriteCategories: Set[String]) extends Validator {
+  import Validator._
+
+  override def conditions(): Try[Valid] = {
+    validation(favoriteCategories.isEmpty, "favoriteCategories should no be empty.")
+    Success(Valid("User GetRecommendationFilterByFavoriteCategoriesRequest has been validated"))
+  }
+
+}
+
+case class ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest(username: String)
+  extends Validator {
+  import Validator._
+
+  override def conditions(): Try[Valid] = {
+    validation(username.length < 5, "username length has to be greater than 5.")
+    Success(Valid("User Request has been validated"))
+  }
+
+}
