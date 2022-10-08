@@ -55,7 +55,7 @@ class LoadDataset(filePath: String, administration: ActorRef, implicit val syste
 
   def convertRowToMapCommands(row: Map[String, String]): Map[String, Product]  = {
     val locationField: Location = Location(row("latitude").toDouble, row("longitude").toDouble)
-    val categoriesField: Set[String] = row("categories").split(",").toSet
+    val categoriesField: Set[String] = row("categories").split(",").map(category => category.trim).toSet
 
     val createUserCommand = getCreateUserCommand(row, locationField, categoriesField)
     val createRestaurantCommand = getCreateRestaurantCommand(row, locationField, categoriesField)

@@ -1,5 +1,7 @@
 package com.vgomez.app.actors.abtractions
 
+import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
+
 import scala.util.Try
 
 object Abstract {
@@ -26,6 +28,8 @@ object Abstract {
     abstract class UpdateResponse
 
     case class DeleteResponse(maybeIdentifier: Try[String])
+
+    case class GetRecommendationResponse(optionGetRestaurantResponses: Option[List[GetRestaurantResponse]])
   }
 
 }

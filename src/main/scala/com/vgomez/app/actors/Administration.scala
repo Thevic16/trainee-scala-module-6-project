@@ -8,7 +8,7 @@ import com.vgomez.app.actors.abtractions.Abstract.Command._
 import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.actors.abtractions.Abstract.Event._
 import com.vgomez.app.actors.AdministrationUtility._
-import com.vgomez.app.actors.readers.ReaderGetAll
+import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderGetAll}
 
 object Administration {
   // state
@@ -20,6 +20,10 @@ object Administration {
     case class GetAllRestaurant(pageNumber: Long)
     case class GetAllReview(pageNumber: Long)
     case class GetAllUser(pageNumber: Long)
+
+    // Recommendations Categories
+    case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String])
+    case class GetRecommendationFilterByUserFavoriteCategories(idUser: String)
   }
 
   // events
@@ -45,6 +49,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   // Readers
   val readerGetAll = context.actorOf(ReaderGetAll.props(system), "reader-get-all")
+  val readerFilterByCategories = context.actorOf(ReaderFilterByCategories.props(system), "reader-filter-by-categories")
 
   // state
   var administrationRecoveryState = AdministrationState(Map(), Map(), Map())
@@ -104,6 +109,16 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     case GetAllUser(pageNumber) =>
       log.info("Administration has receive a GetAllUser command.")
       readerGetAll.forward(ReaderGetAll.Command.GetAllUser(pageNumber))
+
+      // FilterByCategories
+    case GetRecommendationFilterByFavoriteCategories(favoriteCategories) =>
+      log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
+      readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByFavoriteCategories(
+                                                                          favoriteCategories))
+    case GetRecommendationFilterByUserFavoriteCategories(idUser) =>
+      log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
+      readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByUserFavoriteCategories(
+        idUser))
   }
 
   override def receiveCommand: Receive = state(administrationRecoveryState)
@@ -185,8 +200,9 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   def persistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
                            newStateAdministrationState: AdministrationState) = {
     createCommand match {
-      case CreateRestaurant(Some(id), _) =>
+      case CreateRestaurant(Some(id), restaurantInfo) =>
         readerGetAll ! ReaderGetAll.Command.CreateRestaurant(id)
+        readerFilterByCategories ! ReaderFilterByCategories.Command.CreateRestaurant(id, restaurantInfo.categories)
 
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "restaurant", RestaurantCreated(identifier))
@@ -222,7 +238,15 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                                                             administrationState)
     actorRefOption match {
       case Some(actorRef) =>
-        actorRef.forward(updateCommand)
+        {
+          actorRef.forward(updateCommand)
+          updateCommand match {
+            case UpdateRestaurant(id, restaurantInfo) =>
+              readerFilterByCategories ! ReaderFilterByCategories.Command.UpdateRestaurant(id, restaurantInfo.categories)
+            case _ => log.info("Not UpdateRestaurant, don't need to send it to the reader.")
+          }
+        }
+
       case None =>
         val updateResponse: UpdateResponse = getUpdateResponseByUpdateCommand(updateCommand)
         sender() ! updateResponse
