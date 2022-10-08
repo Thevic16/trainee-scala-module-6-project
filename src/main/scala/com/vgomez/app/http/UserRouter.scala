@@ -108,22 +108,22 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
             }
-          }
-        }
-    }~
-      get {
-        parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
-          onSuccess(getAllUser(pageNumber)) {
-            case GetAllUserResponse(Some(getUserResponses)) => complete {
-              getUserResponses.map(getUserResponseByGetUserResponse)
+          } ~
+            get {
+              parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
+                onSuccess(getAllUser(pageNumber)) {
+                  case GetAllUserResponse(Some(getUserResponses)) => complete {
+                    getUserResponses.map(getUserResponseByGetUserResponse)
+                  }
+
+                  case GetAllUserResponse(None) =>
+                    complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                }
+
+              }
             }
-
-            case GetAllUserResponse(None) =>
-              complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
-          }
-
         }
-      }
+    }
 
   def getUserResponseByGetUserResponse(getUserResponse: GetUserResponse): UserResponse = {
     getUserResponse match {

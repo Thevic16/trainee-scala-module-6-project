@@ -184,7 +184,7 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
         context.become(state(readerGetAllState))
       }
 
-    case getResponse@GetRestaurantResponse(_, _) =>
+    case getResponse@GetRestaurantResponse(Some(_), Some(_)) =>
       log.info("getAllRestaurants receiving GetRestaurantResponse from administration.")
       if(currentAmountId+1 >= totalAmountId) {
         log.info(s"getAllRestaurants finishing currentAmountId: ${currentAmountId+1} of total: $totalAmountId.")
@@ -197,6 +197,21 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
         log.info(s"getAllRestaurants becoming currentAmountId: $currentAmountId of total: $totalAmountId.")
         context.become(getAllRestaurant(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
           accResponses :+ getResponse))
+      }
+
+    case GetRestaurantResponse(None, None) =>
+      log.info("getAllRestaurants receiving GetRestaurantResponse from administration.")
+      if (currentAmountId + 1 >= totalAmountId) {
+        log.info(s"getAllRestaurants finishing currentAmountId: ${currentAmountId + 1} of total: $totalAmountId.")
+        originalSender ! GetAllRestaurantResponse(Some(accResponses))
+
+        unstashAll()
+        context.become(state(readerGetAllState))
+      }
+      else {
+        log.info(s"getAllRestaurants becoming currentAmountId: $currentAmountId of total: $totalAmountId.")
+        context.become(getAllRestaurant(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
+          accResponses))
       }
 
     case _ =>
@@ -218,7 +233,7 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
         context.become(state(readerGetAllState))
       }
 
-    case getResponse@GetReviewResponse(_) =>
+    case getResponse@GetReviewResponse(Some(_)) =>
       if (currentAmountId + 1 >= totalAmountId) {
         originalSender ! GetAllReviewResponse(Some(accResponses :+ getResponse))
 
@@ -228,6 +243,18 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
       else {
         context.become(getAllReview(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
           accResponses :+ getResponse))
+      }
+
+    case GetReviewResponse(None) =>
+      if (currentAmountId + 1 >= totalAmountId) {
+        originalSender ! GetAllReviewResponse(Some(accResponses))
+
+        unstashAll()
+        context.become(state(readerGetAllState))
+      }
+      else {
+        context.become(getAllReview(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
+          accResponses))
       }
 
     case _ =>
@@ -250,7 +277,7 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
         context.become(state(readerGetAllState))
       }
 
-    case getResponse@GetUserResponse(_) =>
+    case getResponse@GetUserResponse(Some(_)) =>
       if (currentAmountId + 1 >= totalAmountId) {
         originalSender ! GetAllUserResponse(Some(accResponses :+ getResponse))
 
@@ -260,6 +287,18 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
       else {
         context.become(getAllUser(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
           accResponses :+ getResponse))
+      }
+
+    case GetUserResponse(None) =>
+      if (currentAmountId + 1 >= totalAmountId) {
+        originalSender ! GetAllUserResponse(Some(accResponses))
+
+        unstashAll()
+        context.become(state(readerGetAllState))
+      }
+      else {
+        context.become(getAllUser(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
+          accResponses))
       }
 
     case _ =>

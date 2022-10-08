@@ -176,7 +176,9 @@ class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with
             totalAmountId, currentAmountId + 1, accResponses))
         }
       }
-
+    case GetRestaurantResponse(None, None) =>
+      context.become(getAllRestaurant(readerFilterByCategoriesState, originalSender, queryCategories,
+        totalAmountId, currentAmountId + 1, accResponses))
     case _ =>
       stash()
   }

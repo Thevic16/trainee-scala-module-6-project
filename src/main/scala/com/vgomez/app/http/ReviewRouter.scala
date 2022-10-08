@@ -107,22 +107,22 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
             }
-          }
-        }
-    } ~
-      get {
-        parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
-          onSuccess(getAllReview(pageNumber)) {
-            case GetAllReviewResponse(Some(getRestaurantResponses)) => complete {
-              getRestaurantResponses.map(getReviewResponseByGetReviewResponse)
+          } ~
+            get {
+              parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
+                onSuccess(getAllReview(pageNumber)) {
+                  case GetAllReviewResponse(Some(getRestaurantResponses)) => complete {
+                    getRestaurantResponses.map(getReviewResponseByGetReviewResponse)
+                  }
+
+                  case GetAllReviewResponse(None) =>
+                    complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                }
+
+              }
             }
-
-            case GetAllReviewResponse(None) =>
-              complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
-          }
-
         }
-      }
+    }
 
   def getReviewResponseByGetReviewResponse(getReviewResponse: GetReviewResponse): ReviewResponse = {
     getReviewResponse match {
