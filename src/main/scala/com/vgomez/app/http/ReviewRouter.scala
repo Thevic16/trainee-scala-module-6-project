@@ -98,10 +98,12 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                 request.text, request.date).run() match {
                 case Success(_) =>
                   onSuccess(createReview(request)) {
-                    case CreateResponse(id) =>
+                    case CreateResponse(Success(id)) =>
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.Created)
                       }
+                    case CreateResponse(Failure(_)) =>
+                      complete(StatusCodes.InternalServerError)
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))

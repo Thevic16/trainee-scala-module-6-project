@@ -105,10 +105,12 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
               request.schedule).run() match {
               case Success(_) =>
                 onSuccess(createRestaurant(request)) {
-                  case CreateResponse(id) =>
+                  case CreateResponse(Success(id)) =>
                     respondWithHeader(Location(s"/restaurants/$id")) {
                       complete(StatusCodes.Created)
                     }
+                  case CreateResponse(Failure(_)) =>
+                    complete(StatusCodes.InternalServerError)
                 }
               case Failure(e: ValidationFailException) =>
                 complete(StatusCodes.BadRequest, FailureResponse(e.message))

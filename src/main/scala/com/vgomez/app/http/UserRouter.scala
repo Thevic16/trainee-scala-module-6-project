@@ -99,10 +99,12 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
                 request.favoriteCategories).run() match {
                 case Success(_) =>
                   onSuccess(createUser(request)) {
-                    case CreateResponse(id) =>
+                    case CreateResponse(Success(id)) =>
                       respondWithHeader(Location(s"/users/$id")) {
                         complete(StatusCodes.Created)
                       }
+                    case CreateResponse(Failure(_)) =>
+                      complete(StatusCodes.InternalServerError)
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
