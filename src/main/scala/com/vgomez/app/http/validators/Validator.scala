@@ -120,7 +120,32 @@ case class ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest(usern
 
   override def conditions(): Try[Valid] = {
     validation(username.length < 5, "username length has to be greater than 5.")
-    Success(Valid("User Request has been validated"))
+    Success(Valid("GetRecommendationFilterByUserFavoriteCategoriesRequest has been validated"))
   }
 
+}
+
+case class ValidatorGetRecommendationCloseToLocationRequest(latitude: Double, longitude: Double, rangeInKm: Double)
+  extends Validator {
+  import Validator._
+
+  override def conditions(): Try[Valid] = {
+    validation(conditionLatitude(latitude), "latitude should be in the range of -90 to 90.")
+    validation(conditionLongitude(longitude), "longitude should be in the range of -180 to 180.")
+    validation(rangeInKm < 0, "rangeInKm should be positive")
+
+    Success(Valid("GetRecommendationCloseToLocationRequest has been validated"))
+  }
+}
+
+case class ValidatorGetRecommendationCloseToMeRequest(username: String, rangeInKm: Double)
+  extends Validator {
+  import Validator._
+
+  override def conditions(): Try[Valid] = {
+    validation(username.length < 5, "username length has to be greater than 5.")
+    validation(rangeInKm < 0, "rangeInKm should be positive")
+
+    Success(Valid("GetRecommendationCloseToMeRequest has been validated"))
+  }
 }

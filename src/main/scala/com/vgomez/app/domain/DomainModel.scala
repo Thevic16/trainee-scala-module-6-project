@@ -45,3 +45,27 @@ object DomainModelFactory {
       Schedule(newSchedule.schedulesForDays.tail))
   }
 }
+
+object DomainModelOperation {
+  import DomainModel._
+
+  private val AVERAGE_RADIUS_OF_EARTH_KM = 6371
+
+  // Haversine formula.
+  def calculateDistanceInKm(location1: Location, location2: Location): Double = {
+    val latDistance = Math.toRadians(location1.latitude - location2.latitude)
+    val lngDistance = Math.toRadians(location1.longitude - location2.longitude)
+
+    val sinLat = Math.sin(latDistance / 2)
+    val sinLng = Math.sin(lngDistance / 2)
+
+    val a = sinLat * sinLat + (Math.cos(Math.toRadians(location1.longitude)) *
+        Math.cos(Math.toRadians(location2.longitude)) *
+        sinLng * sinLng)
+
+    val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    
+    (AVERAGE_RADIUS_OF_EARTH_KM * c)
+  }
+
+}

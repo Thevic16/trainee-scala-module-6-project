@@ -1,6 +1,5 @@
 package com.vgomez.app.http.messages
 import spray.json.DefaultJsonProtocol
-
 import com.vgomez.app.actors.Restaurant._
 import com.vgomez.app.actors.Restaurant.Command._
 import com.vgomez.app.actors.Review._
@@ -79,8 +78,22 @@ object HttpRequest{
   case class GetRecommendationFilterByUserFavoriteCategoriesRequest(username: String)
 
   trait GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol =
+    implicit val getRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol =
       jsonFormat1(GetRecommendationFilterByUserFavoriteCategoriesRequest)
+  }
+
+  case class GetRecommendationCloseToLocationRequest(latitude: Double, longitude: Double, rangeInKm: Double)
+
+  trait GetRecommendationCloseToLocationRequestJsonProtocol extends DefaultJsonProtocol {
+    implicit val getRecommendationCloseToLocationRequestJsonProtocol =
+      jsonFormat3(GetRecommendationCloseToLocationRequest)
+  }
+
+  case class GetRecommendationCloseToMeRequest(username: String, rangeInKm: Double)
+
+  trait GetRecommendationCloseToMeRequestJsonProtocol extends DefaultJsonProtocol {
+    implicit val getRecommendationCloseToMeRequestJsonProtocol =
+      jsonFormat2(GetRecommendationCloseToMeRequest)
   }
 
 }

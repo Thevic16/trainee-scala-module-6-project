@@ -46,7 +46,8 @@ class RecommendationFilterByCategoriesRouter(administration: ActorRef)(implicit 
                     case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
                       getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
                     }
-
+                    case GetRecommendationResponse(None) =>
+                      complete(StatusCodes.InternalServerError)
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
@@ -64,7 +65,8 @@ class RecommendationFilterByCategoriesRouter(administration: ActorRef)(implicit 
                   case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
                     getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
                   }
-
+                  case GetRecommendationResponse(None) =>
+                    complete(StatusCodes.InternalServerError)
                 }
               case Failure(e: ValidationFailException) =>
                 complete(StatusCodes.BadRequest, FailureResponse(e.message))

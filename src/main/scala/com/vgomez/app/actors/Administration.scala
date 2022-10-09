@@ -8,7 +8,8 @@ import com.vgomez.app.actors.abtractions.Abstract.Command._
 import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.actors.abtractions.Abstract.Event._
 import com.vgomez.app.actors.AdministrationUtility._
-import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderGetAll}
+import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll}
+import com.vgomez.app.domain.DomainModel.Location
 
 object Administration {
   // state
@@ -24,6 +25,10 @@ object Administration {
     // Recommendations Categories
     case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String])
     case class GetRecommendationFilterByUserFavoriteCategories(username: String)
+
+    // Recommendations Location
+    case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double)
+    case class GetRecommendationCloseToMe(username: String, rangeInKm: Double)
   }
 
   // events
@@ -49,7 +54,10 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   // Readers
   val readerGetAll = context.actorOf(ReaderGetAll.props(system), "reader-get-all")
-  val readerFilterByCategories = context.actorOf(ReaderFilterByCategories.props(system), "reader-filter-by-categories")
+  val readerFilterByCategories = context.actorOf(ReaderFilterByCategories.props(system),
+                                            "reader-filter-by-categories")
+  val readerFilterByLocation = context.actorOf(ReaderFilterByLocation.props(system),
+                                          "reader-filter-by-location")
 
   // state
   var administrationRecoveryState = AdministrationState(Map(), Map(), Map())
@@ -110,7 +118,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetAllUser command.")
       readerGetAll.forward(ReaderGetAll.Command.GetAllUser(pageNumber))
 
-      // FilterByCategories
+      // Recommendations By Categories
     case GetRecommendationFilterByFavoriteCategories(favoriteCategories) =>
       log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByFavoriteCategories(
@@ -119,6 +127,15 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByUserFavoriteCategories(
         username))
+
+    // Recommendations By Locations
+    case GetRecommendationCloseToLocation(location, rangeInKm) =>
+      log.info("Administration has receive a GetRecommendationCloseToLocation command.")
+      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToLocation(location, rangeInKm))
+
+    case GetRecommendationCloseToMe(username, rangeInKm) =>
+      log.info("Administration has receive a GetRecommendationCloseToMe command.")
+      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm))
   }
 
   override def receiveCommand: Receive = state(administrationRecoveryState)
