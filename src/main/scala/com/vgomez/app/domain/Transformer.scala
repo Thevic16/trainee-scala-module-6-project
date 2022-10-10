@@ -1,4 +1,5 @@
 package com.vgomez.app.domain
+import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
 import spray.json._
 
 import scala.collection.immutable.HashMap
@@ -66,10 +67,13 @@ object Transformer extends SimpleSchedulerJsonProtocol{
   }
 
   def transformScheduleStringToSchedule(scheduleString: String): Schedule = {
-    val scheduleStringFormatted = scheduleStringFormatter(scheduleString)
-    val fromJsonScheduler = scheduleStringFormatted.parseJson.convertTo[SimpleScheduler]
-
-    transformSimpleSchedulerToSchedule(fromJsonScheduler)
+    if(scheduleString != "NULL"){
+      val scheduleStringFormatted = scheduleStringFormatter(scheduleString)
+      val fromJsonScheduler = scheduleStringFormatted.parseJson.convertTo[SimpleScheduler]
+      transformSimpleSchedulerToSchedule(fromJsonScheduler)
+    }
+    else
+      generateNewEmptySchedule()
   }
 
   // From Scheduler to JsonScheduler
