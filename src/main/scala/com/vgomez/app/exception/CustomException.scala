@@ -1,14 +1,13 @@
 package com.vgomez.app.exception
 
 object CustomException {
-  case object IdentifierNotFoundException extends
-    RuntimeException("The provided identifier was not found in the system.")
+  case class IdentifierNotFoundException(message: String =
+                                         "The provided identifier was not found in the system.") extends
+    RuntimeException(message)
 
-  case object UsernameExistsException extends
-    RuntimeException("This username already exists in the system.")
-
-  case object IdentifierExistsException extends
-    RuntimeException("This Identifier already exists in the system.")
+  case class IdentifierExistsException(message: String =
+                                            "The provided identifier was not found in the system.") extends
+    RuntimeException(message)
 
   case object EntityIsDeletedException extends
     RuntimeException("This entity is delete in the system.")

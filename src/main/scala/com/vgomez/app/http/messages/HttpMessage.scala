@@ -10,10 +10,10 @@ import com.vgomez.app.domain.{DomainModel, SimpleScheduler}
 import com.vgomez.app.domain.Transformer._
 
 object HttpRequest{
-  case class RestaurantCreationRequest(userId: String, name: String, state: String, city: String, postalCode: String,
+  case class RestaurantCreationRequest(username: String, name: String, state: String, city: String, postalCode: String,
                                        latitude: Double, longitude: Double, categories: Set[String],
                                        schedule: SimpleScheduler) {
-    def toCommand: CreateRestaurant = CreateRestaurant(None, RestaurantInfo(userId, name, state, city, postalCode,
+    def toCommand: CreateRestaurant = CreateRestaurant(None, RestaurantInfo(username, name, state, city, postalCode,
       DomainModel.Location(latitude, longitude), categories: Set[String], transformSimpleSchedulerToSchedule(schedule)))
   }
 
@@ -21,10 +21,10 @@ object HttpRequest{
     implicit val restaurantCreationRequestJson = jsonFormat9(RestaurantCreationRequest)
   }
 
-  case class RestaurantUpdateRequest(userId: String, name: String, state: String, city: String, postalCode: String,
+  case class RestaurantUpdateRequest(username: String, name: String, state: String, city: String, postalCode: String,
                                      latitude: Double, longitude: Double, categories: Set[String],
                                      schedule: SimpleScheduler) {
-    def toCommand(id: String): UpdateRestaurant = UpdateRestaurant(id, RestaurantInfo(userId, name, state, city, postalCode,
+    def toCommand(id: String): UpdateRestaurant = UpdateRestaurant(id, RestaurantInfo(username, name, state, city, postalCode,
       DomainModel.Location(latitude, longitude), categories: Set[String], transformSimpleSchedulerToSchedule(schedule)))
   }
 
@@ -32,16 +32,16 @@ object HttpRequest{
     implicit val restaurantUpdateRequestJson = jsonFormat9(RestaurantUpdateRequest)
   }
 
-  case class ReviewCreationRequest(userId: String, restaurantId: String, stars: Int, text: String, date: String) {
-    def toCommand: CreateReview = CreateReview(None, ReviewInfo(userId, restaurantId, stars, text, date))
+  case class ReviewCreationRequest(username: String, restaurantId: String, stars: Int, text: String, date: String) {
+    def toCommand: CreateReview = CreateReview(None, ReviewInfo(username, restaurantId, stars, text, date))
   }
 
   trait ReviewCreationRequestJsonProtocol extends DefaultJsonProtocol {
     implicit val reviewCreationRequestJson = jsonFormat5(ReviewCreationRequest)
   }
 
-  case class ReviewUpdateRequest(userId: String, restaurantId: String, stars: Int, text: String, date: String) {
-    def toCommand(id: String): UpdateReview = UpdateReview(id, ReviewInfo(userId, restaurantId, stars, text, date))
+  case class ReviewUpdateRequest(username: String, restaurantId: String, stars: Int, text: String, date: String) {
+    def toCommand(id: String): UpdateReview = UpdateReview(id, ReviewInfo(username, restaurantId, stars, text, date))
   }
 
   trait ReviewUpdateRequestJsonProtocol extends DefaultJsonProtocol {
@@ -99,14 +99,14 @@ object HttpRequest{
 }
 object HttpResponse{
   // Resquest clases
-  case class RestaurantResponse(id: String, userId: String, name: String, state: String, city: String, postalCode: String,
+  case class RestaurantResponse(id: String, username: String, name: String, state: String, city: String, postalCode: String,
                                 latitude: Double, longitude: Double, categories: Set[String],
                                 schedule: SimpleScheduler, starts: Int)
   trait RestaurantResponseJsonProtocol extends DefaultJsonProtocol {
     implicit val restaurantResponseJson = jsonFormat11(RestaurantResponse)
   }
 
-  case class ReviewResponse(id: String, userId: String, restaurantId: String, stars: Int, text: String, date: String)
+  case class ReviewResponse(id: String, username: String, restaurantId: String, stars: Int, text: String, date: String)
 
   trait ReviewResponseJsonProtocol extends DefaultJsonProtocol {
     implicit val reviewResponseJson = jsonFormat6(ReviewResponse)

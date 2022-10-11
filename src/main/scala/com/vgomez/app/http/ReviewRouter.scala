@@ -56,7 +56,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
           onSuccess(getReview(id)) {
             case GetReviewResponse(Some(reviewState)) =>
               complete {
-                ReviewResponse(reviewState.id, reviewState.userId, reviewState.restaurantId, reviewState.stars,
+                ReviewResponse(reviewState.id, reviewState.username, reviewState.restaurantId, reviewState.stars,
                   reviewState.text, reviewState.date)
               }
 
@@ -66,7 +66,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
         } ~
           put {
             entity(as[ReviewUpdateRequest]) { request =>
-              ValidatorReviewRequest(request.userId, request.restaurantId, request.stars,
+              ValidatorReviewRequest(request.username, request.restaurantId, request.stars,
                 request.text, request.date).run() match {
                 case Success(_) =>
                   onSuccess(updateReview(id, request)) {
@@ -74,8 +74,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateReviewResponse(Failure(_)) =>
-                      complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
+                    case UpdateReviewResponse(Failure(e: RuntimeException)) =>
+                      complete(StatusCodes.BadRequest, e.getMessage)
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
@@ -94,7 +94,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
         pathEndOrSingleSlash {
           post {
             entity(as[ReviewCreationRequest]){ request =>
-              ValidatorReviewRequest(request.userId, request.restaurantId, request.stars,
+              ValidatorReviewRequest(request.username, request.restaurantId, request.stars,
                 request.text, request.date).run() match {
                 case Success(_) =>
                   onSuccess(createReview(request)) {
@@ -102,8 +102,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.Created)
                       }
-                    case CreateResponse(Failure(_)) =>
-                      complete(StatusCodes.InternalServerError)
+                    case CreateResponse(Failure(e: RuntimeException)) =>
+                      complete(StatusCodes.BadRequest, e.getMessage)
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
@@ -129,7 +129,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
   def getReviewResponseByGetReviewResponse(getReviewResponse: GetReviewResponse): ReviewResponse = {
     getReviewResponse match {
       case GetReviewResponse(Some(reviewState)) =>
-          ReviewResponse(reviewState.id, reviewState.userId, reviewState.restaurantId, reviewState.stars, reviewState.text,
+          ReviewResponse(reviewState.id, reviewState.username, reviewState.restaurantId, reviewState.stars, reviewState.text,
             reviewState.date)
     }
   }

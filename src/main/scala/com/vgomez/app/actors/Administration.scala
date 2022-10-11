@@ -3,7 +3,7 @@ import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props}
 import akka.persistence.PersistentActor
 import com.vgomez.app.exception.CustomException._
 
-import scala.util.Failure
+import scala.util.{Failure, Success}
 import com.vgomez.app.actors.abtractions.Abstract.Command._
 import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.actors.abtractions.Abstract.Event._
@@ -70,10 +70,10 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       processGetCommand(getCommand, administrationState)
 
     case createCommand@CreateRestaurant(_, _) =>
-      processCreateCommand(createCommand, administrationState)
+      processCreateCommandWithVerifyIds(createCommand, administrationState)
 
     case updateCommand@UpdateRestaurant(_, _) =>
-      processUpdateCommand(updateCommand, administrationState)
+      processUpdateCommandWithVerifyIds(updateCommand, administrationState)
 
     case deleteCommand@DeleteRestaurant(_) =>
       processDeleteCommand(deleteCommand, administrationState)
@@ -83,11 +83,11 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       processGetCommand(getCommand, administrationState)
 
     case createCommand@CreateReview(_, _) =>
-      processCreateCommand(createCommand, administrationState)
+      processCreateCommandWithVerifyIds(createCommand, administrationState)
 
 
     case updateCommand@UpdateReview(_, _) =>
-      processUpdateCommand(updateCommand, administrationState)
+      processUpdateCommandWithVerifyIds(updateCommand, administrationState)
 
     case deleteCommand@DeleteReview(_) =>
       processDeleteCommand(deleteCommand, administrationState)
@@ -196,13 +196,22 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                                                             administrationState)
     actorRefOption match {
       case Some(_) =>
-        sender() ! CreateResponse(Failure(IdentifierExistsException))
+        sender() ! CreateResponse(Failure(IdentifierExistsException()))
       case None =>
         val newActorRef: ActorRef = getNewActorRefByCreateCommand(createCommand, identifier)
         val newStateAdministrationState: AdministrationState = getNewStateByCreateCommand(createCommand, newActorRef,
                                                                                         identifier, administrationState)
 
         persistCreateCommand(createCommand, newActorRef, identifier, newStateAdministrationState)
+    }
+  }
+
+  def processCreateCommandWithVerifyIds(createCommand: CreateCommand, administrationState: AdministrationState): Unit = {
+    verifyIdsOnCreateCommand(createCommand, administrationState) match {
+      case Success(_) =>
+        processCreateCommand(createCommand, administrationState)
+      case Failure(exception) =>
+        sender() ! CreateResponse(Failure(exception))
     }
   }
 
@@ -265,8 +274,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
         }
 
       case None =>
-        val updateResponse: UpdateResponse = getUpdateResponseByUpdateCommand(updateCommand)
+        val updateResponse: UpdateResponse = getUpdateResponseFailureByUpdateCommand(updateCommand)
         sender() ! updateResponse
+    }
+  }
+
+  def processUpdateCommandWithVerifyIds(updateCommand: UpdateCommand, administrationState: AdministrationState) = {
+    verifyIdsOnUpdateCommand(updateCommand, administrationState) match {
+      case Success(_) =>
+        processUpdateCommand(updateCommand, administrationState)
+      case Failure(IdentifierNotFoundException(message)) =>
+        sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
     }
   }
 
@@ -277,7 +295,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       case Some(actorRef) =>
         actorRef.forward(deleteCommand)
       case None =>
-        sender() ! DeleteResponse(Failure(IdentifierNotFoundException))
+        sender() ! DeleteResponse(Failure(IdentifierNotFoundException()))
     }
   }
 
