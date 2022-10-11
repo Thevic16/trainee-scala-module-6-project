@@ -1,7 +1,7 @@
 package com.vgomez.app.loadDataset
 import com.github.tototoshi.csv._
 import akka.actor.{ActorRef, ActorSystem}
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.Timeout
 import com.vgomez.app.actors.Restaurant.Command.CreateRestaurant
@@ -15,7 +15,6 @@ import com.vgomez.app.domain.Transformer.transformScheduleStringToSchedule
 
 import java.io.File
 import java.util.UUID
-
 import scala.concurrent.ExecutionContext
 
 object LoadDataset{
@@ -65,9 +64,10 @@ object LoadDataset{
         stars = row.getOrElse("customer_stars", "0").toInt, text = row.getOrElse("text_", "No text"),
         date = row.getOrElse("date_", "Unknown date")))
   }
+
 }
 
-class LoadDataset(filePath: String, administration: ActorRef, implicit val system: ActorSystem,
+class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administration: ActorRef, implicit val system: ActorSystem,
                   implicit val timeout: Timeout) {
     import LoadDataset._
     // Use Akka Stream to process the data
@@ -75,24 +75,41 @@ class LoadDataset(filePath: String, administration: ActorRef, implicit val syste
     implicit val scheduler: ExecutionContext = system.dispatcher
 
 
-  def runLoadDataSetGraph() = {
-    val readerStream = getReaderStream().take(15)
+  def runLoadDataSetGraph(): Unit = {
+    val readerStream = getReaderStream()
 
-    // Graph
-    val source = Source(readerStream)
-    val flow = Flow[Map[String, String]].map(row => convertRowToMapCommands(row))
-    val sink = Sink.foreach[Map[String, Product]](commandsMap => {
-           administration ! commandsMap("createUserCommand")
-           administration ! commandsMap("createRestaurantCommand")
-           administration ! commandsMap("createReviewCommand")
-        })
+    def go(readerStream: Stream[Map[String, String]], counterRow: Int = 0): Unit = {
+      if (readerStream.isEmpty) println(s"All the data ($counterRow rows) have be loaded.")
+      else if (counterRow >= maxAmountRow && maxAmountRow != -1) {
+        println(s"The specify amount of data ($counterRow rows) have be loaded.")
+      }
+      else {
+        val readerStreamChuck = readerStream.take(chuck)
+        val lastMapChuck = readerStreamChuck.last
 
-    source.via(flow).to(sink).run()
+        runChuckGraph(readerStreamChuck)
+        go(readerStream.dropWhile(_ != lastMapChuck).tail, counterRow + chuck)
+      }
+    }
+
+    go(readerStream)
   }
 
   def getReaderStream(): Stream[Map[String, String]] = {
     val reader = CSVReader.open(new File(filePath))
     reader.toStreamWithHeaders
+  }
+
+  def runChuckGraph(readerStream: Stream[Map[String, String]]): Unit = {
+    val source = Source(readerStream)
+    val flow = Flow[Map[String, String]].map(row => convertRowToMapCommands(row))
+    val sink = Sink.foreach[Map[String, Product]](commandsMap => {
+      administration ! commandsMap("createUserCommand")
+      administration ! commandsMap("createRestaurantCommand")
+      administration ! commandsMap("createReviewCommand")
+    })
+
+    source.via(flow).to(sink).run()
   }
 
 }

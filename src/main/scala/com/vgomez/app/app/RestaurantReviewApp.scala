@@ -62,8 +62,11 @@ object RestaurantReviewApp {
     val runLoadDataSetGraph: Boolean = conf.getBoolean("load-dataset.run")
 
     if(runLoadDataSetGraph){
-      val filePath = conf.getString("load-dataset.path-csv")
-      new RunLoadDataSetGraph(filePath, administration, system, timeout).run()
+      val filePath: String = conf.getString("load-dataset.path-csv")
+      val chuck: Int = conf.getInt("load-dataset.chuck")
+      val maxAmountRow: Int = conf.getInt("load-dataset.max-amount-row")
+
+      new RunLoadDataSetGraph(filePath, chuck, maxAmountRow, administration, system, timeout).run()
     }
 
     startHttpServer(administration)
