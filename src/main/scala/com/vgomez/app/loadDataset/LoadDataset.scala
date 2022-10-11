@@ -50,7 +50,7 @@ object LoadDataset{
     val defaultHours: String = "{'Monday': '0:0-0:0'}"
 
     CreateRestaurant(maybeId = Some(restaurantId), RestaurantInfo(
-      userId = username, name = row.getOrElse("name", "Unknown name"), state = row.getOrElse("state_", "Unknown state"),
+      username = username, name = row.getOrElse("name", "Unknown name"), state = row.getOrElse("state_", "Unknown state"),
       city = row.getOrElse("city", "Unknown city"), postalCode = row.getOrElse("postal_code", "UnKnown postal code"),
       location = locationField, categories = categoriesField,
       schedule = transformScheduleStringToSchedule(row.getOrElse("hours", defaultHours))
@@ -60,7 +60,7 @@ object LoadDataset{
   def getCreateReviewCommand(row: Map[String, String], restaurantId: String, reviewId: String,
                              username: String): CreateReview = {
     CreateReview(maybeId = Some(reviewId),
-      ReviewInfo(userId = username, restaurantId = restaurantId,
+      ReviewInfo(username = username, restaurantId = restaurantId,
         stars = row.getOrElse("customer_stars", "0").toInt, text = row.getOrElse("text_", "No text"),
         date = row.getOrElse("date_", "Unknown date")))
   }

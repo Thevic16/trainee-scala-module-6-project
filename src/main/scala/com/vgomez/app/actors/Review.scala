@@ -11,9 +11,9 @@ import com.vgomez.app.exception.CustomException.EntityIsDeletedException
 object Review {
 
   // state
-  case class ReviewInfo(userId: String, restaurantId: String, stars: Int, text: String, date: String)
+  case class ReviewInfo(username: String, restaurantId: String, stars: Int, text: String, date: String)
 
-  case class ReviewState(id: String, userId: String, restaurantId: String, stars: Int, text: String, date: String,
+  case class ReviewState(id: String, username: String, restaurantId: String, stars: Int, text: String, date: String,
                          isDeleted: Boolean)
 
   // commands
@@ -104,13 +104,13 @@ class Review(id: String) extends PersistentActor{
       context.become(state(reviewState))
   }
 
-  def getState(userId: String = "", restaurantId: String = "", stars: Int = 0, text: String = "",
+  def getState(username: String = "", restaurantId: String = "", stars: Int = 0, text: String = "",
                date: String = ""): ReviewState = {
-    ReviewState(id, userId, restaurantId, stars, text, date, false)
+    ReviewState(id, username, restaurantId, stars, text, date, false)
   }
 
   def getNewState(reviewInfo: ReviewInfo): ReviewState = {
-    getState(reviewInfo.userId,reviewInfo.restaurantId, reviewInfo.stars, reviewInfo.text, reviewInfo.date)
+    getState(reviewInfo.username,reviewInfo.restaurantId, reviewInfo.stars, reviewInfo.text, reviewInfo.date)
   }
 
 }

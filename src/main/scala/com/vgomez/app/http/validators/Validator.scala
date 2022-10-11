@@ -47,13 +47,13 @@ abstract class Validator {
   }
 }
 
-case class ValidatorRestaurantRequest(userId: String, name: String, state: String, city: String, postalCode: String,
+case class ValidatorRestaurantRequest(username: String, name: String, state: String, city: String, postalCode: String,
                                       latitude: Double, longitude: Double, categories: Set[String],
                                       schedule: SimpleScheduler) extends Validator {
   import Validator._
 
   override def conditions(): Try[Valid] = {
-    validation(userId.length < 5, "userId length has to be greater than 5.")
+    validation(username.length < 5, "username length has to be greater than 5.")
     validation(name.isEmpty, "name should not be empty.")
     validation(state.length != 2, "state length has to be equal to 2.")
     validation(!state.matches("[A-Z]{2}"), "all character in state should be upper case.")
@@ -71,12 +71,12 @@ case class ValidatorRestaurantRequest(userId: String, name: String, state: Strin
 
 }
 
-case class ValidatorReviewRequest(userId: String, restaurantId: String, stars: Int, text: String,
+case class ValidatorReviewRequest(username: String, restaurantId: String, stars: Int, text: String,
                                   date: String) extends Validator {
   import Validator._
 
   override def conditions(): Try[Valid] = {
-    validation(userId.length < 5, "userId length has to be greater than 5.")
+    validation(username.length < 5, "username length has to be greater than 5.")
     validation(restaurantId.length < 5, "restaurantId length has to be greater than 5.")
     validation(!(stars >= 0 && stars <= 5), "stars should be in the range of [0-5].")
     validation(text.isEmpty, "text should not be empty.")

@@ -59,7 +59,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
           onSuccess(getRestaurant(id)) {
             case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
               complete {
-                RestaurantResponse(restaurantState.id, restaurantState.userId, restaurantState.name,
+                RestaurantResponse(restaurantState.id, restaurantState.username, restaurantState.name,
                   restaurantState.state, restaurantState.city, restaurantState.postalCode,
                   restaurantState.location.latitude, restaurantState.location.longitude,
                   restaurantState.categories, transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
@@ -71,7 +71,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
         } ~
           put {
             entity(as[RestaurantUpdateRequest]) { request =>
-              ValidatorRestaurantRequest(request.userId, request.name, request.state, request.city, request.postalCode,
+              ValidatorRestaurantRequest(request.username, request.name, request.state, request.city, request.postalCode,
                                           request.latitude, request.longitude, request.categories,
                                             request.schedule).run() match {
                 case Success(_) =>
@@ -100,7 +100,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
       pathEndOrSingleSlash {
         post {
           entity(as[RestaurantCreationRequest]){ request =>
-            ValidatorRestaurantRequest(request.userId, request.name, request.state, request.city, request.postalCode,
+            ValidatorRestaurantRequest(request.username, request.name, request.state, request.city, request.postalCode,
               request.latitude, request.longitude, request.categories,
               request.schedule).run() match {
               case Success(_) =>
@@ -137,7 +137,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
   def getRestaurantResponseByGetRestaurantResponse(getRestaurantResponse: GetRestaurantResponse): RestaurantResponse = {
     getRestaurantResponse match {
       case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
-        RestaurantResponse(restaurantState.id, restaurantState.userId, restaurantState.name, restaurantState.state,
+        RestaurantResponse(restaurantState.id, restaurantState.username, restaurantState.name, restaurantState.state,
           restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
           restaurantState.location.longitude, restaurantState.categories,
           transformScheduleToSimpleScheduler(restaurantState.schedule), starts)

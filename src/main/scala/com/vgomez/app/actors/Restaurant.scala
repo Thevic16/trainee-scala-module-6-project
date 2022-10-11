@@ -13,10 +13,10 @@ import com.vgomez.app.exception.CustomException.EntityIsDeletedException
 object Restaurant {
 
   // state
-  case class RestaurantInfo(userId: String , name: String, state: String, city: String, postalCode: String,
+  case class RestaurantInfo(username: String , name: String, state: String, city: String, postalCode: String,
                             location: Location, categories: Set[String], schedule: Schedule)
 
-  case class RestaurantState(id: String, userId: String,  name: String, state: String, city: String, postalCode: String,
+  case class RestaurantState(id: String, username: String,  name: String, state: String, city: String, postalCode: String,
                              location: Location, categories: Set[String], schedule: Schedule,
                              isDeleted: Boolean)
 
@@ -109,14 +109,14 @@ class Restaurant(id: String) extends PersistentActor{
       context.become(state(restaurantState))
   }
 
-  def getState(userId: String = "", name:String = "", state: String = "",
+  def getState(username: String = "", name:String = "", state: String = "",
                city: String = "", postalCode: String = "", location: Location = Location(0, 0),
                categories: Set[String] = Set(), schedule: Schedule = generateNewEmptySchedule()): RestaurantState = {
-    RestaurantState(id, userId, name, state, city, postalCode, location, categories, schedule, false)
+    RestaurantState(id, username, name, state, city, postalCode, location, categories, schedule, false)
   }
 
   def getNewState(restaurantInfo: RestaurantInfo): RestaurantState = {
-    getState(restaurantInfo.userId, restaurantInfo.name, restaurantInfo.state,
+    getState(restaurantInfo.username, restaurantInfo.name, restaurantInfo.state,
       restaurantInfo.city, restaurantInfo.postalCode, restaurantInfo.location,
       restaurantInfo.categories, restaurantInfo.schedule)
   }
