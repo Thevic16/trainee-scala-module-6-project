@@ -79,7 +79,7 @@ object ReaderGetAll {
   // EventsByTag and CurrentEventsByTag
   def getAllIdsByActorType(actorType: String, system: ActorSystem, pageNumber: Long): Future[GetAllIdsResponse] = {
     import system.dispatcher
-    val maxNumberElementPerPage: Long = 3L
+    val maxNumberElementPerPage: Long = 10L
 
     val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
     implicit val materializer = ActorMaterializer()(system)
