@@ -80,8 +80,8 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
                       respondWithHeader(Location(s"/restaurants/$id")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateRestaurantResponse(Failure(_)) =>
-                      complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
+                    case UpdateRestaurantResponse(Failure(e: RuntimeException)) =>
+                      complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
@@ -109,8 +109,8 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
                     respondWithHeader(Location(s"/restaurants/$id")) {
                       complete(StatusCodes.Created)
                     }
-                  case CreateResponse(Failure(_)) =>
-                    complete(StatusCodes.InternalServerError)
+                  case CreateResponse(Failure(e: RuntimeException)) =>
+                    complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                 }
               case Failure(e: ValidationFailException) =>
                 complete(StatusCodes.BadRequest, FailureResponse(e.message))

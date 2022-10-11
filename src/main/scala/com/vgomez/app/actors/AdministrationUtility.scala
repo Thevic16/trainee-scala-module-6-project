@@ -1,6 +1,6 @@
 package com.vgomez.app.actors
 
-import scala.util.Failure
+import scala.util.{Failure, Success, Try}
 import akka.actor.ActorRef
 import com.vgomez.app.actors.Administration.AdministrationState
 import com.vgomez.app.actors.Restaurant.Command._
@@ -83,11 +83,19 @@ object AdministrationUtility {
     }
   }
 
-  def getUpdateResponseByUpdateCommand(updateCommand: UpdateCommand): UpdateResponse = {
+  def getUpdateResponseFailureByUpdateCommand(updateCommand: UpdateCommand): UpdateResponse = {
     updateCommand match {
-      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(IdentifierNotFoundException))
-      case UpdateReview(_, _) => UpdateReviewResponse(Failure(IdentifierNotFoundException))
-      case UpdateUser(_) => UpdateUserResponse(Failure(IdentifierNotFoundException))
+      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(IdentifierNotFoundException()))
+      case UpdateReview(_, _) => UpdateReviewResponse(Failure(IdentifierNotFoundException()))
+      case UpdateUser(_) => UpdateUserResponse(Failure(IdentifierNotFoundException()))
+    }
+  }
+
+  def getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand: UpdateCommand, message: String): UpdateResponse = {
+    updateCommand match {
+      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(IdentifierNotFoundException(message)))
+      case UpdateReview(_, _) => UpdateReviewResponse(Failure(IdentifierNotFoundException(message)))
+      case UpdateUser(_) => UpdateUserResponse(Failure(IdentifierNotFoundException(message)))
     }
   }
 
@@ -97,6 +105,61 @@ object AdministrationUtility {
       case DeleteRestaurant(id) => administrationState.restaurants.get(id)
       case DeleteReview(id) => administrationState.reviews.get(id)
       case DeleteUser(username) => administrationState.users.get(username)
+    }
+  }
+
+  // Verify Ids query commands
+  def verifyIdsOnCreateCommand(createCommand: CreateCommand,
+                               administrationState: AdministrationState): Try[CreateCommand] = {
+    createCommand match {
+      case CreateRestaurant(_, restaurantInfo) =>
+        if(usernameExist(restaurantInfo.username, administrationState))
+          Success(createCommand)
+        else
+          Failure(IdentifierNotFoundException("username identifier field is no found."))
+
+      case CreateReview(_, reviewInfo) =>
+        if (usernameExist(reviewInfo.username, administrationState) &&
+            restaurantExist(reviewInfo.restaurantId, administrationState))
+          Success(createCommand)
+        else
+          Failure(IdentifierNotFoundException("Username/RestaurantId identifier field is no found."))
+
+      case CreateUser(_) => Success(createCommand)
+    }
+  }
+
+  def usernameExist(username: String, administrationState: AdministrationState): Boolean = {
+    administrationState.users.get(username) match {
+      case Some(_) => true
+      case None => false
+    }
+  }
+
+  def restaurantExist(restaurant: String, administrationState: AdministrationState): Boolean = {
+    administrationState.restaurants.get(restaurant) match {
+      case Some(_) => true
+      case None => false
+    }
+  }
+
+  def verifyIdsOnUpdateCommand(updateCommand: UpdateCommand,
+                               administrationState: AdministrationState): Try[UpdateCommand] = {
+    updateCommand match {
+      case UpdateRestaurant(_, restaurantInfo) =>
+        if (usernameExist(restaurantInfo.username, administrationState))
+          Success(updateCommand)
+        else
+          Failure(IdentifierNotFoundException("Username identifier is no found."))
+
+      case UpdateReview(_, reviewInfo) =>
+        if (usernameExist(reviewInfo.username, administrationState) &&
+          restaurantExist(reviewInfo.restaurantId, administrationState))
+          Success(updateCommand)
+        else
+          Failure(IdentifierNotFoundException("Username/RestaurantId identifier is no found."))
+
+      case UpdateUser(_) => Success(updateCommand)
     }
   }
 

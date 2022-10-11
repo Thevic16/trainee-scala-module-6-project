@@ -74,8 +74,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateReviewResponse(Failure(_)) =>
-                      complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
+                    case UpdateReviewResponse(Failure(e: RuntimeException)) =>
+                      complete(StatusCodes.BadRequest, e.getMessage)
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
@@ -102,8 +102,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.Created)
                       }
-                    case CreateResponse(Failure(_)) =>
-                      complete(StatusCodes.InternalServerError)
+                    case CreateResponse(Failure(e: RuntimeException)) =>
+                      complete(StatusCodes.BadRequest, e.getMessage)
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
