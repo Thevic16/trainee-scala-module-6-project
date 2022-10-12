@@ -14,7 +14,7 @@ import akka.http.scaladsl.server.Directives._
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.domain.Transformer.transformScheduleToSimpleScheduler
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.http.validators.{ValidatorGetRecommendationFilterByFavoriteCategoriesRequest, ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest}
+import com.vgomez.app.http.validators.{ValidatorGetRecommendationFilterByFavoriteCategoriesRequest, ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest, ValidatorRequestWithPagination}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
@@ -29,25 +29,36 @@ class RecommendationFilterByCategoriesRouter(administration: ActorRef)(implicit 
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val timeout: Timeout = Timeout(5.seconds)
 
-  def getRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String]): Future[GetRecommendationResponse] =
-    (administration ? GetRecommendationFilterByFavoriteCategories(favoriteCategories)).mapTo[GetRecommendationResponse]
+  def getRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String],
+                                                  pageNumber: Long,
+                                                  numberOfElementPerPage: Long): Future[GetRecommendationResponse] =
+    (administration ? GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber, numberOfElementPerPage)).mapTo[GetRecommendationResponse]
 
-  def getRecommendationFilterByUserFavoriteCategories(idUser: String): Future[GetRecommendationResponse] =
-    (administration ? GetRecommendationFilterByUserFavoriteCategories(idUser)).mapTo[GetRecommendationResponse]
+  def getRecommendationFilterByUserFavoriteCategories(idUser: String,
+                                                      pageNumber: Long,
+                                                      numberOfElementPerPage: Long): Future[GetRecommendationResponse] =
+    (administration ? GetRecommendationFilterByUserFavoriteCategories(idUser, pageNumber, numberOfElementPerPage)).mapTo[GetRecommendationResponse]
 
   val routes: Route =
     pathPrefix("api" / "recommendations" / "filter-by-categories"){
         pathEndOrSingleSlash {
           post {
-            entity(as[GetRecommendationFilterByFavoriteCategoriesRequest]){ request =>
-              ValidatorGetRecommendationFilterByFavoriteCategoriesRequest(request.favoriteCategories).run() match {
+            parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long, numberOfElementPerPage: Long) =>
+              ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
                 case Success(_) =>
-                  onSuccess(getRecommendationFilterByFavoriteCategories(request.favoriteCategories)) {
-                    case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
-                      getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                  entity(as[GetRecommendationFilterByFavoriteCategoriesRequest]) { request =>
+                    ValidatorGetRecommendationFilterByFavoriteCategoriesRequest(request.favoriteCategories).run() match {
+                      case Success(_) =>
+                        onSuccess(getRecommendationFilterByFavoriteCategories(request.favoriteCategories, pageNumber, numberOfElementPerPage)) {
+                          case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
+                            getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                          }
+                          case GetRecommendationResponse(None) =>
+                            complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                        }
+                      case Failure(e: ValidationFailException) =>
+                        complete(StatusCodes.BadRequest, FailureResponse(e.message))
                     }
-                    case GetRecommendationResponse(None) =>
-                      complete(StatusCodes.InternalServerError)
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
@@ -58,15 +69,22 @@ class RecommendationFilterByCategoriesRouter(administration: ActorRef)(implicit 
     } ~ pathPrefix("api" / "recommendations" / "filter-by-user-categories") {
       pathEndOrSingleSlash {
         post {
-          entity(as[GetRecommendationFilterByUserFavoriteCategoriesRequest]) { request =>
-            ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest(request.username).run() match {
+          parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long, numberOfElementPerPage: Long) =>
+            ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
               case Success(_) =>
-                onSuccess(getRecommendationFilterByUserFavoriteCategories(request.username)) {
-                  case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
-                    getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                entity(as[GetRecommendationFilterByUserFavoriteCategoriesRequest]) { request =>
+                  ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest(request.username).run() match {
+                    case Success(_) =>
+                      onSuccess(getRecommendationFilterByUserFavoriteCategories(request.username, pageNumber, numberOfElementPerPage)) {
+                        case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
+                          getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                        }
+                        case GetRecommendationResponse(None) =>
+                          complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                      }
+                    case Failure(e: ValidationFailException) =>
+                      complete(StatusCodes.BadRequest, FailureResponse(e.message))
                   }
-                  case GetRecommendationResponse(None) =>
-                    complete(StatusCodes.InternalServerError)
                 }
               case Failure(e: ValidationFailException) =>
                 complete(StatusCodes.BadRequest, FailureResponse(e.message))

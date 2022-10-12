@@ -24,8 +24,10 @@ object Administration {
     case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)
 
     // Recommendations Categories
-    case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String])
-    case class GetRecommendationFilterByUserFavoriteCategories(username: String)
+    case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String], pageNumber: Long,
+                                                           numberOfElementPerPage: Long)
+    case class GetRecommendationFilterByUserFavoriteCategories(username: String, pageNumber: Long,
+                                                               numberOfElementPerPage: Long)
 
     // Recommendations Location
     case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double)
@@ -125,14 +127,14 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       readerGetAll.forward(ReaderGetAll.Command.GetAllUser(pageNumber, numberOfElementPerPage))
 
       // Recommendations By Categories
-    case GetRecommendationFilterByFavoriteCategories(favoriteCategories) =>
+    case GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByFavoriteCategories(
-                                                                          favoriteCategories))
-    case GetRecommendationFilterByUserFavoriteCategories(username) =>
+                                                                          favoriteCategories, pageNumber, numberOfElementPerPage))
+    case GetRecommendationFilterByUserFavoriteCategories(username, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByUserFavoriteCategories(
-        username))
+        username, pageNumber, numberOfElementPerPage))
 
     // Recommendations By Locations
     case GetRecommendationCloseToLocation(location, rangeInKm) =>
