@@ -5,18 +5,16 @@ import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import akka.persistence.PersistentActor
 import akka.persistence.journal.{Tagged, WriteEventAdapter}
-import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
-import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Concat, Flow, Keep, Merge, RunnableGraph, Sink, Source}
+import akka.persistence.query.{EventEnvelope}
+import akka.stream.scaladsl.{Flow, RunnableGraph, Source}
 import com.vgomez.app.actors.Restaurant.Command.GetRestaurant
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
-import com.vgomez.app.actors.Review.Command.GetReview
-import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.abtractions.Abstract.Event.Event
 import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.Response._
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.getGraphReaderUtility
 
 import scala.concurrent.Future
 
@@ -36,10 +34,6 @@ object ReaderFilterByCategories {
                                                                numberOfElementPerPage: Long)
   }
 
-  object Response {
-    case class GetAllIdsResponse(ids : Set[String])
-  }
-
   // events
   case class RestaurantCreated(id: String, categories: Set[String]) extends Event
   case class RestaurantUpdated(id: String, categories: Set[String]) extends Event
@@ -50,10 +44,8 @@ object ReaderFilterByCategories {
   class ReaderFilterByCategoriesEventAdapter extends WriteEventAdapter {
     override def toJournal(event: Any): Any = event match {
       case RestaurantCreated(_, categories) =>
-        println("Tagging RestaurantCreated event with categories.")
         Tagged(event, categories)
       case RestaurantUpdated(_, categories) =>
-        println("Tagging RestaurantUpdated event with categories.")
         Tagged(event, categories)
       case _ =>
         event
@@ -61,45 +53,24 @@ object ReaderFilterByCategories {
     override def manifest(event: Any): String = ""
   }
 
-  import Response.GetAllIdsResponse
-  def getAllIdsByCategories(categories: Set[String], system: ActorSystem, pageNumber: Long,
-                            numberOfElementPerPage: Long): Future[GetAllIdsResponse] = {
-    import system.dispatcher
-
-    val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
-    implicit val materializer = ActorMaterializer()(system)
-
-    val listEventsWithSequenceSource = categories.toList.map(category => queries.currentEventsByTag(
-                                                                tag = category, offset = Sequence(0L)))
-
-    val eventsWithSequenceSource = listEventsWithSequenceSource.fold(Source.empty)(Source.combine(_,_)(Concat(_)))
-
-    val eventsWithSequenceSourcePagination = eventsWithSequenceSource
-
-    val graph: RunnableGraph[Future[Seq[String]]] = getGraph(eventsWithSequenceSourcePagination)
-
-    graph.run().map(seqIds => GetAllIdsResponse(seqIds.toSet.drop((numberOfElementPerPage * pageNumber).toInt).take(numberOfElementPerPage.toInt)))
-  }
-
-  def getGraph(eventsWithSequenceSource: Source[EventEnvelope, NotUsed]): RunnableGraph[Future[Seq[String]]] = {
-    val eventsSource = eventsWithSequenceSource.map(_.event)
-    val flow = Flow[Any].map {
+  def getGraphQueryReader(eventsWithSequenceSource: Source[EventEnvelope,
+    NotUsed]): RunnableGraph[Future[Seq[String]]] = {
+    val flowMapGetIdFromEvent = Flow[Any].map {
       case RestaurantCreated(id, _) => id
       case RestaurantUpdated(id, _) => id
       case _ => ""
     }
-    val sink = Sink.seq[String]
-
-    eventsSource.via(flow).toMat(sink)(Keep.right)
+    getGraphReaderUtility(eventsWithSequenceSource, flowMapGetIdFromEvent)
   }
 }
 
 class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with ActorLogging with Stash {
-
   import ReaderFilterByCategories._
   import Command._
-  import Response._
   import system.dispatcher
+
+  // ReaderDatabaseUtility
+  val readerDatabaseUtility = ReaderDatabaseUtility(system)
 
   // state
   var readerFilterByCategoriesRecoveryState = ReaderFilterByCategoriesState(Set())
@@ -122,7 +93,7 @@ class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with
 
     case GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByFavoriteCategories command.")
-      getAllIdsByCategories(favoriteCategories, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
+      getEventsIdsByCategories(favoriteCategories, pageNumber, numberOfElementPerPage).mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllRestaurant(readerFilterByCategoriesState, sender(),favoriteCategories, Int.MaxValue))
 
@@ -141,7 +112,7 @@ class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with
                        queryCategories: Set[String], totalAmountId: Int, currentAmountId: Int = 0,
                        accResponses: List[GetRestaurantResponse] = List()): Receive = {
 
-    case GetAllIdsResponse(ids) =>
+    case GetEventsIdsResponse(ids) =>
       if(ids.nonEmpty){
         log.info("getAllRestaurant getting ids restaurant.")
         ids.foreach(id => context.parent ! GetRestaurant(id))
@@ -192,7 +163,7 @@ class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with
                                                              originalSender: ActorRef, pageNumber: Long,
                                                              numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
-      getAllIdsByCategories(userState.favoriteCategories, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
+      getEventsIdsByCategories(userState.favoriteCategories, pageNumber, numberOfElementPerPage).mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllRestaurant(readerFilterByCategoriesState, originalSender, userState.favoriteCategories,
                                       Int.MaxValue))
@@ -233,4 +204,11 @@ class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with
                                               s"for restaurant with id: $id")
   }
 
+  // Auxiliary methods
+  def getEventsIdsByCategories(categories: Set[String], pageNumber: Long,
+                            numberOfElementPerPage: Long): Future[GetEventsIdsResponse] = {
+    val eventsWithSequenceSource = readerDatabaseUtility.getSourceEventSByTagSet(categories)
+    val graph: RunnableGraph[Future[Seq[String]]] = getGraphQueryReader(eventsWithSequenceSource)
+    readerDatabaseUtility.runGraphWithPagination(graph, pageNumber, numberOfElementPerPage)
+  }
 }

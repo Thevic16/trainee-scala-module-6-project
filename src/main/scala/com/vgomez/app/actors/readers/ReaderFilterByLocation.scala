@@ -12,8 +12,10 @@ import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.getGraphReaderUtility
 import com.vgomez.app.domain.DomainModel.Location
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.Response._
 
 import scala.concurrent.Future
 
@@ -29,39 +31,17 @@ object ReaderFilterByLocation {
                                           numberOfElementPerPage: Long)
   }
 
-  object Response {
-    case class GetAllIdsResponse(ids : Set[String])
-  }
-
   def props(system: ActorSystem): Props =  Props(new ReaderFilterByLocation(system))
 
-  import Response.GetAllIdsResponse
-  def getAllIdsRestaurant(system: ActorSystem): Future[GetAllIdsResponse] = {
-    import system.dispatcher
-    import com.vgomez.app.actors.readers.ReaderGetAll.ActorType.restaurantType
-
-    val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
-    implicit val materializer = ActorMaterializer()(system)
-
-    val eventsWithSequenceSource = queries.currentEventsByTag(tag = restaurantType,
-      offset = Sequence(0L))
-
-    val graph: RunnableGraph[Future[Seq[String]]] = getGraph(eventsWithSequenceSource)
-
-    graph.run().map(seqIds => GetAllIdsResponse(seqIds.toSet))
-  }
-
-  def getGraph(eventsWithSequenceSource: Source[EventEnvelope, NotUsed]): RunnableGraph[Future[Seq[String]]] = {
+  def getGraphQueryReader(eventsWithSequenceSource: Source[EventEnvelope,
+                                    NotUsed]): RunnableGraph[Future[Seq[String]]] = {
     import com.vgomez.app.actors.readers.ReaderGetAll.RestaurantCreated
 
-    val eventsSource = eventsWithSequenceSource.map(_.event)
-    val flow = Flow[Any].map {
+    val flowMapGetIdFromEvent = Flow[Any].map {
       case RestaurantCreated(id) => id
       case _ => ""
     }
-    val sink = Sink.seq[String]
-
-    eventsSource.via(flow).toMat(sink)(Keep.right)
+    getGraphReaderUtility(eventsWithSequenceSource, flowMapGetIdFromEvent)
   }
 
 }
@@ -70,14 +50,15 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
 
   import ReaderFilterByLocation._
   import Command._
-  import Response._
   import system.dispatcher
 
+  // ReaderDatabaseUtility
+  val readerDatabaseUtility = ReaderDatabaseUtility(system)
 
   def state(): Receive = {
     case GetRecommendationCloseToLocation(location, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByLocation has receive a GetRecommendationCloseToLocation command.")
-      getAllIdsRestaurant(system).mapTo[GetAllIdsResponse].pipeTo(self)
+      getEventsIdsRestaurantType().mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllRestaurant(sender(),location, rangeInKm, Int.MaxValue, pageNumber, numberOfElementPerPage))
 
@@ -95,7 +76,7 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
                        totalAmountId: Int, pageNumber: Long, numberOfElementPerPage: Long, currentAmountId: Int = 0,
                        accResponses: List[GetRestaurantResponse] = List()): Receive = {
 
-    case GetAllIdsResponse(ids) =>
+    case GetEventsIdsResponse(ids) =>
       if(ids.nonEmpty){
         log.info("getAllRestaurant getting ids restaurant.")
 
@@ -156,7 +137,7 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
 
   def halfwayGetRecommendationCloseToMe(originalSender: ActorRef, rangeInKm: Double, pageNumber: Long, numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
-      getAllIdsRestaurant(system).mapTo[GetAllIdsResponse].pipeTo(self)
+      getEventsIdsRestaurantType().mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllRestaurant(originalSender, userState.location, rangeInKm, Int.MaxValue, pageNumber, numberOfElementPerPage))
 
@@ -170,4 +151,13 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
   }
 
   override def receive: Receive = state()
+
+  // Auxiliary methods
+  def getEventsIdsRestaurantType(): Future[GetEventsIdsResponse] = {
+    import com.vgomez.app.actors.readers.ReaderGetAll.ActorType.restaurantType
+
+    val eventsWithSequenceSource = readerDatabaseUtility.getSourceEventSByTag(restaurantType)
+    val graph: RunnableGraph[Future[Seq[String]]] = getGraphQueryReader(eventsWithSequenceSource)
+    readerDatabaseUtility.runGraph(graph)
+  }
 }

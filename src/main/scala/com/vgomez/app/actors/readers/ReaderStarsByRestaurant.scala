@@ -31,7 +31,7 @@ object ReaderStarsByRestaurant {
   }
 
   object Response {
-    case class GetAllStarsResponse(starsList : Seq[Int])
+    case class GetAllStarsByRestaurantResponse(starsList : Seq[Int])
     case class GetStartByRestaurantResponse(starts: Int)
   }
 
@@ -45,10 +45,8 @@ object ReaderStarsByRestaurant {
   class ReaderStarByRestaurantAdapter extends WriteEventAdapter {
     override def toJournal(event: Any): Any = event match {
       case ReviewCreated(_, restaurantId,_) =>
-        println("Tagging RestaurantCreated event with categories.")
         Tagged(event, Set(restaurantId))
       case ReviewUpdated(_, restaurantId, _) =>
-        println("Tagging RestaurantUpdated event with categories.")
         Tagged(event, Set(restaurantId))
       case _ =>
         event
@@ -56,20 +54,7 @@ object ReaderStarsByRestaurant {
     override def manifest(event: Any): String = ""
   }
 
-  import Response.GetAllStarsResponse
-  def getAllStarsByRestaurant(restaurantId: String, system: ActorSystem): Future[GetAllStarsResponse] = {
-    import system.dispatcher
-
-    val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
-    implicit val materializer = ActorMaterializer()(system)
-
-    val eventsWithSequenceSource = queries.currentEventsByTag(tag = restaurantId, offset = Sequence(0L))
-    val ranGraph: Future[Seq[Int]] = runGraph(eventsWithSequenceSource, materializer, restaurantId)
-
-    ranGraph.map(GetAllStarsResponse)
-  }
-
-  def runGraph(eventsWithSequenceSource: Source[EventEnvelope, NotUsed], materializer: Materializer,
+  def runGraphQueryReader(eventsWithSequenceSource: Source[EventEnvelope, NotUsed], materializer: Materializer,
                queryRestaurantId: String): Future[Seq[Int]] = {
     val eventsSource = eventsWithSequenceSource.map(_.event)
 
@@ -86,7 +71,6 @@ object ReaderStarsByRestaurant {
     }
 
     val sink = Sink.seq[Int]
-
     eventsSource.via(flowFilter).via(flowMap).runWith(sink)(materializer)
   }
 
@@ -98,6 +82,9 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
   import Command._
   import Response._
   import system.dispatcher
+
+  // ReaderDatabaseUtility
+  val readerDatabaseUtility = ReaderDatabaseUtility(system)
 
   // state
   var readerStarsByRestaurantRecoveryState = ReaderStarsByRestaurantState(Set())
@@ -120,7 +107,7 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
 
     case GetStartByRestaurant(restaurantId) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByFavoriteCategories command.")
-      getAllStarsByRestaurant(restaurantId, system).mapTo[GetAllStarsResponse].pipeTo(self)
+      getAllStarsByRestaurant(restaurantId).mapTo[GetAllStarsByRestaurantResponse].pipeTo(self)
       unstashAll()
       context.become(getStartByRestaurant(readerStarsByRestaurantState, sender()))
 
@@ -130,7 +117,7 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
   
   def getStartByRestaurant(readerStarsByRestaurantState: ReaderStarsByRestaurantState, originalSender: ActorRef): Receive = {
 
-    case GetAllStarsResponse(starsList) =>
+    case GetAllStarsByRestaurantResponse(starsList) =>
       log.info("getStartByRestaurant getting startsList.")
       if(starsList.nonEmpty){
         val startAVG: Int = starsList.sum / starsList.length
@@ -172,5 +159,14 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
 
     case ReviewUpdated(id, _, _) => log.info(s"ReaderFilterByCategories has recovered a update " +
       s"for review with id: $id")
+  }
+
+  // Auxiliary methods
+  def getAllStarsByRestaurant(restaurantId: String): Future[GetAllStarsByRestaurantResponse] = {
+    val eventsWithSequenceSource = readerDatabaseUtility.getSourceEventSByTag(restaurantId)
+    val ranGraph: Future[Seq[Int]] = runGraphQueryReader(eventsWithSequenceSource, readerDatabaseUtility.materializer,
+                                                         restaurantId)
+
+    ranGraph.map(GetAllStarsByRestaurantResponse)
   }
 }
