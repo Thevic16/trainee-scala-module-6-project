@@ -104,6 +104,19 @@ case class ValidatorUserRequest(username: String, password: String, role: String
   }
 }
 
+case class ValidatorRequestWithPagination(pageNumber: Long, numberOfElementPerPage: Long) extends Validator {
+
+  import Validator._
+
+  override def conditions(): Try[Valid] = {
+    validation(pageNumber < 0, "pageNumber parameter should be a positive number.")
+    validation(numberOfElementPerPage < 0, "numberOfElementPerPage parameter should be a positive number.")
+    validation(numberOfElementPerPage > 100, "numberOfElementPerPage parameter should be greater than 100.")
+
+    Success(Valid("GetAllRequest has been validated"))
+  }
+}
+
 case class ValidatorGetRecommendationFilterByFavoriteCategoriesRequest(favoriteCategories: Set[String]) extends Validator {
   import Validator._
 

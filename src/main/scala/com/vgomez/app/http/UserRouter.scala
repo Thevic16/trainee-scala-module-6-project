@@ -48,8 +48,8 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
   def deleteUser(username: String): Future[DeleteResponse] =
     (administration ? DeleteUser(username)).mapTo[DeleteResponse]
 
-  def getAllUser(pageNumber: Long): Future[GetAllUserResponse] =
-    (administration ? GetAllUser(pageNumber)).mapTo[GetAllUserResponse]
+  def getAllUser(pageNumber: Long, numberOfElementPerPage: Long): Future[GetAllUserResponse] =
+    (administration ? GetAllUser(pageNumber, numberOfElementPerPage)).mapTo[GetAllUserResponse]
 
   val routes: Route =
     pathPrefix("api" / "users"){
@@ -112,16 +112,20 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
             }
           } ~
             get {
-              parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
-                onSuccess(getAllUser(pageNumber)) {
-                  case GetAllUserResponse(Some(getUserResponses)) => complete {
-                    getUserResponses.map(getUserResponseByGetUserResponse)
-                  }
+              parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long, numberOfElementPerPage: Long) =>
+                ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
+                  case Success(_) =>
+                    onSuccess(getAllUser(pageNumber, numberOfElementPerPage)) {
+                      case GetAllUserResponse(Some(getUserResponses)) => complete {
+                        getUserResponses.map(getUserResponseByGetUserResponse)
+                      }
 
-                  case GetAllUserResponse(None) =>
-                    complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                      case GetAllUserResponse(None) =>
+                        complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                    }
+                  case Failure(e: ValidationFailException) =>
+                    complete(StatusCodes.BadRequest, FailureResponse(e.message))
                 }
-
               }
             }
         }

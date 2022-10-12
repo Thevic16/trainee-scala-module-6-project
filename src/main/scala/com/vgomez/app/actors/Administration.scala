@@ -19,9 +19,9 @@ object Administration {
   // commands
   object Command {
     case class GetStartByRestaurant(restaurantId: String)
-    case class GetAllRestaurant(pageNumber: Long)
-    case class GetAllReview(pageNumber: Long)
-    case class GetAllUser(pageNumber: Long)
+    case class GetAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long)
+    case class GetAllReview(pageNumber: Long, numberOfElementPerPage: Long)
+    case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)
 
     // Recommendations Categories
     case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String])
@@ -112,17 +112,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       readerStarsByRestaurant.forward(ReaderStarsByRestaurant.Command.GetStartByRestaurant(restaurantId))
 
       // GetAllCases
-    case GetAllRestaurant(pageNumber) =>
+    case GetAllRestaurant(pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetAllRestaurant command.")
-      readerGetAll.forward(ReaderGetAll.Command.GetAllRestaurant(pageNumber))
+      readerGetAll.forward(ReaderGetAll.Command.GetAllRestaurant(pageNumber, numberOfElementPerPage))
 
-    case GetAllReview(pageNumber) =>
+    case GetAllReview(pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetAllReview command.")
-      readerGetAll.forward(ReaderGetAll.Command.GetAllReview(pageNumber))
+      readerGetAll.forward(ReaderGetAll.Command.GetAllReview(pageNumber, numberOfElementPerPage))
 
-    case GetAllUser(pageNumber) =>
+    case GetAllUser(pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetAllUser command.")
-      readerGetAll.forward(ReaderGetAll.Command.GetAllUser(pageNumber))
+      readerGetAll.forward(ReaderGetAll.Command.GetAllUser(pageNumber, numberOfElementPerPage))
 
       // Recommendations By Categories
     case GetRecommendationFilterByFavoriteCategories(favoriteCategories) =>

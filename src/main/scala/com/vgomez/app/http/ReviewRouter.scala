@@ -46,8 +46,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
   def deleteReview(id: String): Future[DeleteResponse] =
     (administration ? DeleteReview(id)).mapTo[DeleteResponse]
 
-  def getAllReview(pageNumber: Long): Future[GetAllReviewResponse] =
-    (administration ? GetAllReview(pageNumber)).mapTo[GetAllReviewResponse]
+  def getAllReview(pageNumber: Long, numberOfElementPerPage: Long): Future[GetAllReviewResponse] =
+    (administration ? GetAllReview(pageNumber, numberOfElementPerPage)).mapTo[GetAllReviewResponse]
 
   val routes: Route =
     pathPrefix("api" / "reviews"){
@@ -111,16 +111,20 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
             }
           } ~
             get {
-              parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
-                onSuccess(getAllReview(pageNumber)) {
-                  case GetAllReviewResponse(Some(getRestaurantResponses)) => complete {
-                    getRestaurantResponses.map(getReviewResponseByGetReviewResponse)
-                  }
+              parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long, numberOfElementPerPage: Long) =>
+                ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
+                  case Success(_) =>
+                    onSuccess(getAllReview(pageNumber, numberOfElementPerPage)) {
+                      case GetAllReviewResponse(Some(getRestaurantResponses)) => complete {
+                        getRestaurantResponses.map(getReviewResponseByGetReviewResponse)
+                      }
 
-                  case GetAllReviewResponse(None) =>
-                    complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                      case GetAllReviewResponse(None) =>
+                        complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                    }
+                  case Failure(e: ValidationFailException) =>
+                    complete(StatusCodes.BadRequest, FailureResponse(e.message))
                 }
-
               }
             }
         }
