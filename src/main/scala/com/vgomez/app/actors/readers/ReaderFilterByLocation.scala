@@ -22,9 +22,11 @@ object ReaderFilterByLocation {
   // commands
   object Command {
     // Recommendations Location
-    case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double)
+    case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double, pageNumber: Long,
+                                                numberOfElementPerPage: Long)
 
-    case class GetRecommendationCloseToMe(username: String, rangeInKm: Double)
+    case class GetRecommendationCloseToMe(username: String, rangeInKm: Double, pageNumber: Long,
+                                          numberOfElementPerPage: Long)
   }
 
   object Response {
@@ -41,7 +43,9 @@ object ReaderFilterByLocation {
     val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
     implicit val materializer = ActorMaterializer()(system)
 
-    val eventsWithSequenceSource = queries.currentEventsByTag(tag = restaurantType, offset = Sequence(0L))
+    val eventsWithSequenceSource = queries.currentEventsByTag(tag = restaurantType,
+      offset = Sequence(0L))
+
     val graph: RunnableGraph[Future[Seq[String]]] = getGraph(eventsWithSequenceSource)
 
     graph.run().map(seqIds => GetAllIdsResponse(seqIds.toSet))
@@ -71,24 +75,24 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
 
 
   def state(): Receive = {
-    case GetRecommendationCloseToLocation(location, rangeInKm) =>
+    case GetRecommendationCloseToLocation(location, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByLocation has receive a GetRecommendationCloseToLocation command.")
       getAllIdsRestaurant(system).mapTo[GetAllIdsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllRestaurant(sender(),location, rangeInKm, Int.MaxValue))
+      context.become(getAllRestaurant(sender(),location, rangeInKm, Int.MaxValue, pageNumber, numberOfElementPerPage))
 
-    case GetRecommendationCloseToMe(username, rangeInKm) =>
+    case GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByLocation has receive a GetRecommendationCloseToMe command.")
       context.parent ! GetUser(username)
       unstashAll()
-      context.become(halfwayGetRecommendationCloseToMe(sender(), rangeInKm))
+      context.become(halfwayGetRecommendationCloseToMe(sender(), rangeInKm, pageNumber, numberOfElementPerPage))
 
     case _ =>
       stash()
   }
 
   def getAllRestaurant(originalSender: ActorRef, queryLocation: Location, rangeInKm: Double,
-                       totalAmountId: Int, currentAmountId: Int = 0,
+                       totalAmountId: Int, pageNumber: Long, numberOfElementPerPage: Long, currentAmountId: Int = 0,
                        accResponses: List[GetRestaurantResponse] = List()): Receive = {
 
     case GetAllIdsResponse(ids) =>
@@ -96,7 +100,7 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
         log.info("getAllRestaurant getting ids restaurant.")
 
         ids.foreach(id => context.parent ! GetRestaurant(id))
-        context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, ids.size, currentAmountId, accResponses))
+        context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, ids.size, pageNumber, numberOfElementPerPage, currentAmountId, accResponses))
       }
       else {
         originalSender ! GetRecommendationResponse(None)
@@ -112,10 +116,21 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
         log.info(s"getAllRestaurants finishing currentAmountId: ${currentAmountId+1} of total: $totalAmountId.")
 
         if(calculateDistanceInKm(queryLocation, restaurantState.location) <= rangeInKm){
-          originalSender ! GetRecommendationResponse(Some(accResponses :+ getResponse))
-        }
-        else originalSender ! GetRecommendationResponse(Some(accResponses))
+          val responses = (accResponses :+ getResponse).drop((pageNumber * numberOfElementPerPage).toInt).take(numberOfElementPerPage.toInt)
 
+          if(responses.nonEmpty)
+            originalSender ! GetRecommendationResponse(Some(responses))
+          else originalSender ! GetRecommendationResponse(None)
+
+        }
+        else {
+          val responses = accResponses.drop((pageNumber * numberOfElementPerPage).toInt).take(numberOfElementPerPage.toInt)
+
+          if (responses.nonEmpty)
+            originalSender ! GetRecommendationResponse(Some(responses))
+          else originalSender ! GetRecommendationResponse(None)
+
+        }
         unstashAll()
         context.become(state())
       }
@@ -123,27 +138,27 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
         log.info(s"getAllRestaurants becoming currentAmountId: $currentAmountId of total: $totalAmountId.")
 
         if(calculateDistanceInKm(queryLocation, restaurantState.location) <= rangeInKm){
-          context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, totalAmountId, currentAmountId + 1,
+          context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, totalAmountId, pageNumber, numberOfElementPerPage, currentAmountId + 1,
                                           accResponses :+ getResponse))
         }
         else {
-          context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, totalAmountId, currentAmountId + 1,
+          context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, totalAmountId, pageNumber, numberOfElementPerPage, currentAmountId + 1,
                                           accResponses))
         }
       }
     case GetRestaurantResponse(None, None) =>
-      context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, totalAmountId, currentAmountId + 1,
+      context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, totalAmountId, pageNumber, numberOfElementPerPage, currentAmountId + 1,
                       accResponses))
     case _ =>
       stash()
   }
 
 
-  def halfwayGetRecommendationCloseToMe(originalSender: ActorRef, rangeInKm: Double): Receive = {
+  def halfwayGetRecommendationCloseToMe(originalSender: ActorRef, rangeInKm: Double, pageNumber: Long, numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
       getAllIdsRestaurant(system).mapTo[GetAllIdsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllRestaurant(originalSender, userState.location, rangeInKm, Int.MaxValue))
+      context.become(getAllRestaurant(originalSender, userState.location, rangeInKm, Int.MaxValue, pageNumber, numberOfElementPerPage))
 
     case GetUserResponse(None) =>
       originalSender ! GetRecommendationResponse(None)

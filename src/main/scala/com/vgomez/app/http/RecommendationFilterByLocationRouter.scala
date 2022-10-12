@@ -15,7 +15,7 @@ import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.domain.DomainModel
 import com.vgomez.app.domain.Transformer.transformScheduleToSimpleScheduler
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.http.validators.{ValidatorGetRecommendationCloseToLocationRequest, ValidatorGetRecommendationCloseToMeRequest, ValidatorGetRecommendationFilterByFavoriteCategoriesRequest, ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest}
+import com.vgomez.app.http.validators.{ValidatorGetRecommendationCloseToLocationRequest, ValidatorGetRecommendationCloseToMeRequest, ValidatorGetRecommendationFilterByFavoriteCategoriesRequest, ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest, ValidatorRequestWithPagination}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
@@ -30,26 +30,35 @@ class RecommendationFilterByLocationRouter(administration: ActorRef)(implicit sy
   implicit val timeout: Timeout = Timeout(5.seconds)
 
   def getRecommendationCloseToLocation(latitude: Double, longitude: Double,
-                                       rangeInKm: Double): Future[GetRecommendationResponse] =
+                                       rangeInKm: Double, pageNumber: Long,
+                                       numberOfElementPerPage: Long): Future[GetRecommendationResponse] =
     (administration ? GetRecommendationCloseToLocation(DomainModel.Location(latitude, longitude),
-                                                        rangeInKm)).mapTo[GetRecommendationResponse]
+                                                        rangeInKm, pageNumber, numberOfElementPerPage)).mapTo[GetRecommendationResponse]
 
-  def getRecommendationCloseToMe(username: String, rangeInKm: Double): Future[GetRecommendationResponse] =
-    (administration ? GetRecommendationCloseToMe(username, rangeInKm)).mapTo[GetRecommendationResponse]
+  def getRecommendationCloseToMe(username: String, rangeInKm: Double, pageNumber: Long,
+                                 numberOfElementPerPage: Long): Future[GetRecommendationResponse] =
+    (administration ? GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage)).mapTo[GetRecommendationResponse]
 
   val routes: Route =
     pathPrefix("api" / "recommendations" / "close-to-location"){
       pathEndOrSingleSlash {
         post {
-          entity(as[GetRecommendationCloseToLocationRequest]){ request =>
-            ValidatorGetRecommendationCloseToLocationRequest(request.latitude, request.longitude, request.rangeInKm).run() match {
+          parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long, numberOfElementPerPage: Long) =>
+            ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
               case Success(_) =>
-                onSuccess(getRecommendationCloseToLocation(request.latitude, request.longitude, request.rangeInKm)) {
-                  case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
-                    getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                entity(as[GetRecommendationCloseToLocationRequest]) { request =>
+                  ValidatorGetRecommendationCloseToLocationRequest(request.latitude, request.longitude, request.rangeInKm).run() match {
+                    case Success(_) =>
+                      onSuccess(getRecommendationCloseToLocation(request.latitude, request.longitude, request.rangeInKm, pageNumber, numberOfElementPerPage)) {
+                        case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
+                          getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                        }
+                        case GetRecommendationResponse(None) =>
+                          complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                      }
+                    case Failure(e: ValidationFailException) =>
+                      complete(StatusCodes.BadRequest, FailureResponse(e.message))
                   }
-                  case GetRecommendationResponse(None) =>
-                    complete(StatusCodes.InternalServerError)
                 }
               case Failure(e: ValidationFailException) =>
                 complete(StatusCodes.BadRequest, FailureResponse(e.message))
@@ -60,15 +69,22 @@ class RecommendationFilterByLocationRouter(administration: ActorRef)(implicit sy
     } ~ pathPrefix("api" / "recommendations" / "close-to-me") {
       pathEndOrSingleSlash {
         post {
-          entity(as[GetRecommendationCloseToMeRequest]) { request =>
-            ValidatorGetRecommendationCloseToMeRequest(request.username, request.rangeInKm).run() match {
+          parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long, numberOfElementPerPage: Long) =>
+            ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
               case Success(_) =>
-                onSuccess(getRecommendationCloseToMe(request.username, request.rangeInKm)) {
-                  case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
-                    getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                entity(as[GetRecommendationCloseToMeRequest]) { request =>
+                  ValidatorGetRecommendationCloseToMeRequest(request.username, request.rangeInKm).run() match {
+                    case Success(_) =>
+                      onSuccess(getRecommendationCloseToMe(request.username, request.rangeInKm, pageNumber, numberOfElementPerPage)) {
+                        case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
+                          getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                        }
+                        case GetRecommendationResponse(None) =>
+                          complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber (in case you expect a result check username)."))
+                      }
+                    case Failure(e: ValidationFailException) =>
+                      complete(StatusCodes.BadRequest, FailureResponse(e.message))
                   }
-                  case GetRecommendationResponse(None) =>
-                    complete(StatusCodes.BadRequest, FailureResponse("Check username field."))
                 }
               case Failure(e: ValidationFailException) =>
                 complete(StatusCodes.BadRequest, FailureResponse(e.message))

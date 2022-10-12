@@ -19,17 +19,21 @@ object Administration {
   // commands
   object Command {
     case class GetStartByRestaurant(restaurantId: String)
-    case class GetAllRestaurant(pageNumber: Long)
-    case class GetAllReview(pageNumber: Long)
-    case class GetAllUser(pageNumber: Long)
+    case class GetAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long)
+    case class GetAllReview(pageNumber: Long, numberOfElementPerPage: Long)
+    case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)
 
     // Recommendations Categories
-    case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String])
-    case class GetRecommendationFilterByUserFavoriteCategories(username: String)
+    case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String], pageNumber: Long,
+                                                           numberOfElementPerPage: Long)
+    case class GetRecommendationFilterByUserFavoriteCategories(username: String, pageNumber: Long,
+                                                               numberOfElementPerPage: Long)
 
     // Recommendations Location
-    case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double)
-    case class GetRecommendationCloseToMe(username: String, rangeInKm: Double)
+    case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double, pageNumber: Long,
+                                                numberOfElementPerPage: Long)
+    case class GetRecommendationCloseToMe(username: String, rangeInKm: Double, pageNumber: Long,
+                                          numberOfElementPerPage: Long)
   }
 
   // events
@@ -112,36 +116,36 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       readerStarsByRestaurant.forward(ReaderStarsByRestaurant.Command.GetStartByRestaurant(restaurantId))
 
       // GetAllCases
-    case GetAllRestaurant(pageNumber) =>
+    case GetAllRestaurant(pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetAllRestaurant command.")
-      readerGetAll.forward(ReaderGetAll.Command.GetAllRestaurant(pageNumber))
+      readerGetAll.forward(ReaderGetAll.Command.GetAllRestaurant(pageNumber, numberOfElementPerPage))
 
-    case GetAllReview(pageNumber) =>
+    case GetAllReview(pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetAllReview command.")
-      readerGetAll.forward(ReaderGetAll.Command.GetAllReview(pageNumber))
+      readerGetAll.forward(ReaderGetAll.Command.GetAllReview(pageNumber, numberOfElementPerPage))
 
-    case GetAllUser(pageNumber) =>
+    case GetAllUser(pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetAllUser command.")
-      readerGetAll.forward(ReaderGetAll.Command.GetAllUser(pageNumber))
+      readerGetAll.forward(ReaderGetAll.Command.GetAllUser(pageNumber, numberOfElementPerPage))
 
       // Recommendations By Categories
-    case GetRecommendationFilterByFavoriteCategories(favoriteCategories) =>
+    case GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByFavoriteCategories(
-                                                                          favoriteCategories))
-    case GetRecommendationFilterByUserFavoriteCategories(username) =>
+                                                                          favoriteCategories, pageNumber, numberOfElementPerPage))
+    case GetRecommendationFilterByUserFavoriteCategories(username, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(ReaderFilterByCategories.Command.GetRecommendationFilterByUserFavoriteCategories(
-        username))
+        username, pageNumber, numberOfElementPerPage))
 
     // Recommendations By Locations
-    case GetRecommendationCloseToLocation(location, rangeInKm) =>
+    case GetRecommendationCloseToLocation(location, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationCloseToLocation command.")
-      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToLocation(location, rangeInKm))
+      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToLocation(location, rangeInKm, pageNumber, numberOfElementPerPage))
 
-    case GetRecommendationCloseToMe(username, rangeInKm) =>
+    case GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationCloseToMe command.")
-      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm))
+      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage))
   }
 
   override def receiveCommand: Receive = state(administrationRecoveryState)

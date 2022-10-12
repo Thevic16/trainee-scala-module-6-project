@@ -36,9 +36,9 @@ object ReaderGetAll {
     case class CreateReview(id: String)
     case class CreateUser(username: String)
 
-    case class GetAllRestaurant(pageNumber: Long)
-    case class GetAllReview(pageNumber: Long)
-    case class GetAllUser(pageNumber: Long)
+    case class GetAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long)
+    case class GetAllReview(pageNumber: Long, numberOfElementPerPage: Long)
+    case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)
   }
 
   object Response {
@@ -77,15 +77,15 @@ object ReaderGetAll {
 
   import Response.GetAllIdsResponse
   // EventsByTag and CurrentEventsByTag
-  def getAllIdsByActorType(actorType: String, system: ActorSystem, pageNumber: Long): Future[GetAllIdsResponse] = {
+  def getAllIdsByActorType(actorType: String, system: ActorSystem, pageNumber: Long,
+                           numberOfElementPerPage: Long): Future[GetAllIdsResponse] = {
     import system.dispatcher
-    val maxNumberElementPerPage: Long = 10L
 
     val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
     implicit val materializer = ActorMaterializer()(system)
 
     val eventsWithSequenceSource = queries.currentEventsByTag(tag = actorType,
-                                  offset = Sequence(maxNumberElementPerPage * pageNumber)).take(maxNumberElementPerPage)
+                                  offset = Sequence(numberOfElementPerPage * pageNumber)).take(numberOfElementPerPage)
     val graph: RunnableGraph[Future[Seq[String]]] = getGraph(eventsWithSequenceSource)
 
     graph.run().map(GetAllIdsResponse)
@@ -145,21 +145,21 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
         context.become(state(newState))
       }
 
-    case GetAllRestaurant(pageNumber) =>
+    case GetAllRestaurant(pageNumber, numberOfElementPerPage) =>
       log.info("ReaderGetAll has receive a GetAllRestaurant command.")
-      getAllIdsByActorType(restaurantType, system, pageNumber).mapTo[GetAllIdsResponse].pipeTo(self)
+      getAllIdsByActorType(restaurantType, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllRestaurant(readerGetAllState, sender(), Int.MaxValue))
 
-    case GetAllReview(pageNumber) =>
+    case GetAllReview(pageNumber, numberOfElementPerPage) =>
       log.info("ReaderGetAll has receive a GetAllReview command.")
-      getAllIdsByActorType(reviewType, system, pageNumber).mapTo[GetAllIdsResponse].pipeTo(self)
+      getAllIdsByActorType(reviewType, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllReview(readerGetAllState, sender(), Int.MaxValue))
 
-    case GetAllUser(pageNumber) =>
+    case GetAllUser(pageNumber, numberOfElementPerPage) =>
       log.info("ReaderGetAll has receive a GetAllUser command.")
-      getAllIdsByActorType(userType, system, pageNumber).mapTo[GetAllIdsResponse].pipeTo(self)
+      getAllIdsByActorType(userType, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllUser(readerGetAllState, sender(), Int.MaxValue))
 

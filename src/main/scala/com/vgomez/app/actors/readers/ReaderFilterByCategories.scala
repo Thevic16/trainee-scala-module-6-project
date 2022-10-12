@@ -8,7 +8,7 @@ import akka.persistence.journal.{Tagged, WriteEventAdapter}
 import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
 import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, Keep, Merge, RunnableGraph, Sink, Source}
+import akka.stream.scaladsl.{Concat, Flow, Keep, Merge, RunnableGraph, Sink, Source}
 import com.vgomez.app.actors.Restaurant.Command.GetRestaurant
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.actors.Review.Command.GetReview
@@ -30,8 +30,10 @@ object ReaderFilterByCategories {
     case class UpdateRestaurant(id: String, categories: Set[String])
 
     // Recommendations Categories
-    case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String])
-    case class GetRecommendationFilterByUserFavoriteCategories(username: String)
+    case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String], pageNumber: Long,
+                                                           numberOfElementPerPage: Long)
+    case class GetRecommendationFilterByUserFavoriteCategories(username: String, pageNumber: Long,
+                                                               numberOfElementPerPage: Long)
   }
 
   object Response {
@@ -60,7 +62,8 @@ object ReaderFilterByCategories {
   }
 
   import Response.GetAllIdsResponse
-  def getAllIdsByCategories(categories: Set[String], system: ActorSystem): Future[GetAllIdsResponse] = {
+  def getAllIdsByCategories(categories: Set[String], system: ActorSystem, pageNumber: Long,
+                            numberOfElementPerPage: Long): Future[GetAllIdsResponse] = {
     import system.dispatcher
 
     val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
@@ -69,11 +72,13 @@ object ReaderFilterByCategories {
     val listEventsWithSequenceSource = categories.toList.map(category => queries.currentEventsByTag(
                                                                 tag = category, offset = Sequence(0L)))
 
-    val eventsWithSequenceSource = listEventsWithSequenceSource.fold(Source.empty)(Source.combine(_,_)(Merge(_)))
+    val eventsWithSequenceSource = listEventsWithSequenceSource.fold(Source.empty)(Source.combine(_,_)(Concat(_)))
 
-    val graph: RunnableGraph[Future[Seq[String]]] = getGraph(eventsWithSequenceSource)
+    val eventsWithSequenceSourcePagination = eventsWithSequenceSource
 
-    graph.run().map(seqIds => GetAllIdsResponse(seqIds.toSet))
+    val graph: RunnableGraph[Future[Seq[String]]] = getGraph(eventsWithSequenceSourcePagination)
+
+    graph.run().map(seqIds => GetAllIdsResponse(seqIds.toSet.drop((numberOfElementPerPage * pageNumber).toInt).take(numberOfElementPerPage.toInt)))
   }
 
   def getGraph(eventsWithSequenceSource: Source[EventEnvelope, NotUsed]): RunnableGraph[Future[Seq[String]]] = {
@@ -87,7 +92,6 @@ object ReaderFilterByCategories {
 
     eventsSource.via(flow).toMat(sink)(Keep.right)
   }
-
 }
 
 class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with ActorLogging with Stash {
@@ -116,18 +120,18 @@ class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with
         log.info(s"ReaderFilterByCategories update a restaurant with id: $id")
       }
 
-    case GetRecommendationFilterByFavoriteCategories(favoriteCategories) =>
+    case GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByFavoriteCategories command.")
-      getAllIdsByCategories(favoriteCategories, system).mapTo[GetAllIdsResponse].pipeTo(self)
+      getAllIdsByCategories(favoriteCategories, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllRestaurant(readerFilterByCategoriesState, sender(),favoriteCategories, Int.MaxValue))
 
-    case GetRecommendationFilterByUserFavoriteCategories(username) =>
+    case GetRecommendationFilterByUserFavoriteCategories(username, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByUserFavoriteCategories command.")
       context.parent ! GetUser(username)
       unstashAll()
       context.become(halfwayGetRecommendationFilterByUserFavoriteCategories(readerFilterByCategoriesRecoveryState,
-                                                                            sender()))
+                                                                            sender(), pageNumber, numberOfElementPerPage))
 
     case _ =>
       stash()
@@ -185,9 +189,10 @@ class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with
 
 
   def halfwayGetRecommendationFilterByUserFavoriteCategories(readerFilterByCategoriesState: ReaderFilterByCategoriesState,
-                                                             originalSender: ActorRef): Receive = {
+                                                             originalSender: ActorRef, pageNumber: Long,
+                                                             numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
-      getAllIdsByCategories(userState.favoriteCategories, system).mapTo[GetAllIdsResponse].pipeTo(self)
+      getAllIdsByCategories(userState.favoriteCategories, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllRestaurant(readerFilterByCategoriesState, originalSender, userState.favoriteCategories,
                                       Int.MaxValue))

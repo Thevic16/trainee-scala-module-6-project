@@ -48,8 +48,8 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
   def deleteRestaurant(id: String): Future[DeleteResponse] =
     (administration ? DeleteRestaurant(id)).mapTo[DeleteResponse]
 
-  def getAllRestaurant(pageNumber: Long): Future[GetAllRestaurantResponse] =
-    (administration ? GetAllRestaurant(pageNumber)).mapTo[GetAllRestaurantResponse]
+  def getAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long): Future[GetAllRestaurantResponse] =
+    (administration ? GetAllRestaurant(pageNumber, numberOfElementPerPage)).mapTo[GetAllRestaurantResponse]
 
 
   val routes: Route =
@@ -118,16 +118,20 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
           }
         }~
           get {
-            parameter('pageNumber.as[Long]) { (pageNumber: Long) =>
-              onSuccess(getAllRestaurant(pageNumber)) {
-                case GetAllRestaurantResponse(Some(getRestaurantResponses)) => complete {
-                  getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
-                }
+            parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long, numberOfElementPerPage: Long) =>
+              ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
+                case Success(_) =>
+                  onSuccess(getAllRestaurant(pageNumber, numberOfElementPerPage)) {
+                    case GetAllRestaurantResponse(Some(getRestaurantResponses)) => complete {
+                      getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                    }
 
-                case GetAllRestaurantResponse(None) =>
-                  complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                    case GetAllRestaurantResponse(None) =>
+                      complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                  }
+                case Failure(e: ValidationFailException) =>
+                  complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
-
             }
           }
       }
