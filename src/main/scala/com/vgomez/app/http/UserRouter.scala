@@ -103,8 +103,8 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
                       respondWithHeader(Location(s"/users/$id")) {
                         complete(StatusCodes.Created)
                       }
-                    case CreateResponse(Failure(_)) =>
-                      complete(StatusCodes.InternalServerError)
+                    case CreateResponse(Failure(e: RuntimeException)) =>
+                      complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
