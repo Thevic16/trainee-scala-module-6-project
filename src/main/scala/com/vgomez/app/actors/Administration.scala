@@ -8,7 +8,7 @@ import com.vgomez.app.actors.abtractions.Abstract.Command._
 import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.actors.abtractions.Abstract.Event._
 import com.vgomez.app.actors.AdministrationUtility._
-import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll}
+import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll, ReaderStarsByRestaurant}
 import com.vgomez.app.domain.DomainModel.Location
 
 object Administration {
@@ -18,6 +18,7 @@ object Administration {
 
   // commands
   object Command {
+    case class GetStartByRestaurant(restaurantId: String)
     case class GetAllRestaurant(pageNumber: Long)
     case class GetAllReview(pageNumber: Long)
     case class GetAllUser(pageNumber: Long)
@@ -58,6 +59,8 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                             "reader-filter-by-categories")
   val readerFilterByLocation = context.actorOf(ReaderFilterByLocation.props(system),
                                           "reader-filter-by-location")
+  val readerStarsByRestaurant = context.actorOf(ReaderStarsByRestaurant.props(system),
+                                        "reader-stars-by-restaurant")
 
   // state
   var administrationRecoveryState = AdministrationState(Map(), Map(), Map())
@@ -85,7 +88,6 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     case createCommand@CreateReview(_, _) =>
       processCreateCommandWithVerifyIds(createCommand, administrationState)
 
-
     case updateCommand@UpdateReview(_, _) =>
       processUpdateCommandWithVerifyIds(updateCommand, administrationState)
 
@@ -104,6 +106,10 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
     case deleteCommand@DeleteUser(_) =>
       processDeleteCommand(deleteCommand, administrationState)
+
+    case GetStartByRestaurant(restaurantId) =>
+      log.info("Administration receive a GetStartByRestaurant")
+      readerStarsByRestaurant.forward(ReaderStarsByRestaurant.Command.GetStartByRestaurant(restaurantId))
 
       // GetAllCases
     case GetAllRestaurant(pageNumber) =>
@@ -233,8 +239,10 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "restaurant", RestaurantCreated(identifier))
 
-      case CreateReview(_, _) =>
+      case CreateReview(_, reviewInfo) =>
         readerGetAll ! ReaderGetAll.Command.CreateReview(identifier)
+        readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.CreateReview(identifier, reviewInfo.restaurantId,
+                                                                                reviewInfo.stars)
 
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "review", ReviewCreated(identifier))
@@ -264,14 +272,15 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                                                             administrationState)
     actorRefOption match {
       case Some(actorRef) =>
-        {
           actorRef.forward(updateCommand)
           updateCommand match {
             case UpdateRestaurant(id, restaurantInfo) =>
               readerFilterByCategories ! ReaderFilterByCategories.Command.UpdateRestaurant(id, restaurantInfo.categories)
-            case _ => log.info("Not UpdateRestaurant, don't need to send it to the reader.")
+            case UpdateReview(id, reviewInfo) =>
+              readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.UpdateReview(id, reviewInfo.restaurantId,
+                reviewInfo.stars)
+            case _ => log.info("Not need to send the update to any reader.")
           }
-        }
 
       case None =>
         val updateResponse: UpdateResponse = getUpdateResponseFailureByUpdateCommand(updateCommand)

@@ -223,5 +223,9 @@ class ReaderFilterByCategories(system: ActorSystem) extends PersistentActor with
         restaurants = readerFilterByCategoriesRecoveryState.restaurants + id)
 
       context.become(state(readerFilterByCategoriesRecoveryState))
+
+    case RestaurantUpdated(id, _) => log.info(s"ReaderFilterByCategories has recovered a update " +
+                                              s"for restaurant with id: $id")
   }
+
 }
