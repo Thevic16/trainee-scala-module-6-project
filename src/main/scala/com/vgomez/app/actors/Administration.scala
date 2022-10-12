@@ -30,8 +30,10 @@ object Administration {
                                                                numberOfElementPerPage: Long)
 
     // Recommendations Location
-    case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double)
-    case class GetRecommendationCloseToMe(username: String, rangeInKm: Double)
+    case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double, pageNumber: Long,
+                                                numberOfElementPerPage: Long)
+    case class GetRecommendationCloseToMe(username: String, rangeInKm: Double, pageNumber: Long,
+                                          numberOfElementPerPage: Long)
   }
 
   // events
@@ -137,13 +139,13 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
         username, pageNumber, numberOfElementPerPage))
 
     // Recommendations By Locations
-    case GetRecommendationCloseToLocation(location, rangeInKm) =>
+    case GetRecommendationCloseToLocation(location, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationCloseToLocation command.")
-      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToLocation(location, rangeInKm))
+      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToLocation(location, rangeInKm, pageNumber, numberOfElementPerPage))
 
-    case GetRecommendationCloseToMe(username, rangeInKm) =>
+    case GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationCloseToMe command.")
-      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm))
+      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage))
   }
 
   override def receiveCommand: Receive = state(administrationRecoveryState)
