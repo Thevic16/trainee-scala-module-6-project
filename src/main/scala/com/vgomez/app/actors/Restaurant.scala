@@ -38,7 +38,7 @@ object Restaurant {
 
   // responses
   object Response {
-    case class GetRestaurantResponse(maybeRestaurantState: Option[RestaurantState], maybeStarts: Option[Int])
+    case class GetRestaurantResponse(maybeRestaurantState: Option[RestaurantState], maybeStars: Option[Int])
       extends GetResponse
 
     case class UpdateRestaurantResponse(maybeRestaurantState: Try[RestaurantState]) extends UpdateResponse

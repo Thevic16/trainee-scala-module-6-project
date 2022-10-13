@@ -5,7 +5,7 @@ import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import akka.persistence.PersistentActor
 import akka.persistence.journal.{Tagged, WriteEventAdapter}
-import akka.persistence.query.{EventEnvelope}
+import akka.persistence.query.EventEnvelope
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.vgomez.app.actors.abtractions.Abstract.Event.Event
@@ -24,7 +24,7 @@ object ReaderStarsByRestaurant {
 
   object Response {
     case class GetAllStarsByRestaurantResponse(starsList : Seq[Int])
-    case class GetStartByRestaurantResponse(starts: Int)
+    case class GetStartByRestaurantResponse(stars: Int)
   }
 
   // events
