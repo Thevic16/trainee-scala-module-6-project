@@ -1,6 +1,7 @@
 package com.vgomez.app.http
 
 import com.vgomez.app.actors.Restaurant.Response._
+import com.vgomez.app.actors.Restaurant.RestaurantState
 import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.domain.Transformer._
@@ -33,6 +34,13 @@ object RouterUtility {
         UserResponse(userState.username, userState.password, transformRoleToStringRole(userState.role),
           userState.location.latitude, userState.location.longitude, userState.favoriteCategories)
     }
+  }
+
+  def getRestaurantResponseByRestaurantState(restaurantState: RestaurantState, stars: Int): RestaurantResponse = {
+    RestaurantResponse(restaurantState.id, restaurantState.username, restaurantState.name,
+      restaurantState.state, restaurantState.city, restaurantState.postalCode,
+      restaurantState.location.latitude, restaurantState.location.longitude,
+      restaurantState.categories, transformScheduleToSimpleScheduler(restaurantState.schedule), stars)
   }
 
 }

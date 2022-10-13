@@ -55,12 +55,9 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
       path(Segment) { id =>
         get {
           onSuccess(getRestaurant(id)) {
-            case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
+            case GetRestaurantResponse(Some(restaurantState), Some(stars)) =>
               complete {
-                RestaurantResponse(restaurantState.id, restaurantState.username, restaurantState.name,
-                  restaurantState.state, restaurantState.city, restaurantState.postalCode,
-                  restaurantState.location.latitude, restaurantState.location.longitude,
-                  restaurantState.categories, transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
+                getRestaurantResponseByRestaurantState(restaurantState, stars)
               }
 
             case GetRestaurantResponse(None, None) =>
@@ -116,7 +113,8 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
           }
         }~
           get {
-            parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long, numberOfElementPerPage: Long) =>
+            parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long,
+                                                                                 numberOfElementPerPage: Long) =>
               ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
                 case Success(_) =>
                   onSuccess(getAllRestaurant(pageNumber, numberOfElementPerPage)) {
@@ -134,5 +132,4 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
           }
       }
     }
-
 }
