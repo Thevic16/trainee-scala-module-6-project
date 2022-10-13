@@ -11,14 +11,13 @@ import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResp
 import com.vgomez.app.http.messages.HttpRequest.{GetRecommendationFilterByFavoriteCategoriesRequest, GetRecommendationFilterByFavoriteCategoriesRequestJsonProtocol, GetRecommendationFilterByUserFavoriteCategoriesRequest, GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol}
 import com.vgomez.app.http.messages.HttpResponse.{FailureResponse, FailureResponseJsonProtocol, RestaurantResponse, RestaurantResponseJsonProtocol}
 import akka.http.scaladsl.server.Directives._
-import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
-import com.vgomez.app.domain.Transformer.transformScheduleToSimpleScheduler
 import com.vgomez.app.exception.CustomException.ValidationFailException
 import com.vgomez.app.http.validators.{ValidatorGetRecommendationFilterByFavoriteCategoriesRequest, ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest, ValidatorRequestWithPagination}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
+import com.vgomez.app.http.RouterUtility._
 
 
 class RecommendationFilterByCategoriesRouter(administration: ActorRef)(implicit system: ActorSystem)
@@ -93,15 +92,5 @@ class RecommendationFilterByCategoriesRouter(administration: ActorRef)(implicit 
         }
       }
     }
-
-  def getRestaurantResponseByGetRestaurantResponse(getRestaurantResponse: GetRestaurantResponse): RestaurantResponse = {
-    getRestaurantResponse match {
-      case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
-        RestaurantResponse(restaurantState.id, restaurantState.username, restaurantState.name, restaurantState.state,
-          restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
-          restaurantState.location.longitude, restaurantState.categories,
-          transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
-    }
-  }
 
 }

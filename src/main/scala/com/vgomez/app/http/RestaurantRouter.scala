@@ -10,20 +10,18 @@ import scala.concurrent.{ExecutionContext, Future}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.vgomez.app.actors.Restaurant._
 import com.vgomez.app.actors.Restaurant.Command._
 import com.vgomez.app.actors.Restaurant.Response._
-import com.vgomez.app.domain.{DomainModel, SimpleScheduler}
 import com.vgomez.app.domain.Transformer._
 import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
-import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.actors.Administration.Command.GetAllRestaurant
-import com.vgomez.app.exception.CustomException.{IdentifierNotFoundException, ValidationFailException}
+import com.vgomez.app.exception.CustomException.ValidationFailException
 import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllRestaurantResponse
 import com.vgomez.app.http.validators._
+import com.vgomez.app.http.RouterUtility._
 
 import scala.util.{Failure, Success}
 
@@ -137,14 +135,4 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
       }
     }
 
-
-  def getRestaurantResponseByGetRestaurantResponse(getRestaurantResponse: GetRestaurantResponse): RestaurantResponse = {
-    getRestaurantResponse match {
-      case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
-        RestaurantResponse(restaurantState.id, restaurantState.username, restaurantState.name, restaurantState.state,
-          restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
-          restaurantState.location.longitude, restaurantState.categories,
-          transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
-    }
-  }
 }

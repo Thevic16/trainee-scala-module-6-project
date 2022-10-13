@@ -6,20 +6,24 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.util.Timeout
-import com.vgomez.app.actors.Administration.Command.{GetRecommendationCloseToLocation, GetRecommendationCloseToMe, GetRecommendationFilterByFavoriteCategories, GetRecommendationFilterByUserFavoriteCategories}
+import com.vgomez.app.actors.Administration.Command.{GetRecommendationCloseToLocation, GetRecommendationCloseToMe}
 import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
-import com.vgomez.app.http.messages.HttpRequest.{GetRecommendationCloseToLocationRequest, GetRecommendationCloseToLocationRequestJsonProtocol, GetRecommendationCloseToMeRequest, GetRecommendationCloseToMeRequestJsonProtocol, GetRecommendationFilterByFavoriteCategoriesRequest, GetRecommendationFilterByFavoriteCategoriesRequestJsonProtocol, GetRecommendationFilterByUserFavoriteCategoriesRequest, GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol}
-import com.vgomez.app.http.messages.HttpResponse.{FailureResponse, FailureResponseJsonProtocol, RestaurantResponse, RestaurantResponseJsonProtocol}
+import com.vgomez.app.http.messages.HttpRequest.{GetRecommendationCloseToLocationRequest,
+                                                GetRecommendationCloseToLocationRequestJsonProtocol,
+                                                GetRecommendationCloseToMeRequest,
+                                                GetRecommendationCloseToMeRequestJsonProtocol}
+import com.vgomez.app.http.messages.HttpResponse.{FailureResponse, FailureResponseJsonProtocol, RestaurantResponseJsonProtocol}
 import akka.http.scaladsl.server.Directives._
-import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.domain.DomainModel
-import com.vgomez.app.domain.Transformer.transformScheduleToSimpleScheduler
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.http.validators.{ValidatorGetRecommendationCloseToLocationRequest, ValidatorGetRecommendationCloseToMeRequest, ValidatorGetRecommendationFilterByFavoriteCategoriesRequest, ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest, ValidatorRequestWithPagination}
+import com.vgomez.app.http.validators.{ValidatorGetRecommendationCloseToLocationRequest,
+                                       ValidatorGetRecommendationCloseToMeRequest,
+                                        ValidatorRequestWithPagination}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
+import com.vgomez.app.http.RouterUtility._
 
 
 class RecommendationFilterByLocationRouter(administration: ActorRef)(implicit system: ActorSystem)
@@ -93,15 +97,5 @@ class RecommendationFilterByLocationRouter(administration: ActorRef)(implicit sy
         }
       }
     }
-
-  def getRestaurantResponseByGetRestaurantResponse(getRestaurantResponse: GetRestaurantResponse): RestaurantResponse = {
-    getRestaurantResponse match {
-      case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
-        RestaurantResponse(restaurantState.id, restaurantState.username, restaurantState.name, restaurantState.state,
-          restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
-          restaurantState.location.longitude, restaurantState.categories,
-          transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
-    }
-  }
 
 }

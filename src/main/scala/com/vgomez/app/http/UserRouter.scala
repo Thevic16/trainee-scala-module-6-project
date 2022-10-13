@@ -6,25 +6,22 @@ import scala.concurrent.duration._
 import akka.util.Timeout
 import akka.http.scaladsl.model.headers.Location
 
-import scala.concurrent.{ExecutionContext, Future, duration}
+import scala.concurrent.{ExecutionContext, Future}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.vgomez.app.actors.User._
 import com.vgomez.app.actors.User.Command._
 import com.vgomez.app.actors.User.Response._
 import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
-import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.actors.Administration.Command.GetAllUser
-import com.vgomez.app.domain.DomainModel
-import com.vgomez.app.domain.Transformer.{transformRoleToStringRole, transformStringRoleToRole}
-import com.vgomez.app.exception.CustomException.{IdentifierNotFoundException, ValidationFailException}
+import com.vgomez.app.domain.Transformer.transformRoleToStringRole
+import com.vgomez.app.exception.CustomException.ValidationFailException
 import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllUserResponse
 import com.vgomez.app.http.validators._
-
+import com.vgomez.app.http.RouterUtility._
 
 import scala.util.{Failure, Success}
 
@@ -130,13 +127,5 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem)
             }
         }
     }
-
-  def getUserResponseByGetUserResponse(getUserResponse: GetUserResponse): UserResponse = {
-    getUserResponse match {
-      case GetUserResponse(Some(userState)) =>
-        UserResponse(userState.username, userState.password, transformRoleToStringRole(userState.role),
-          userState.location.latitude, userState.location.longitude, userState.favoriteCategories)
-    }
-  }
 
 }
