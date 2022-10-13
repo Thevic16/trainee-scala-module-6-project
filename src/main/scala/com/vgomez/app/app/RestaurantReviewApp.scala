@@ -53,12 +53,14 @@ object RestaurantReviewApp {
   }
 
   def main(args: Array[String]): Unit = {
-    implicit val system: ActorSystem = ActorSystem("RestaurantReviewsApp")
+    val conf = ConfigFactory.load()
+    implicit val system: ActorSystem = ActorSystem("RestaurantReviewsApp", ConfigFactory.load().getConfig(
+                                                                      conf.getString("actor-system-config.path")))
+
     val timeout: Timeout = Timeout(2.seconds)
 
     val administration = system.actorOf(Administration.props(system), "administration-system")
 
-    val conf = ConfigFactory.load()
     val runLoadDataSetGraph: Boolean = conf.getBoolean("load-dataset.run")
 
     if(runLoadDataSetGraph){
