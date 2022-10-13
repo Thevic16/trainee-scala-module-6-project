@@ -68,4 +68,15 @@ object DomainModelOperation {
     (AVERAGE_RADIUS_OF_EARTH_KM * c)
   }
 
+  def restaurantCategoriesIsContainsByQueryCategories(restaurantCategories: Set[String],
+                                                      queryCategories: Set[String]): Boolean = {
+    def go(restaurantCategories: Set[String]): Boolean = {
+      if (restaurantCategories.isEmpty) false
+      else if (queryCategories.contains(restaurantCategories.head)) true
+      else go(restaurantCategories.tail)
+    }
+
+    go(restaurantCategories)
+  }
+
 }

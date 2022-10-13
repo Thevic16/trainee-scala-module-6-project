@@ -156,11 +156,11 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
 
     case getResponse@GetRestaurantResponse(Some(_), Some(_)) =>
       processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
-                                        accResponses, getResponse, false)
+                                        accResponses, getResponse, none = false)
 
     case getResponse@GetRestaurantResponse(None, None) =>
       processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
-        accResponses, getResponse, true)
+        accResponses, getResponse, none = true)
 
     case _ =>
       stash()
@@ -174,11 +174,11 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
 
     case getResponse@GetReviewResponse(Some(_)) =>
       processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
-        accResponses, getResponse, false)
+        accResponses, getResponse, none = false)
 
     case getResponse@GetReviewResponse(None) =>
       processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
-        accResponses, getResponse, true)
+        accResponses, getResponse, none = true)
 
     case _ =>
       stash()
@@ -193,11 +193,11 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
 
     case getResponse@GetUserResponse(Some(_)) =>
       processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
-        accResponses, getResponse, false)
+        accResponses, getResponse, none = false)
 
     case getResponse@GetUserResponse(None) =>
       processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
-        accResponses, getResponse, true)
+        accResponses, getResponse, none = true)
 
     case _ =>
       stash()
