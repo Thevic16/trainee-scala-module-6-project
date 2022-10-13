@@ -1,7 +1,7 @@
 package com.vgomez.app.loadDataset
 import com.github.tototoshi.csv._
 import akka.actor.{ActorRef, ActorSystem}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.Timeout
 import com.vgomez.app.actors.Restaurant.Command.CreateRestaurant
@@ -22,14 +22,16 @@ object LoadDataset{
     val locationField: Location = Location(row.getOrElse("latitude", "0").toDouble,
       row.getOrElse("longitude", "0").toDouble)
 
-    val categoriesField: Set[String] = row.getOrElse("categories", "").split(",").map(category => category.trim).toSet
+    val categoriesField: Set[String] = row.getOrElse("categories", "").split(",").map(
+                                                                                        category => category.trim).toSet
     val restaurantId: String = row.getOrElse("business_id", UUID.randomUUID().toString)
     val reviewId: String = row.getOrElse("review_id", UUID.randomUUID().toString)
     val username: String = row.getOrElse("user_id", UUID.randomUUID().toString)
 
 
     val createUserCommand = getCreateUserCommand(row, locationField, categoriesField)
-    val createRestaurantCommand = getCreateRestaurantCommand(row, locationField, categoriesField, restaurantId, username)
+    val createRestaurantCommand = getCreateRestaurantCommand(row, locationField, categoriesField, restaurantId,
+                                                              username)
     val createReviewCommand = getCreateReviewCommand(row, restaurantId, reviewId, username)
 
     Map("createUserCommand" -> createUserCommand, "createRestaurantCommand" -> createRestaurantCommand,
@@ -46,12 +48,14 @@ object LoadDataset{
   }
 
   def getCreateRestaurantCommand(row: Map[String, String], locationField: Location,
-                                 categoriesField: Set[String], restaurantId: String, username: String): CreateRestaurant = {
+                                 categoriesField: Set[String], restaurantId: String,
+                                 username: String): CreateRestaurant = {
     val defaultHours: String = "{'Monday': '0:0-0:0'}"
 
     CreateRestaurant(maybeId = Some(restaurantId), RestaurantInfo(
-      username = username, name = row.getOrElse("name", "Unknown name"), state = row.getOrElse("state_", "Unknown state"),
-      city = row.getOrElse("city", "Unknown city"), postalCode = row.getOrElse("postal_code", "UnKnown postal code"),
+      username = username, name = row.getOrElse("name", "Unknown name"),
+      state = row.getOrElse("state_", "Unknown state"), city = row.getOrElse("city", "Unknown city"),
+      postalCode = row.getOrElse("postal_code", "UnKnown postal code"),
       location = locationField, categories = categoriesField,
       schedule = transformScheduleStringToSchedule(row.getOrElse("hours", defaultHours))
     ))
@@ -67,8 +71,8 @@ object LoadDataset{
 
 }
 
-class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administration: ActorRef, implicit val system: ActorSystem,
-                  implicit val timeout: Timeout) {
+class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administration: ActorRef,
+                  implicit val system: ActorSystem, implicit val timeout: Timeout) {
     import LoadDataset._
     // Use Akka Stream to process the data
     implicit val materializer = ActorMaterializer()

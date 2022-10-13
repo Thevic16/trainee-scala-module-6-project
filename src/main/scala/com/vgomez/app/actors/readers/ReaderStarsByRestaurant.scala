@@ -5,17 +5,10 @@ import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import akka.persistence.PersistentActor
 import akka.persistence.journal.{Tagged, WriteEventAdapter}
-import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
-import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
-import akka.stream.{ActorMaterializer, Materializer}
-import akka.stream.scaladsl.{Flow, Keep, Merge, RunnableGraph, Sink, Source}
-import com.vgomez.app.actors.Restaurant.Command.GetRestaurant
-import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
-import com.vgomez.app.actors.User.Command.GetUser
-import com.vgomez.app.actors.User.Response.GetUserResponse
+import akka.persistence.query.EventEnvelope
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.vgomez.app.actors.abtractions.Abstract.Event.Event
-import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
-
 import scala.concurrent.Future
 
 object ReaderStarsByRestaurant {
@@ -27,12 +20,11 @@ object ReaderStarsByRestaurant {
     case class CreateReview(id: String, restaurantId: String, stars: Int)
     case class UpdateReview(id: String, restaurantId: String, stars: Int)
     case class GetStartByRestaurant(restaurantId: String)
-
   }
 
   object Response {
-    case class GetAllStarsResponse(starsList : Seq[Int])
-    case class GetStartByRestaurantResponse(starts: Int)
+    case class GetAllStarsByRestaurantResponse(starsList : Seq[Int])
+    case class GetStartByRestaurantResponse(stars: Int)
   }
 
   // events
@@ -45,10 +37,8 @@ object ReaderStarsByRestaurant {
   class ReaderStarByRestaurantAdapter extends WriteEventAdapter {
     override def toJournal(event: Any): Any = event match {
       case ReviewCreated(_, restaurantId,_) =>
-        println("Tagging RestaurantCreated event with categories.")
         Tagged(event, Set(restaurantId))
       case ReviewUpdated(_, restaurantId, _) =>
-        println("Tagging RestaurantUpdated event with categories.")
         Tagged(event, Set(restaurantId))
       case _ =>
         event
@@ -56,24 +46,11 @@ object ReaderStarsByRestaurant {
     override def manifest(event: Any): String = ""
   }
 
-  import Response.GetAllStarsResponse
-  def getAllStarsByRestaurant(restaurantId: String, system: ActorSystem): Future[GetAllStarsResponse] = {
-    import system.dispatcher
-
-    val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
-    implicit val materializer = ActorMaterializer()(system)
-
-    val eventsWithSequenceSource = queries.currentEventsByTag(tag = restaurantId, offset = Sequence(0L))
-    val ranGraph: Future[Seq[Int]] = runGraph(eventsWithSequenceSource, materializer, restaurantId)
-
-    ranGraph.map(GetAllStarsResponse)
-  }
-
-  def runGraph(eventsWithSequenceSource: Source[EventEnvelope, NotUsed], materializer: Materializer,
-               queryRestaurantId: String): Future[Seq[Int]] = {
+  def runGraphQueryReader(eventsWithSequenceSource: Source[EventEnvelope, NotUsed], materializer: Materializer,
+                          queryRestaurantId: String): Future[Seq[Int]] = {
     val eventsSource = eventsWithSequenceSource.map(_.event)
 
-    val flowFilter = Flow[Any].filter{
+    val flowFilter = Flow[Any].filter {
       case ReviewCreated(_, restaurantId, _) if restaurantId == queryRestaurantId => true
       case ReviewUpdated(_, restaurantId, _) if restaurantId == queryRestaurantId => true
       case _ => false
@@ -86,7 +63,6 @@ object ReaderStarsByRestaurant {
     }
 
     val sink = Sink.seq[Int]
-
     eventsSource.via(flowFilter).via(flowMap).runWith(sink)(materializer)
   }
 
@@ -98,6 +74,9 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
   import Command._
   import Response._
   import system.dispatcher
+
+  // ReaderDatabaseUtility
+  val readerDatabaseUtility = ReaderDatabaseUtility(system)
 
   // state
   var readerStarsByRestaurantRecoveryState = ReaderStarsByRestaurantState(Set())
@@ -120,17 +99,18 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
 
     case GetStartByRestaurant(restaurantId) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByFavoriteCategories command.")
-      getAllStarsByRestaurant(restaurantId, system).mapTo[GetAllStarsResponse].pipeTo(self)
+      getAllStarsByRestaurant(restaurantId).mapTo[GetAllStarsByRestaurantResponse].pipeTo(self)
       unstashAll()
-      context.become(getStartByRestaurant(readerStarsByRestaurantState, sender()))
+      context.become(getStartByRestaurantState(readerStarsByRestaurantState, sender()))
 
     case _ =>
       stash()
   }
   
-  def getStartByRestaurant(readerStarsByRestaurantState: ReaderStarsByRestaurantState, originalSender: ActorRef): Receive = {
+  def getStartByRestaurantState(readerStarsByRestaurantState: ReaderStarsByRestaurantState,
+                                originalSender: ActorRef): Receive = {
 
-    case GetAllStarsResponse(starsList) =>
+    case GetAllStarsByRestaurantResponse(starsList) =>
       log.info("getStartByRestaurant getting startsList.")
       if(starsList.nonEmpty){
         val startAVG: Int = starsList.sum / starsList.length
@@ -147,19 +127,6 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
   }
 
 
-  def restaurantCategoriesIsContainsByQueryCategories(restaurantCategories: Set[String],
-                                                      queryCategories: Set[String]): Boolean =
-    {
-      def go(restaurantCategories: Set[String]): Boolean = {
-        if(restaurantCategories.isEmpty) false
-        else if (queryCategories.contains(restaurantCategories.head)) true
-        else go(restaurantCategories.tail)
-      }
-
-      go(restaurantCategories)
-    }
-
-
   override def receiveCommand: Receive = state(ReaderStarsByRestaurantState(Set()))
 
   override def receiveRecover: Receive = {
@@ -173,4 +140,13 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
     case ReviewUpdated(id, _, _) => log.info(s"ReaderFilterByCategories has recovered a update " +
       s"for review with id: $id")
   }
+
+  // Auxiliary methods ReaderDatabaseUtility
+  def getAllStarsByRestaurant(restaurantId: String): Future[GetAllStarsByRestaurantResponse] = {
+    val eventsWithSequenceSource = readerDatabaseUtility.getSourceEventSByTag(restaurantId)
+    val ranGraph: Future[Seq[Int]] = runGraphQueryReader(eventsWithSequenceSource, readerDatabaseUtility.materializer,
+                                                         restaurantId)
+    ranGraph.map(GetAllStarsByRestaurantResponse)
+  }
+
 }

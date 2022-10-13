@@ -1,14 +1,12 @@
 package com.vgomez.app.actors.readers
 
 import akka.NotUsed
-import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Stash, Status}
+import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import akka.persistence.PersistentActor
 import akka.persistence.journal.{Tagged, WriteEventAdapter}
-import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
-import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink, Source}
+import akka.persistence.query.EventEnvelope
+import akka.stream.scaladsl.{Flow, RunnableGraph, Source}
 import com.vgomez.app.actors.Restaurant.Command.GetRestaurant
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.actors.Review.Command.GetReview
@@ -16,6 +14,10 @@ import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.abtractions.Abstract.Event.Event
+import com.vgomez.app.actors.abtractions.Abstract.Response.GetResponse
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.Response._
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.getMaterializeGraphReaderUtility
+import com.vgomez.app.actors.readers.ReaderUtility._
 
 import scala.concurrent.Future
 
@@ -35,7 +37,6 @@ object ReaderGetAll {
     case class CreateRestaurant(id: String)
     case class CreateReview(id: String)
     case class CreateUser(username: String)
-
     case class GetAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long)
     case class GetAllReview(pageNumber: Long, numberOfElementPerPage: Long)
     case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)
@@ -45,8 +46,6 @@ object ReaderGetAll {
     case class GetAllRestaurantResponse(optionGetRestaurantResponses: Option[List[GetRestaurantResponse]])
     case class GetAllReviewResponse(optionGetReviewResponses: Option[List[GetReviewResponse]])
     case class GetAllUserResponse(optionGetUserResponses: Option[List[GetUserResponse]])
-
-    case class GetAllIdsResponse(ids : Seq[String])
   }
 
   // events
@@ -61,13 +60,10 @@ object ReaderGetAll {
     import ActorType._
     override def toJournal(event: Any): Any = event match {
       case RestaurantCreated(_) =>
-        println("Tagging restaurant event.")
         Tagged(event, Set(restaurantType))
       case ReviewCreated(_) =>
-        println("Tagging review event.")
         Tagged(event, Set(reviewType))
       case UserCreated(_) =>
-        println("Tagging user event.")
         Tagged(event, Set(userType))
       case _ =>
         event
@@ -75,35 +71,16 @@ object ReaderGetAll {
     override def manifest(event: Any): String = ""
   }
 
-  import Response.GetAllIdsResponse
-  // EventsByTag and CurrentEventsByTag
-  def getAllIdsByActorType(actorType: String, system: ActorSystem, pageNumber: Long,
-                           numberOfElementPerPage: Long): Future[GetAllIdsResponse] = {
-    import system.dispatcher
-
-    val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
-    implicit val materializer = ActorMaterializer()(system)
-
-    val eventsWithSequenceSource = queries.currentEventsByTag(tag = actorType,
-                                  offset = Sequence(numberOfElementPerPage * pageNumber)).take(numberOfElementPerPage)
-    val graph: RunnableGraph[Future[Seq[String]]] = getGraph(eventsWithSequenceSource)
-
-    graph.run().map(GetAllIdsResponse)
-  }
-
-  def getGraph(eventsWithSequenceSource: Source[EventEnvelope, NotUsed]): RunnableGraph[Future[Seq[String]]] = {
-    val eventsSource = eventsWithSequenceSource.map(_.event)
-    val flow = Flow[Any].map {
+  def getGraphQueryReader(eventsWithSequenceSource: Source[EventEnvelope,
+    NotUsed]): RunnableGraph[Future[Seq[String]]] = {
+    val flowMapGetIdFromEvent = Flow[Any].map {
       case RestaurantCreated(id) => id
       case ReviewCreated(id) => id
       case UserCreated(id) => id
       case _ => ""
     }
-    val sink = Sink.seq[String]
-
-    eventsSource.via(flow).toMat(sink)(Keep.right)
+    getMaterializeGraphReaderUtility(eventsWithSequenceSource, flowMapGetIdFromEvent)
   }
-
 }
 
 class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLogging with Stash {
@@ -113,6 +90,9 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
   import Response._
   import ActorType._
   import system.dispatcher
+
+  // ReaderDatabaseUtility
+  val readerDatabaseUtility = ReaderDatabaseUtility(system)
 
   // state
   var readerGetAllRecoveryState = ReaderGetAllState(Set(), Set(), Set())
@@ -147,163 +127,82 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
 
     case GetAllRestaurant(pageNumber, numberOfElementPerPage) =>
       log.info("ReaderGetAll has receive a GetAllRestaurant command.")
-      getAllIdsByActorType(restaurantType, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
+      getEventsIdsByActorType(restaurantType, pageNumber, numberOfElementPerPage).mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllRestaurant(readerGetAllState, sender(), Int.MaxValue))
+      context.become(getAllRestaurantState(readerGetAllState, sender(), Int.MaxValue))
 
     case GetAllReview(pageNumber, numberOfElementPerPage) =>
       log.info("ReaderGetAll has receive a GetAllReview command.")
-      getAllIdsByActorType(reviewType, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
+      getEventsIdsByActorType(reviewType, pageNumber, numberOfElementPerPage).mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllReview(readerGetAllState, sender(), Int.MaxValue))
+      context.become(getAllReviewState(readerGetAllState, sender(), Int.MaxValue))
 
     case GetAllUser(pageNumber, numberOfElementPerPage) =>
       log.info("ReaderGetAll has receive a GetAllUser command.")
-      getAllIdsByActorType(userType, system, pageNumber, numberOfElementPerPage).mapTo[GetAllIdsResponse].pipeTo(self)
+      getEventsIdsByActorType(userType, pageNumber, numberOfElementPerPage).mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllUser(readerGetAllState, sender(), Int.MaxValue))
+      context.become(getAllUserState(readerGetAllState, sender(), Int.MaxValue))
 
     case _ =>
       stash()
   }
   
-  def getAllRestaurant(readerGetAllState: ReaderGetAllState, originalSender: ActorRef, totalAmountId: Int,
+  def getAllRestaurantState(readerGetAllState: ReaderGetAllState, originalSender: ActorRef, totalAmountId: Int,
                        currentAmountId: Int = 0,
                        accResponses: List[GetRestaurantResponse] = List()): Receive = {
 
-    case GetAllIdsResponse(ids) =>
-      if(ids.nonEmpty){
-        log.info("getAllRestaurant getting ids restaurant.")
-        ids.foreach(id => context.parent ! GetRestaurant(id))
-        context.become(getAllRestaurant(readerGetAllState, originalSender, ids.size, currentAmountId, accResponses))
-      }
-      else {
-        originalSender ! GetAllRestaurantResponse(None)
-
-        unstashAll()
-        context.become(state(readerGetAllState))
-      }
+    case GetEventsIdsResponse(ids) =>
+      processGetEventsIdsResponseCommand(readerGetAllState, originalSender, ActorType.restaurantType, ids)
 
     case getResponse@GetRestaurantResponse(Some(_), Some(_)) =>
-      log.info("getAllRestaurants receiving GetRestaurantResponse from administration.")
-      if(currentAmountId+1 >= totalAmountId) {
-        log.info(s"getAllRestaurants finishing currentAmountId: ${currentAmountId+1} of total: $totalAmountId.")
-        originalSender ! GetAllRestaurantResponse(Some(accResponses :+ getResponse))
+      processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
+                                        accResponses, getResponse, none = false)
 
-        unstashAll()
-        context.become(state(readerGetAllState))
-      }
-      else {
-        log.info(s"getAllRestaurants becoming currentAmountId: $currentAmountId of total: $totalAmountId.")
-        context.become(getAllRestaurant(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
-          accResponses :+ getResponse))
-      }
-
-    case GetRestaurantResponse(None, None) =>
-      log.info("getAllRestaurants receiving GetRestaurantResponse from administration.")
-      if (currentAmountId + 1 >= totalAmountId) {
-        log.info(s"getAllRestaurants finishing currentAmountId: ${currentAmountId + 1} of total: $totalAmountId.")
-        originalSender ! GetAllRestaurantResponse(Some(accResponses))
-
-        unstashAll()
-        context.become(state(readerGetAllState))
-      }
-      else {
-        log.info(s"getAllRestaurants becoming currentAmountId: $currentAmountId of total: $totalAmountId.")
-        context.become(getAllRestaurant(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
-          accResponses))
-      }
+    case getResponse@GetRestaurantResponse(None, None) =>
+      processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
+        accResponses, getResponse, none = true)
 
     case _ =>
       stash()
   }
 
-  def getAllReview(readerGetAllState: ReaderGetAllState, originalSender: ActorRef, totalAmountId: Int,
+  def getAllReviewState(readerGetAllState: ReaderGetAllState, originalSender: ActorRef, totalAmountId: Int,
                    currentAmountId: Int = 0, accResponses: List[GetReviewResponse] = List()): Receive = {
 
-    case GetAllIdsResponse(ids) =>
-      if(ids.nonEmpty){
-        ids.foreach(id => context.parent ! GetReview(id))
-        context.become(getAllReview(readerGetAllState, originalSender, ids.size, currentAmountId, accResponses))
-      }
-      else {
-        originalSender ! GetAllReviewResponse(None)
-
-        unstashAll()
-        context.become(state(readerGetAllState))
-      }
+    case GetEventsIdsResponse(ids) =>
+      processGetEventsIdsResponseCommand(readerGetAllState, originalSender, ActorType.reviewType, ids)
 
     case getResponse@GetReviewResponse(Some(_)) =>
-      if (currentAmountId + 1 >= totalAmountId) {
-        originalSender ! GetAllReviewResponse(Some(accResponses :+ getResponse))
+      processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
+        accResponses, getResponse, none = false)
 
-        unstashAll()
-        context.become(state(readerGetAllState))
-      }
-      else {
-        context.become(getAllReview(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
-          accResponses :+ getResponse))
-      }
-
-    case GetReviewResponse(None) =>
-      if (currentAmountId + 1 >= totalAmountId) {
-        originalSender ! GetAllReviewResponse(Some(accResponses))
-
-        unstashAll()
-        context.become(state(readerGetAllState))
-      }
-      else {
-        context.become(getAllReview(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
-          accResponses))
-      }
+    case getResponse@GetReviewResponse(None) =>
+      processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
+        accResponses, getResponse, none = true)
 
     case _ =>
       stash()
   }
 
 
-  def getAllUser(readerGetAllState: ReaderGetAllState, originalSender: ActorRef, totalAmountId: Int,
+  def getAllUserState(readerGetAllState: ReaderGetAllState, originalSender: ActorRef, totalAmountId: Int,
                    currentAmountId: Int = 0, accResponses: List[GetUserResponse] = List()): Receive = {
 
-    case GetAllIdsResponse(ids) =>
-      if(ids.nonEmpty){
-        ids.foreach(id => context.parent ! GetUser(id))
-        context.become(getAllUser(readerGetAllState, originalSender, ids.size, currentAmountId, accResponses))
-      }
-      else {
-        originalSender ! GetAllUserResponse(None)
-
-        unstashAll()
-        context.become(state(readerGetAllState))
-      }
+    case GetEventsIdsResponse(ids) =>
+      processGetEventsIdsResponseCommand(readerGetAllState, originalSender, ActorType.userType, ids)
 
     case getResponse@GetUserResponse(Some(_)) =>
-      if (currentAmountId + 1 >= totalAmountId) {
-        originalSender ! GetAllUserResponse(Some(accResponses :+ getResponse))
+      processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
+        accResponses, getResponse, none = false)
 
-        unstashAll()
-        context.become(state(readerGetAllState))
-      }
-      else {
-        context.become(getAllUser(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
-          accResponses :+ getResponse))
-      }
-
-    case GetUserResponse(None) =>
-      if (currentAmountId + 1 >= totalAmountId) {
-        originalSender ! GetAllUserResponse(Some(accResponses))
-
-        unstashAll()
-        context.become(state(readerGetAllState))
-      }
-      else {
-        context.become(getAllUser(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
-          accResponses))
-      }
+    case getResponse@GetUserResponse(None) =>
+      processGetResponseCommand(readerGetAllState, originalSender, totalAmountId, currentAmountId,
+        accResponses, getResponse, none = true)
 
     case _ =>
       stash()
   }
+
 
   override def receiveCommand: Receive = state(ReaderGetAllState(Set(), Set(), Set()))
 
@@ -329,4 +228,109 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
 
       context.become(state(readerGetAllRecoveryState))
   }
+
+  // Auxiliary methods reader database
+  def getEventsIdsByActorType(actorType: String, pageNumber: Long,
+                           numberOfElementPerPage: Long): Future[GetEventsIdsResponse] = {
+    val eventsWithSequenceSource = readerDatabaseUtility.getSourceEventSByTagWithPagination(actorType, pageNumber,
+                                                                                            numberOfElementPerPage)
+    val graph: RunnableGraph[Future[Seq[String]]] = getGraphQueryReader(eventsWithSequenceSource)
+    readerDatabaseUtility.runGraph(graph)
+  }
+
+  // Auxiliary methods getAll States
+  def processGetEventsIdsResponseCommand(readerGetAllState: ReaderGetAllState, originalSender: ActorRef,
+                                         actorType: String, ids: Set[String]): Unit = {
+    val currentAmountId: Int = 0
+    val accResponses = List()
+
+    if(ids.nonEmpty){
+      log.info("getting ids")
+      actorType match {
+        case ActorType.restaurantType =>
+          ids.foreach(id => context.parent ! GetRestaurant(id))
+          context.become(getAllRestaurantState(readerGetAllState, originalSender, ids.size, currentAmountId, accResponses))
+        case ActorType.reviewType =>
+          ids.foreach(id => context.parent ! GetReview(id))
+          context.become(getAllReviewState(readerGetAllState, originalSender, ids.size, currentAmountId, accResponses))
+        case ActorType.userType =>
+          ids.foreach(id => context.parent ! GetUser(id))
+          context.become(getAllUserState(readerGetAllState, originalSender, ids.size, currentAmountId, accResponses))
+      }
+    }
+    else {
+      actorType match {
+        case ActorType.restaurantType =>
+          originalSender ! GetAllRestaurantResponse(None)
+        case ActorType.reviewType =>
+          originalSender ! GetAllReviewResponse(None)
+        case ActorType.userType =>
+          originalSender ! GetAllUserResponse(None)
+      }
+      unstashAll()
+      context.become(state(readerGetAllState))
+    }
+
+  }
+
+  def processGetResponseCommand(readerGetAllState: ReaderGetAllState, originalSender: ActorRef,
+                                        totalAmountId: Int, currentAmountId: Int, accResponses: List[GetResponse],
+                                        getResponse: GetResponse, none: Boolean): Unit = {
+    log.info("receiving GetResponse from administration.")
+
+
+    if(currentAmountId+1 >= totalAmountId) {
+      log.info(s"finishing currentAmountId: ${currentAmountId+1} of total: $totalAmountId.")
+      getResponse match {
+        case getResponse@GetRestaurantResponse(_, _) =>
+          if(none)
+            originalSender ! GetAllRestaurantResponse(Some(getRestaurantResponseList(accResponses)))
+          else
+            originalSender ! GetAllRestaurantResponse(Some(getRestaurantResponseList(accResponses) :+ getResponse))
+
+        case getResponse@GetReviewResponse(_) =>
+          if(none)
+            originalSender ! GetAllReviewResponse(Some(getReviewResponseList(accResponses)))
+          else
+            originalSender ! GetAllReviewResponse(Some(getReviewResponseList(accResponses) :+ getResponse))
+
+        case getResponse@GetUserResponse(_) =>
+          if(none)
+            originalSender ! GetAllUserResponse(Some(getUserResponseList(accResponses)))
+          else
+            originalSender ! GetAllUserResponse(Some(getUserResponseList(accResponses) :+ getResponse))
+      }
+      unstashAll()
+      context.become(state(readerGetAllState))
+    }
+    else {
+      log.info(s"becoming currentAmountId: $currentAmountId of total: $totalAmountId.")
+      getResponse match {
+        case getResponse@GetRestaurantResponse(_, _) =>
+          if(none)
+            context.become(getAllRestaurantState(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
+              getRestaurantResponseList(accResponses)))
+          else
+            context.become(getAllRestaurantState(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
+              getRestaurantResponseList(accResponses) :+ getResponse))
+
+        case getResponse@GetReviewResponse(_) =>
+          if(none)
+            context.become(getAllReviewState(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
+              getReviewResponseList(accResponses)))
+          else
+            context.become(getAllReviewState(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
+              getReviewResponseList(accResponses) :+ getResponse))
+
+        case getResponse@GetUserResponse(_) =>
+          if(none)
+            context.become(getAllUserState(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
+              getUserResponseList(accResponses)))
+          else
+            context.become(getAllUserState(readerGetAllState, originalSender, totalAmountId, currentAmountId + 1,
+              getUserResponseList(accResponses) :+ getResponse))
+      }
+    }
+  }
+
 }

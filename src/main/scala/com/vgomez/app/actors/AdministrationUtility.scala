@@ -1,7 +1,7 @@
 package com.vgomez.app.actors
 
 import scala.util.{Failure, Success, Try}
-import akka.actor.ActorRef
+import akka.actor.{ActorContext, ActorRef}
 import com.vgomez.app.actors.Administration.AdministrationState
 import com.vgomez.app.actors.Restaurant.Command._
 import com.vgomez.app.actors.Restaurant.Response._
@@ -17,6 +17,7 @@ import java.util.UUID
 
 object AdministrationUtility {
 
+  // Get Commands relate
   def getActorRefOptionByGetCommand(getCommand: GetCommand,
                                     administrationState: AdministrationState): Option[ActorRef] = {
     getCommand match {
@@ -34,6 +35,7 @@ object AdministrationUtility {
     }
   }
 
+  // Create Command related.
   def getIdentifierByCreateCommand(createCommand: CreateCommand): String = {
     val identifierOption: Option[String] = createCommand match {
       case CreateRestaurant(maybeId, _) => maybeId
@@ -65,6 +67,16 @@ object AdministrationUtility {
         users = administrationState.users + (identifier -> newActorRef))
     }
   }
+
+  def getNewActorRefByCreateCommand(context: ActorContext, createCommand: CreateCommand, identifier: String): ActorRef = {
+    createCommand match {
+      case CreateRestaurant(_, _) => context.actorOf(Restaurant.props(identifier), identifier)
+      case CreateReview(_, _) => context.actorOf(Review.props(identifier), identifier)
+      case CreateUser(_) => context.actorOf(User.props(identifier), identifier)
+    }
+  }
+
+  // Update Commands Related
 
   def getIdentifierByUpdateCommand(updateCommand: UpdateCommand): String = {
     updateCommand match {
@@ -99,6 +111,8 @@ object AdministrationUtility {
     }
   }
 
+
+  // Delete Command related.
   def getActorRefOptionByDeleteCommand(deleteCommand: DeleteCommand,
                                        administrationState: AdministrationState): Option[ActorRef] = {
     deleteCommand match {
@@ -108,7 +122,8 @@ object AdministrationUtility {
     }
   }
 
-  // Verify Ids query commands
+
+  // Verify Ids query commands related
   def verifyIdsOnCreateCommand(createCommand: CreateCommand,
                                administrationState: AdministrationState): Try[CreateCommand] = {
     createCommand match {
