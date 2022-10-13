@@ -110,7 +110,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
             }
           } ~
             get {
-              parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long, numberOfElementPerPage: Long) =>
+              parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long,
+                                                                                   numberOfElementPerPage: Long) =>
                 ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
                   case Success(_) =>
                     onSuccess(getAllReview(pageNumber, numberOfElementPerPage)) {
@@ -128,5 +129,4 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
             }
         }
     }
-
 }
