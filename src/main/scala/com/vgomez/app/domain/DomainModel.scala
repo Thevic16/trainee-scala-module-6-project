@@ -59,7 +59,7 @@ object DomainModelOperation {
     else Double.MaxValue
   }
 
-  def calculateDistanceInKmHelper(location1: Location, location2: Location): Double = {
+  private def calculateDistanceInKmHelper(location1: Location, location2: Location): Double = {
     val latDistance = Math.toRadians(location1.latitude - location2.latitude)
     val lngDistance = Math.toRadians(location1.longitude - location2.longitude)
 
