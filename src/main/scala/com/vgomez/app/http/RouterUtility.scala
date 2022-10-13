@@ -12,11 +12,8 @@ object RouterUtility {
 
   def getRestaurantResponseByGetRestaurantResponse(getRestaurantResponse: GetRestaurantResponse): RestaurantResponse = {
     getRestaurantResponse match {
-      case GetRestaurantResponse(Some(restaurantState), Some(starts)) =>
-        RestaurantResponse(restaurantState.id, restaurantState.username, restaurantState.name, restaurantState.state,
-          restaurantState.city, restaurantState.postalCode, restaurantState.location.latitude,
-          restaurantState.location.longitude, restaurantState.categories,
-          transformScheduleToSimpleScheduler(restaurantState.schedule), starts)
+      case GetRestaurantResponse(Some(restaurantState), Some(stars)) =>
+        getRestaurantResponseByRestaurantState(restaurantState, stars)
     }
   }
 
