@@ -3,10 +3,8 @@ package com.vgomez.app.actors.readers
 import akka.NotUsed
 import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
-import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
-import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink, Source}
+import akka.persistence.query.EventEnvelope
+import akka.stream.scaladsl.{Flow, RunnableGraph, Source}
 import com.vgomez.app.actors.Restaurant.Command.GetRestaurant
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.actors.User.Command.GetUser
@@ -60,7 +58,7 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
       log.info("ReaderFilterByLocation has receive a GetRecommendationCloseToLocation command.")
       getEventsIdsRestaurantType().mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllRestaurant(sender(),location, rangeInKm, Int.MaxValue, pageNumber, numberOfElementPerPage))
+      context.become(getAllRestaurantState(sender(),location, rangeInKm, Int.MaxValue, pageNumber, numberOfElementPerPage))
 
     case GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByLocation has receive a GetRecommendationCloseToMe command.")
@@ -72,74 +70,35 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
       stash()
   }
 
-  def getAllRestaurant(originalSender: ActorRef, queryLocation: Location, rangeInKm: Double,
+  def getAllRestaurantState(originalSender: ActorRef, queryLocation: Location, rangeInKm: Double,
                        totalAmountId: Int, pageNumber: Long, numberOfElementPerPage: Long, currentAmountId: Int = 0,
                        accResponses: List[GetRestaurantResponse] = List()): Receive = {
 
     case GetEventsIdsResponse(ids) =>
-      if(ids.nonEmpty){
-        log.info("getAllRestaurant getting ids restaurant.")
+      processGetEventsIdsResponseCommand(originalSender, queryLocation, rangeInKm, pageNumber, numberOfElementPerPage,
+                                          ids)
 
-        ids.foreach(id => context.parent ! GetRestaurant(id))
-        context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, ids.size, pageNumber, numberOfElementPerPage, currentAmountId, accResponses))
-      }
-      else {
-        originalSender ! GetRecommendationResponse(None)
+    case getResponse@GetRestaurantResponse(Some(restaurantState), Some(_)) =>
+      processGetResponseCommand(originalSender, queryLocation, rangeInKm, totalAmountId, pageNumber,
+                                numberOfElementPerPage, currentAmountId, accResponses, getResponse,
+                                restaurantLocation = Some(restaurantState.location), none = false)
 
-        unstashAll()
-        context.become(state())
-      }
+    case getResponse@GetRestaurantResponse(None, None) =>
+      processGetResponseCommand(originalSender, queryLocation, rangeInKm, totalAmountId, pageNumber,
+        numberOfElementPerPage, currentAmountId, accResponses, getResponse,
+        restaurantLocation = None, none = true)
 
-    case getResponse@GetRestaurantResponse(Some(restaurantState), _) =>
-      log.info("getAllRestaurants receiving GetRestaurantResponse from administration.")
-
-      if(currentAmountId+1 >= totalAmountId) {
-        log.info(s"getAllRestaurants finishing currentAmountId: ${currentAmountId+1} of total: $totalAmountId.")
-
-        if(calculateDistanceInKm(queryLocation, restaurantState.location) <= rangeInKm){
-          val responses = (accResponses :+ getResponse).drop((pageNumber * numberOfElementPerPage).toInt).take(numberOfElementPerPage.toInt)
-
-          if(responses.nonEmpty)
-            originalSender ! GetRecommendationResponse(Some(responses))
-          else originalSender ! GetRecommendationResponse(None)
-
-        }
-        else {
-          val responses = accResponses.drop((pageNumber * numberOfElementPerPage).toInt).take(numberOfElementPerPage.toInt)
-
-          if (responses.nonEmpty)
-            originalSender ! GetRecommendationResponse(Some(responses))
-          else originalSender ! GetRecommendationResponse(None)
-
-        }
-        unstashAll()
-        context.become(state())
-      }
-      else {
-        log.info(s"getAllRestaurants becoming currentAmountId: $currentAmountId of total: $totalAmountId.")
-
-        if(calculateDistanceInKm(queryLocation, restaurantState.location) <= rangeInKm){
-          context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, totalAmountId, pageNumber, numberOfElementPerPage, currentAmountId + 1,
-                                          accResponses :+ getResponse))
-        }
-        else {
-          context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, totalAmountId, pageNumber, numberOfElementPerPage, currentAmountId + 1,
-                                          accResponses))
-        }
-      }
-    case GetRestaurantResponse(None, None) =>
-      context.become(getAllRestaurant(originalSender, queryLocation, rangeInKm, totalAmountId, pageNumber, numberOfElementPerPage, currentAmountId + 1,
-                      accResponses))
     case _ =>
       stash()
   }
 
-
-  def halfwayGetRecommendationCloseToMe(originalSender: ActorRef, rangeInKm: Double, pageNumber: Long, numberOfElementPerPage: Long): Receive = {
+  def halfwayGetRecommendationCloseToMe(originalSender: ActorRef, rangeInKm: Double, pageNumber: Long,
+                                        numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
       getEventsIdsRestaurantType().mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllRestaurant(originalSender, userState.location, rangeInKm, Int.MaxValue, pageNumber, numberOfElementPerPage))
+      context.become(getAllRestaurantState(originalSender, userState.location, rangeInKm, Int.MaxValue, pageNumber,
+                                            numberOfElementPerPage))
 
     case GetUserResponse(None) =>
       originalSender ! GetRecommendationResponse(None)
@@ -159,5 +118,63 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
     val eventsWithSequenceSource = readerDatabaseUtility.getSourceEventSByTag(restaurantType)
     val graph: RunnableGraph[Future[Seq[String]]] = getGraphQueryReader(eventsWithSequenceSource)
     readerDatabaseUtility.runGraph(graph)
+  }
+
+  // Auxiliary methods getRestaurantState
+  def processGetEventsIdsResponseCommand(originalSender: ActorRef, queryLocation: Location, rangeInKm: Double,
+                                         pageNumber: Long, numberOfElementPerPage: Long, ids: Set[String]): Unit = {
+    val currentAmountId: Int = 0
+    val accResponses = List()
+
+    if (ids.nonEmpty) {
+      log.info("getting ids")
+      ids.foreach(id => context.parent ! GetRestaurant(id))
+      context.become(getAllRestaurantState(originalSender, queryLocation, rangeInKm, ids.size, pageNumber,
+                                            numberOfElementPerPage, currentAmountId, accResponses))
+    }
+    else {
+      originalSender ! GetRecommendationResponse(None)
+      unstashAll()
+      context.become(state())
+    }
+  }
+
+  def processGetResponseCommand(originalSender: ActorRef,
+                                queryLocation: Location, rangeInKm: Double, totalAmountId: Int, pageNumber: Long,
+                                numberOfElementPerPage: Long, currentAmountId: Int,
+                                accResponses: List[GetRestaurantResponse], getResponse: GetRestaurantResponse,
+                                restaurantLocation: Option[Location],
+                                none: Boolean): Unit = {
+    log.info("receiving GetResponse from administration.")
+
+    if (currentAmountId + 1 >= totalAmountId) {
+      log.info(s"finishing currentAmountId: ${currentAmountId + 1} of total: $totalAmountId.")
+      if (!none && calculateDistanceInKm(queryLocation, restaurantLocation) <= rangeInKm)
+        {
+          val responses = (accResponses :+ getResponse).slice((pageNumber * numberOfElementPerPage).toInt,
+                                             (pageNumber * numberOfElementPerPage).toInt + numberOfElementPerPage.toInt)
+          originalSender ! GetRecommendationResponse(Some(responses))
+        }
+      else
+        {
+          val responses = accResponses.slice((pageNumber * numberOfElementPerPage).toInt,
+                                             (pageNumber * numberOfElementPerPage).toInt + numberOfElementPerPage.toInt)
+          originalSender ! GetRecommendationResponse(Some(responses))
+        }
+
+      unstashAll()
+      context.become(state())
+    }
+    else {
+      log.info(s"becoming currentAmountId: $currentAmountId of total: $totalAmountId.")
+      if (!none && calculateDistanceInKm(queryLocation, restaurantLocation) <= rangeInKm)
+        context.become(getAllRestaurantState(originalSender, queryLocation, rangeInKm,
+                                              totalAmountId, pageNumber, numberOfElementPerPage, currentAmountId + 1,
+                                               accResponses :+ getResponse))
+      else
+        context.become(getAllRestaurantState(originalSender, queryLocation, rangeInKm,
+          totalAmountId, pageNumber, numberOfElementPerPage, currentAmountId + 1,
+          accResponses))
+    }
   }
 }
