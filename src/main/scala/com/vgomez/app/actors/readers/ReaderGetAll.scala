@@ -16,7 +16,7 @@ import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.abtractions.Abstract.Event.Event
 import com.vgomez.app.actors.abtractions.Abstract.Response.GetResponse
 import com.vgomez.app.actors.readers.ReaderDatabaseUtility.Response._
-import com.vgomez.app.actors.readers.ReaderDatabaseUtility.getGraphReaderUtility
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.getMaterializeGraphReaderUtility
 import com.vgomez.app.actors.readers.ReaderUtility._
 
 import scala.concurrent.Future
@@ -79,7 +79,7 @@ object ReaderGetAll {
       case UserCreated(id) => id
       case _ => ""
     }
-    getGraphReaderUtility(eventsWithSequenceSource, flowMapGetIdFromEvent)
+    getMaterializeGraphReaderUtility(eventsWithSequenceSource, flowMapGetIdFromEvent)
   }
 }
 

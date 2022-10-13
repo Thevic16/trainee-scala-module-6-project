@@ -10,7 +10,7 @@ import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
-import com.vgomez.app.actors.readers.ReaderDatabaseUtility.getGraphReaderUtility
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.getMaterializeGraphReaderUtility
 import com.vgomez.app.domain.DomainModel.Location
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 import com.vgomez.app.actors.readers.ReaderDatabaseUtility.Response._
@@ -39,7 +39,7 @@ object ReaderFilterByLocation {
       case RestaurantCreated(id) => id
       case _ => ""
     }
-    getGraphReaderUtility(eventsWithSequenceSource, flowMapGetIdFromEvent)
+    getMaterializeGraphReaderUtility(eventsWithSequenceSource, flowMapGetIdFromEvent)
   }
 
 }
@@ -111,7 +111,7 @@ class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stas
 
   override def receive: Receive = state()
 
-  // Auxiliary methods
+  // Auxiliary methods ReaderDatabaseUtility
   def getEventsIdsRestaurantType(): Future[GetEventsIdsResponse] = {
     import com.vgomez.app.actors.readers.ReaderGetAll.ActorType.restaurantType
 

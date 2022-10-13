@@ -14,7 +14,7 @@ import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.abtractions.Abstract.Event.Event
 import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
 import com.vgomez.app.actors.readers.ReaderDatabaseUtility.Response._
-import com.vgomez.app.actors.readers.ReaderDatabaseUtility.getGraphReaderUtility
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.getMaterializeGraphReaderUtility
 import com.vgomez.app.domain.DomainModelOperation.restaurantCategoriesIsContainsByQueryCategories
 
 import scala.concurrent.Future
@@ -61,7 +61,7 @@ object ReaderFilterByCategories {
       case RestaurantUpdated(id, _) => id
       case _ => ""
     }
-    getGraphReaderUtility(eventsWithSequenceSource, flowMapGetIdFromEvent)
+    getMaterializeGraphReaderUtility(eventsWithSequenceSource, flowMapGetIdFromEvent)
   }
 }
 

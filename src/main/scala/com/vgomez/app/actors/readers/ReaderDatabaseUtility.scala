@@ -14,7 +14,7 @@ object ReaderDatabaseUtility {
     case class GetEventsIdsResponse(ids: Set[String])
   }
 
-  def getGraphReaderUtility(eventsWithSequenceSource: Source[EventEnvelope, NotUsed],
+  def getMaterializeGraphReaderUtility(eventsWithSequenceSource: Source[EventEnvelope, NotUsed],
                       flow: Flow[Any, String, NotUsed]): RunnableGraph[Future[Seq[String]]] = {
     val eventsSource = eventsWithSequenceSource.map(_.event)
     val sink = Sink.seq[String]
