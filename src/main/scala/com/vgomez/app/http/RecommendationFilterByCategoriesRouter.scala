@@ -22,18 +22,17 @@ import com.vgomez.app.http.validators.{ValidatorGetRecommendationFilterByFavorit
                                           ValidatorRequestWithPagination}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 import com.vgomez.app.http.RouterUtility._
 
 
-class RecommendationFilterByCategoriesRouter(administration: ActorRef)(implicit system: ActorSystem)
+class RecommendationFilterByCategoriesRouter(administration: ActorRef)(implicit system: ActorSystem,
+                                                                       implicit val timeout: Timeout)
   extends GetRecommendationFilterByFavoriteCategoriesRequestJsonProtocol
     with GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol with RestaurantResponseJsonProtocol
      with FailureResponseJsonProtocol with SprayJsonSupport{
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
-  implicit val timeout: Timeout = Timeout(5.seconds)
 
   def getRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String],
                                                   pageNumber: Long,

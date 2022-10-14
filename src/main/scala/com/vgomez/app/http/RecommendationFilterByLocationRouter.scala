@@ -22,17 +22,16 @@ import com.vgomez.app.http.validators.{ValidatorGetRecommendationCloseToLocation
                                         ValidatorRequestWithPagination}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 import com.vgomez.app.http.RouterUtility._
 
 
-class RecommendationFilterByLocationRouter(administration: ActorRef)(implicit system: ActorSystem)
+class RecommendationFilterByLocationRouter(administration: ActorRef)(implicit system: ActorSystem,
+                                                                     implicit val timeout: Timeout)
   extends GetRecommendationCloseToLocationRequestJsonProtocol with GetRecommendationCloseToMeRequestJsonProtocol
     with RestaurantResponseJsonProtocol with FailureResponseJsonProtocol with SprayJsonSupport{
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
-  implicit val timeout: Timeout = Timeout(5.seconds)
 
   def getRecommendationCloseToLocation(latitude: Double, longitude: Double,
                                        rangeInKm: Double, pageNumber: Long,

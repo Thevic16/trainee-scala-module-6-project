@@ -2,7 +2,6 @@ package com.vgomez.app.http
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
 
-import scala.concurrent.duration._
 import akka.util.Timeout
 import akka.http.scaladsl.model.headers.Location
 
@@ -25,12 +24,11 @@ import com.vgomez.app.http.RouterUtility._
 import scala.util.{Failure, Success}
 
 // Review Router.
-class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem)
+class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, implicit val timeout: Timeout)
   extends ReviewCreationRequestJsonProtocol with ReviewUpdateRequestJsonProtocol
     with ReviewResponseJsonProtocol with FailureResponseJsonProtocol with SprayJsonSupport{
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
-  implicit val timeout: Timeout = Timeout(5.seconds)
 
   def getReview(id: String): Future[GetReviewResponse] =
     (administration ? GetReview(id)).mapTo[GetReviewResponse]

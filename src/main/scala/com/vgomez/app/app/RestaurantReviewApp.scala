@@ -17,9 +17,10 @@ import com.vgomez.app.loadDataset.RunLoadDataSetGraph
 
 object RestaurantReviewApp {
 
-  def startHttpServer(administration: ActorRef)(implicit system: ActorSystem): Unit = {
+  def startHttpServer(administration: ActorRef,timeout: Timeout)(implicit system: ActorSystem): Unit = {
     implicit val scheduler: ExecutionContext = system.dispatcher
     implicit val materializer = ActorMaterializer()
+    implicit val timeoutRouter = timeout
 
     val restaurantRouter = new RestaurantRouter(administration)
     val restaurantRoutes = restaurantRouter.routes
@@ -57,7 +58,7 @@ object RestaurantReviewApp {
     implicit val system: ActorSystem = ActorSystem("RestaurantReviewsApp", ConfigFactory.load().getConfig(
                                                                       conf.getString("actor-system-config.path")))
 
-    val timeout: Timeout = Timeout(2.seconds)
+    val timeout: Timeout = Timeout(conf.getInt("actor-system-config.timeout").seconds)
 
     val administration = system.actorOf(Administration.props(system), "administration-system")
 
@@ -71,6 +72,6 @@ object RestaurantReviewApp {
       new RunLoadDataSetGraph(filePath, chuck, maxAmountRow, administration, system, timeout).run()
     }
 
-    startHttpServer(administration)
+    startHttpServer(administration, timeout)
   }
 }

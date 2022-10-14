@@ -13,4 +13,7 @@ object CustomException {
     RuntimeException("This entity is delete in the system.")
 
   case class ValidationFailException(message: String) extends IllegalArgumentException(message)
+
+  case object UnknownConfigurationPathException extends
+    RuntimeException("Unknown Actor system configuration path, please check application.conf actor-system-config section.")
 }

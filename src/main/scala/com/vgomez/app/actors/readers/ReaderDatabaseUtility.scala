@@ -3,15 +3,31 @@ package com.vgomez.app.actors.readers
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
+import akka.persistence.cassandra.query.scaladsl.CassandraReadJournal
 import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Concat, Flow, Keep, RunnableGraph, Sink, Source}
+import com.typesafe.config.ConfigFactory
 import com.vgomez.app.actors.readers.ReaderDatabaseUtility.Response.GetEventsIdsResponse
+import com.vgomez.app.exception.CustomException.UnknownConfigurationPathException
 
 import scala.concurrent.Future
 object ReaderDatabaseUtility {
   object Response {
     case class GetEventsIdsResponse(ids: Set[String])
+  }
+
+  def getReadJournal(system: ActorSystem) = {
+    val conf = ConfigFactory.load()
+    val configurationPath: String = conf.getString("actor-system-config.path")
+
+    if(configurationPath == "localStores") {
+      PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
+    }
+    else if(configurationPath == "cassandra"){
+      PersistenceQuery(system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
+    }
+    else throw UnknownConfigurationPathException
   }
 
   def getMaterializeGraphReaderUtility(eventsWithSequenceSource: Source[EventEnvelope, NotUsed],
@@ -28,7 +44,7 @@ case class ReaderDatabaseUtility(system: ActorSystem) {
   import ReaderDatabaseUtility._
   import system.dispatcher
 
-  val queries = PersistenceQuery(system).readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier)
+  val queries = getReadJournal(system)
   implicit val materializer = ActorMaterializer()(system)
 
   def getSourceEventSByTag(tag: String): Source[EventEnvelope, NotUsed] = {

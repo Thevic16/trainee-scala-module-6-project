@@ -2,7 +2,6 @@ package com.vgomez.app.http
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
 
-import scala.concurrent.duration._
 import akka.util.Timeout
 import akka.http.scaladsl.model.headers.Location
 
@@ -12,7 +11,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.vgomez.app.actors.Restaurant.Command._
 import com.vgomez.app.actors.Restaurant.Response._
-import com.vgomez.app.domain.Transformer._
 import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -26,12 +24,11 @@ import com.vgomez.app.http.RouterUtility._
 import scala.util.{Failure, Success}
 
 // Restaurant Router.
-class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem)
+class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, implicit val timeout: Timeout)
   extends RestaurantCreationRequestJsonProtocol with RestaurantUpdateRequestJsonProtocol
     with RestaurantResponseJsonProtocol with FailureResponseJsonProtocol with SprayJsonSupport{
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
-  implicit val timeout: Timeout = Timeout(5.seconds)
 
   def getRestaurant(id: String): Future[GetRestaurantResponse] =
     (administration ? GetRestaurant(id)).mapTo[GetRestaurantResponse]
