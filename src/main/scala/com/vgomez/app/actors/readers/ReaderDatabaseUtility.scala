@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
 import akka.persistence.cassandra.query.scaladsl.CassandraReadJournal
-import akka.persistence.query.{EventEnvelope, PersistenceQuery, Sequence}
+import akka.persistence.query.{EventEnvelope, Offset, PersistenceQuery}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Concat, Flow, Keep, RunnableGraph, Sink, Source}
 import com.typesafe.config.ConfigFactory
@@ -48,18 +48,18 @@ case class ReaderDatabaseUtility(system: ActorSystem) {
   implicit val materializer = ActorMaterializer()(system)
 
   def getSourceEventSByTag(tag: String): Source[EventEnvelope, NotUsed] = {
-    queries.currentEventsByTag(tag = tag, offset = Sequence(0L))
+    queries.currentEventsByTag(tag = tag, offset = Offset.noOffset)
   }
 
   def getSourceEventSByTagWithPagination(tag: String, pageNumber: Long,
                                          numberOfElementPerPage: Long): Source[EventEnvelope, NotUsed] = {
     queries.currentEventsByTag(tag = tag,
-      offset = Sequence(numberOfElementPerPage * pageNumber)).take(numberOfElementPerPage)
+      offset = Offset.noOffset).drop(numberOfElementPerPage * pageNumber).take(numberOfElementPerPage)
   }
 
   def getSourceEventSByTagSet(set: Set[String]) : Source[EventEnvelope, NotUsed] = {
     val listEventsWithSequenceSource = set.toList.map(tag => queries.currentEventsByTag(
-      tag = tag, offset = Sequence(0L)))
+      tag = tag, offset = Offset.noOffset))
 
     listEventsWithSequenceSource.fold(Source.empty)(Source.combine(_, _)(Concat(_)))
   }

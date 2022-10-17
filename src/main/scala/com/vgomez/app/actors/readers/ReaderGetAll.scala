@@ -232,6 +232,7 @@ class ReaderGetAll(system: ActorSystem) extends PersistentActor with ActorLoggin
   // Auxiliary methods reader database
   def getEventsIdsByActorType(actorType: String, pageNumber: Long,
                            numberOfElementPerPage: Long): Future[GetEventsIdsResponse] = {
+    log.info("running getEventsIdsByActorType")
     val eventsWithSequenceSource = readerDatabaseUtility.getSourceEventSByTagWithPagination(actorType, pageNumber,
                                                                                             numberOfElementPerPage)
     val graph: RunnableGraph[Future[Seq[String]]] = getGraphQueryReader(eventsWithSequenceSource)

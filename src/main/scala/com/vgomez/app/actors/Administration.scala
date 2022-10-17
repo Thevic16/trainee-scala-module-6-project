@@ -8,7 +8,8 @@ import com.vgomez.app.actors.abtractions.Abstract.Command._
 import com.vgomez.app.actors.abtractions.Abstract.Response._
 import com.vgomez.app.actors.abtractions.Abstract.Event._
 import com.vgomez.app.actors.AdministrationUtility._
-import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll, ReaderStarsByRestaurant}
+import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll,
+                                      ReaderStarsByRestaurant}
 import com.vgomez.app.domain.DomainModel.Location
 
 object Administration {
