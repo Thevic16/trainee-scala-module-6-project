@@ -128,7 +128,7 @@ class Restaurant(id: String) extends PersistentActor with Stash{
   def getState(username: String = "", name:String = "", state: String = "",
                city: String = "", postalCode: String = "", location: Location = Location(0, 0),
                categories: Set[String] = Set(), schedule: Schedule = generateNewEmptySchedule()): RestaurantState = {
-    RestaurantState(id, username, name, state, city, postalCode, location, categories, schedule, false)
+    RestaurantState(id, username, name, state, city, postalCode, location, categories, schedule, isDeleted = false)
   }
 
   def getNewState(restaurantInfo: RestaurantInfo): RestaurantState = {

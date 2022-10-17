@@ -106,7 +106,7 @@ class Review(id: String) extends PersistentActor{
 
   def getState(username: String = "", restaurantId: String = "", stars: Int = 0, text: String = "",
                date: String = ""): ReviewState = {
-    ReviewState(id, username, restaurantId, stars, text, date, false)
+    ReviewState(id, username, restaurantId, stars, text, date, isDeleted = false)
   }
 
   def getNewState(reviewInfo: ReviewInfo): ReviewState = {

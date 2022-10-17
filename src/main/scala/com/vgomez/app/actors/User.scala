@@ -107,7 +107,7 @@ class User(username: String) extends PersistentActor with ActorLogging{
 
   def getState(username: String = username, password: String = "", role: Role = Normal,
                location: Location = Location(0,0), favoriteCategories: Set[String] = Set()): UserState = {
-      UserState(username, password, role, location, favoriteCategories, false)
+      UserState(username, password, role, location, favoriteCategories, isDeleted = false)
   }
 
   def getNewState(userInfo: UserInfo): UserState = {

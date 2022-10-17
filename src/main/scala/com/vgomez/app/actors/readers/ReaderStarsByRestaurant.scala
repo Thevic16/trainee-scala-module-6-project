@@ -8,7 +8,11 @@ import akka.persistence.journal.{Tagged, WriteEventAdapter}
 import akka.persistence.query.EventEnvelope
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
+import com.vgomez.app.actors.Review.Command.GetReview
+import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.abtractions.Abstract.Event.Event
+import com.vgomez.app.actors.readers.ReaderDatabaseUtility.Response.GetEventsIdsResponse
+
 import scala.concurrent.Future
 
 object ReaderStarsByRestaurant {
@@ -17,28 +21,27 @@ object ReaderStarsByRestaurant {
 
   // commands
   object Command {
-    case class CreateReview(id: String, restaurantId: String, stars: Int)
-    case class UpdateReview(id: String, restaurantId: String, stars: Int)
+    case class CreateReview(id: String, restaurantId: String)
+    case class UpdateReview(id: String, restaurantId: String)
     case class GetStarsByRestaurant(restaurantId: String)
   }
 
   object Response {
-    case class GetAllStarsByRestaurantResponse(starsList : Seq[Int])
     case class GetStarsByRestaurantResponse(stars: Int)
   }
 
   // events
-  case class ReviewCreated(id: String, restaurantId: String, stars: Int) extends Event
-  case class ReviewUpdated(id: String, restaurantId: String, stars: Int) extends Event
+  case class ReviewCreated(id: String, restaurantId: String) extends Event
+  case class ReviewUpdated(id: String, restaurantId: String) extends Event
 
   def props(system: ActorSystem): Props =  Props(new ReaderStarsByRestaurant(system))
 
   // WriteEventAdapter
   class ReaderStarByRestaurantAdapter extends WriteEventAdapter {
     override def toJournal(event: Any): Any = event match {
-      case ReviewCreated(_, restaurantId,_) =>
+      case ReviewCreated(_, restaurantId) =>
         Tagged(event, Set(restaurantId))
-      case ReviewUpdated(_, restaurantId, _) =>
+      case ReviewUpdated(_, restaurantId) =>
         Tagged(event, Set(restaurantId))
       case _ =>
         event
@@ -47,22 +50,22 @@ object ReaderStarsByRestaurant {
   }
 
   def runGraphQueryReader(eventsWithSequenceSource: Source[EventEnvelope, NotUsed], materializer: Materializer,
-                          queryRestaurantId: String): Future[Seq[Int]] = {
+                          queryRestaurantId: String): Future[Seq[String]] = {
     val eventsSource = eventsWithSequenceSource.map(_.event)
 
     val flowFilter = Flow[Any].filter {
-      case ReviewCreated(_, restaurantId, _) if restaurantId == queryRestaurantId => true
-      case ReviewUpdated(_, restaurantId, _) if restaurantId == queryRestaurantId => true
+      case ReviewCreated(_, restaurantId) if restaurantId == queryRestaurantId => true
+      case ReviewUpdated(_, restaurantId) if restaurantId == queryRestaurantId => true
       case _ => false
     }
 
     val flowMap = Flow[Any].map {
-      case ReviewCreated(_, _, stars) => stars
-      case ReviewUpdated(_, _, stars) => stars
-      case _ => 0
+      case ReviewCreated(id, _) => id
+      case ReviewUpdated(id, _) => id
+      case _ => ""
     }
 
-    val sink = Sink.seq[Int]
+    val sink = Sink.seq[String]
     eventsSource.via(flowFilter).via(flowMap).runWith(sink)(materializer)
   }
 
@@ -84,43 +87,44 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
   override def persistenceId: String = "reader-starts-by-restaurant"
 
   def state(readerStarsByRestaurantState: ReaderStarsByRestaurantState): Receive = {
-    case CreateReview(id, restaurantId, stars) =>
+    case CreateReview(id, restaurantId) =>
       val newState: ReaderStarsByRestaurantState = readerStarsByRestaurantState.copy(
                                                           reviews = readerStarsByRestaurantState.reviews + id)
-      persist(ReviewCreated(id, restaurantId, stars)) { _ =>
+      persist(ReviewCreated(id, restaurantId)) { _ =>
         log.info(s"ReaderStarsByRestaurant create a review with id: $id")
         context.become(state(newState))
       }
 
-    case UpdateReview(id, categories, stars) =>
-      persist(ReviewUpdated(id, categories, stars)) { _ =>
+    case UpdateReview(id, categories) =>
+      persist(ReviewUpdated(id, categories)) { _ =>
         log.info(s"ReaderStarsByRestaurant update a review with id: $id")
       }
 
     case GetStarsByRestaurant(restaurantId) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByFavoriteCategories command.")
-      getAllStarsByRestaurant(restaurantId).mapTo[GetAllStarsByRestaurantResponse].pipeTo(self)
+      getReviewsIdsByRestaurant(restaurantId).mapTo[GetEventsIdsResponse].pipeTo(self)
       unstashAll()
-      context.become(getStartByRestaurantState(readerStarsByRestaurantState, sender()))
+      context.become(getStartByRestaurantState(readerStarsByRestaurantState, sender(), restaurantId, Int.MaxValue))
 
     case _ =>
       stash()
   }
   
   def getStartByRestaurantState(readerStarsByRestaurantState: ReaderStarsByRestaurantState,
-                                originalSender: ActorRef): Receive = {
+                                originalSender: ActorRef, queryRestaurantId: String,
+                                totalAmountId: Int, currentAmountId: Int = 0,
+                                accResponses: List[GetReviewResponse] = List()): Receive = {
 
-    case GetAllStarsByRestaurantResponse(starsList) =>
-      log.info("getStartByRestaurant getting startsList.")
-      if(starsList.nonEmpty){
-        val startAVG: Int = starsList.sum / starsList.length
-        originalSender ! GetStarsByRestaurantResponse(startAVG)
-      }
-      else
-        originalSender ! GetStarsByRestaurantResponse(0)
+    case GetEventsIdsResponse(idsReviews) =>
+      processGetEventsIdsResponseCommand(readerStarsByRestaurantState, originalSender,queryRestaurantId, idsReviews)
 
-      unstashAll()
-      context.become(state(readerStarsByRestaurantState))
+    case getResponse@GetReviewResponse(Some(reviewState)) =>
+      processGetResponseCommand(readerStarsByRestaurantState, originalSender, queryRestaurantId, totalAmountId,
+        currentAmountId, accResponses, getResponse, Some(reviewState.restaurantId), none = false)
+
+    case getResponse@GetReviewResponse(None) =>
+      processGetResponseCommand(readerStarsByRestaurantState, originalSender, queryRestaurantId, totalAmountId,
+        currentAmountId, accResponses, getResponse, None, none = false)
 
     case _ =>
       stash()
@@ -130,23 +134,78 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
   override def receiveCommand: Receive = state(ReaderStarsByRestaurantState(Set()))
 
   override def receiveRecover: Receive = {
-    case ReviewCreated(id, _, _) =>
+    case ReviewCreated(id, _) =>
       log.info(s"ReaderStarsByRestaurant has recovered a review with id: $id")
       readerStarsByRestaurantRecoveryState = readerStarsByRestaurantRecoveryState.copy(
                                                             reviews = readerStarsByRestaurantRecoveryState.reviews + id)
 
       context.become(state(readerStarsByRestaurantRecoveryState))
 
-    case ReviewUpdated(id, _, _) => log.info(s"ReaderFilterByCategories has recovered a update " +
+    case ReviewUpdated(id, _) => log.info(s"ReaderFilterByCategories has recovered a update " +
       s"for review with id: $id")
   }
 
   // Auxiliary methods ReaderDatabaseUtility
-  def getAllStarsByRestaurant(restaurantId: String): Future[GetAllStarsByRestaurantResponse] = {
+  def getReviewsIdsByRestaurant(restaurantId: String): Future[GetEventsIdsResponse] = {
     val eventsWithSequenceSource = readerDatabaseUtility.getSourceEventSByTag(restaurantId)
-    val ranGraph: Future[Seq[Int]] = runGraphQueryReader(eventsWithSequenceSource, readerDatabaseUtility.materializer,
+    val ranGraph: Future[Seq[String]] = runGraphQueryReader(eventsWithSequenceSource, readerDatabaseUtility.materializer,
                                                          restaurantId)
-    ranGraph.map(GetAllStarsByRestaurantResponse)
+    ranGraph.map(ids => GetEventsIdsResponse(ids.toSet))
+  }
+
+  // Auxiliary methods getStartByRestaurantState.
+  def processGetEventsIdsResponseCommand(readerStarsByRestaurantState: ReaderStarsByRestaurantState,
+                                         originalSender: ActorRef, queryRestaurantId: String, ids: Set[String]): Unit = {
+    val currentAmountId: Int = 0
+    val accResponses = List()
+
+    if (ids.nonEmpty) {
+      log.info("getting ids")
+      ids.foreach(id => context.parent ! GetReview(id))
+      context.become(getStartByRestaurantState(readerStarsByRestaurantState, originalSender,queryRestaurantId,
+                                                ids.size, currentAmountId, accResponses))
+    }
+    else {
+      originalSender ! GetStarsByRestaurantResponse(0)
+      unstashAll()
+      context.become(state(readerStarsByRestaurantState))
+    }
+  }
+
+  def processGetResponseCommand(readerStarsByRestaurantState: ReaderStarsByRestaurantState, originalSender: ActorRef,
+                                queryRestaurantId: String, totalAmountId: Int, currentAmountId: Int,
+                                accResponses: List[GetReviewResponse], getResponse: GetReviewResponse,
+                                reviewRestaurantId: Option[String], none: Boolean): Unit = {
+
+    log.info("receiving GetResponse from administration.")
+
+    if (currentAmountId + 1 >= totalAmountId) {
+      log.info(s"finishing currentAmountId: ${currentAmountId + 1} of total: $totalAmountId.")
+      if (!none && queryRestaurantId == reviewRestaurantId.getOrElse("")) {
+        val starsList: List[Int] = (accResponses :+ getResponse).map(getReviewResponse =>
+                                                                          getReviewResponse.maybeReviewState.get.stars)
+        val startAVG: Int = starsList.sum / starsList.length
+        originalSender ! GetStarsByRestaurantResponse(startAVG)
+      } else {
+        val starsList: List[Int] = (accResponses).map(getReviewResponse =>
+          getReviewResponse.maybeReviewState.get.stars)
+
+        val startAVG: Int = starsList.sum / starsList.length
+        originalSender ! GetStarsByRestaurantResponse(startAVG)
+      }
+
+      unstashAll()
+      context.become(state(readerStarsByRestaurantState))
+    }
+    else {
+      log.info(s"becoming currentAmountId: $currentAmountId of total: $totalAmountId.")
+      if (!none && queryRestaurantId == reviewRestaurantId.getOrElse(""))
+        context.become(getStartByRestaurantState(readerStarsByRestaurantState, originalSender, queryRestaurantId,
+          totalAmountId, currentAmountId + 1, accResponses :+ getResponse))
+      else
+        context.become(getStartByRestaurantState(readerStarsByRestaurantState, originalSender, queryRestaurantId,
+          totalAmountId, currentAmountId + 1, accResponses))
+    }
   }
 
 }

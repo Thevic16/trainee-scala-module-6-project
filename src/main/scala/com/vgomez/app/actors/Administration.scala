@@ -235,8 +235,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       case CreateReview(_, reviewInfo) =>
         // sending message to readers.
         readerGetAll ! ReaderGetAll.Command.CreateReview(identifier)
-        readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.CreateReview(identifier, reviewInfo.restaurantId,
-          reviewInfo.stars)
+        readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.CreateReview(identifier, reviewInfo.restaurantId)
 
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "review", ReviewCreated(identifier))
@@ -275,8 +274,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
               log.info(s"UpdateRestaurant Command for id: $id has been handle by Administration.")
 
             case UpdateReview(id, reviewInfo) =>
-              readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.UpdateReview(id, reviewInfo.restaurantId,
-                reviewInfo.stars)
+              readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.UpdateReview(id, reviewInfo.restaurantId)
               log.info(s"UpdateReview Command for id: $id has been handle by Administration.")
 
             case UpdateUser(userInfo) => log.info(s"UpdateUser Command for username: ${userInfo.username} " +
