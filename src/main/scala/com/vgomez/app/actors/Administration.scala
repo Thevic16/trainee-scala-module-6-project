@@ -18,7 +18,7 @@ object Administration {
                                  users: Map[String, ActorRef])
   // commands
   object Command {
-    case class GetStartByRestaurant(restaurantId: String)
+    case class GetStarsByRestaurant(restaurantId: String)
     case class GetAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long)
     case class GetAllReview(pageNumber: Long, numberOfElementPerPage: Long)
     case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)
@@ -70,9 +70,9 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     case getCommand@GetRestaurant(_) =>
       processGetCommand(getCommand, administrationState)
 
-    case GetStartByRestaurant(restaurantId) =>
+    case GetStarsByRestaurant(restaurantId) =>
       log.info("Administration receive a GetStartByRestaurant Command.")
-      readerStarsByRestaurant.forward(ReaderStarsByRestaurant.Command.GetStartByRestaurant(restaurantId))
+      readerStarsByRestaurant.forward(ReaderStarsByRestaurant.Command.GetStarsByRestaurant(restaurantId))
 
     case GetAllRestaurant(pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetAllRestaurant command.")

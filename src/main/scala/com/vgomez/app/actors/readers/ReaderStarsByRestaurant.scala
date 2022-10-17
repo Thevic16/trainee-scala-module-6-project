@@ -19,12 +19,12 @@ object ReaderStarsByRestaurant {
   object Command {
     case class CreateReview(id: String, restaurantId: String, stars: Int)
     case class UpdateReview(id: String, restaurantId: String, stars: Int)
-    case class GetStartByRestaurant(restaurantId: String)
+    case class GetStarsByRestaurant(restaurantId: String)
   }
 
   object Response {
     case class GetAllStarsByRestaurantResponse(starsList : Seq[Int])
-    case class GetStartByRestaurantResponse(stars: Int)
+    case class GetStarsByRestaurantResponse(stars: Int)
   }
 
   // events
@@ -97,7 +97,7 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
         log.info(s"ReaderStarsByRestaurant update a review with id: $id")
       }
 
-    case GetStartByRestaurant(restaurantId) =>
+    case GetStarsByRestaurant(restaurantId) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByFavoriteCategories command.")
       getAllStarsByRestaurant(restaurantId).mapTo[GetAllStarsByRestaurantResponse].pipeTo(self)
       unstashAll()
@@ -114,10 +114,10 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends PersistentActor with 
       log.info("getStartByRestaurant getting startsList.")
       if(starsList.nonEmpty){
         val startAVG: Int = starsList.sum / starsList.length
-        originalSender ! GetStartByRestaurantResponse(startAVG)
+        originalSender ! GetStarsByRestaurantResponse(startAVG)
       }
       else
-        originalSender ! GetStartByRestaurantResponse(0)
+        originalSender ! GetStarsByRestaurantResponse(0)
 
       unstashAll()
       context.become(state(readerStarsByRestaurantState))

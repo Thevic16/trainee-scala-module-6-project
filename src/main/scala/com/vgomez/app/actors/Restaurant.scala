@@ -1,14 +1,14 @@
 package com.vgomez.app.actors
 import akka.actor.{ActorRef, Props, Stash}
 import akka.persistence.PersistentActor
-import com.vgomez.app.actors.Administration.Command.GetStartByRestaurant
+import com.vgomez.app.actors.Administration.Command.GetStarsByRestaurant
 
 import scala.util.{Failure, Success, Try}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
 import com.vgomez.app.actors.abtractions.Abstract.Command._
 import com.vgomez.app.actors.abtractions.Abstract.Response._
-import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStartByRestaurantResponse
+import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsByRestaurantResponse
 import com.vgomez.app.exception.CustomException.EntityIsDeletedException
 
 
@@ -60,7 +60,7 @@ class Restaurant(id: String) extends PersistentActor with Stash{
       if (restaurantState.isDeleted)
         sender() ! GetRestaurantResponse(None, None)
       else {
-        context.parent ! GetStartByRestaurant(id)
+        context.parent ! GetStarsByRestaurant(id)
         unstashAll()
         context.become(getStarsState(restaurantState, sender()))
       }
@@ -102,7 +102,7 @@ class Restaurant(id: String) extends PersistentActor with Stash{
   }
 
   def getStarsState(restaurantState: RestaurantState, originalSender: ActorRef): Receive = {
-    case GetStartByRestaurantResponse(starts) =>
+    case GetStarsByRestaurantResponse(starts) =>
       originalSender ! GetRestaurantResponse(Some(restaurantState), Some(starts))
 
       unstashAll()
