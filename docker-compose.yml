@@ -1,4 +1,16 @@
 services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      - "TZ=America/New_York"
+      - "POSTGRES_USER=docker"
+      - "POSTGRES_PASSWORD=docker"
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./sql:/docker-entrypoint-initdb.d"
+
   cassandra:
     image: cassandra:3
     container_name: cassandra
