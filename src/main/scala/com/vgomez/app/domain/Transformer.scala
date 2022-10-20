@@ -82,6 +82,7 @@ object Transformer extends SimpleSchedulerJsonProtocol{
     val endHour: Hour = schedule.schedulesForDays(dayWeek).endHour
     s"${startHour.hr}:${startHour.minutes}-${endHour.hr}:${endHour.minutes}"
   }
+
   def transformScheduleToSimpleScheduler(schedule: Schedule): SimpleScheduler = {
     SimpleScheduler(monday = transformScheduleDayWeekToString(schedule,Monday),
       tuesday = transformScheduleDayWeekToString(schedule, Tuesday),
@@ -104,6 +105,25 @@ object Transformer extends SimpleSchedulerJsonProtocol{
     role match {
       case Admin => "admin"
       case Normal => "normal"
+    }
+  }
+
+  object FromDomainToRawData {
+    def transformScheduleToScheduleString(schedule: Schedule): String = {
+      val simpleScheduler = SimpleScheduler(monday = transformScheduleDayToString(schedule.schedulesForDays(Monday)),
+        tuesday = transformScheduleDayToString(schedule.schedulesForDays(Tuesday)),
+        wednesday = transformScheduleDayToString(schedule.schedulesForDays(Wednesday)),
+        thursday = transformScheduleDayToString(schedule.schedulesForDays(Thursday)),
+        friday = transformScheduleDayToString(schedule.schedulesForDays(Friday)),
+        saturday = transformScheduleDayToString(schedule.schedulesForDays(Saturday)),
+        sunday = transformScheduleDayToString(schedule.schedulesForDays(Sunday)))
+
+      simpleScheduler.toJson.toString()
+    }
+
+    def transformScheduleDayToString(scheduleDay: ScheduleDay): String = {
+      s"${scheduleDay.startHour.hr}:${scheduleDay.startHour.minutes}-" +
+        s"${scheduleDay.endHour.hr}:${scheduleDay.endHour.minutes}"
     }
   }
 
