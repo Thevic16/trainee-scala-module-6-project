@@ -10,6 +10,7 @@ import com.vgomez.app.actors.abtractions.Abstract.Event._
 import com.vgomez.app.actors.AdministrationUtility._
 import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll,
                                       ReaderStarsByRestaurant}
+import com.vgomez.app.actors.writers.WriterToIndexDatabase
 import com.vgomez.app.domain.DomainModel.Location
 
 object Administration {
@@ -60,6 +61,9 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                           "reader-filter-by-location")
   val readerStarsByRestaurant = context.actorOf(ReaderStarsByRestaurant.props(system),
                                         "reader-stars-by-restaurant")
+
+  val writerToIndexDatabase = context.actorOf(WriterToIndexDatabase.props(system), "writer-to-index-database")
+
   // for state recovery
   var administrationRecoveryState = AdministrationState(Map(), Map(), Map())
 
@@ -225,24 +229,27 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                            newStateAdministrationState: AdministrationState): Unit = {
     createCommand match {
       case CreateRestaurant(_, restaurantInfo) =>
-        // sending message to readers.
-        readerGetAll ! ReaderGetAll.Command.CreateRestaurant(identifier)
-        readerFilterByCategories ! ReaderFilterByCategories.Command.CreateRestaurant(identifier, restaurantInfo.categories)
+        // sending message to writer.
+        //readerGetAll ! ReaderGetAll.Command.CreateRestaurant(identifier)
+        //readerFilterByCategories ! ReaderFilterByCategories.Command.CreateRestaurant(identifier, restaurantInfo.categories)
+        writerToIndexDatabase ! WriterToIndexDatabase.Command.CreateRestaurant(identifier, restaurantInfo)
 
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "restaurant", RestaurantCreated(identifier))
 
       case CreateReview(_, reviewInfo) =>
-        // sending message to readers.
-        readerGetAll ! ReaderGetAll.Command.CreateReview(identifier)
-        readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.CreateReview(identifier, reviewInfo.restaurantId)
+        // sending message to writer.
+        //readerGetAll ! ReaderGetAll.Command.CreateReview(identifier)
+        //readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.CreateReview(identifier, reviewInfo.restaurantId)
+        writerToIndexDatabase ! WriterToIndexDatabase.Command.CreateReview(identifier, reviewInfo)
 
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "review", ReviewCreated(identifier))
 
-      case CreateUser(_) =>
-        // sending message to reader.
-        readerGetAll ! ReaderGetAll.Command.CreateUser(identifier)
+      case CreateUser(userInfo) =>
+        // sending message to writer.
+        //readerGetAll ! ReaderGetAll.Command.CreateUser(identifier)
+        writerToIndexDatabase ! WriterToIndexDatabase.Command.CreateUser(userInfo)
 
         helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "user", UserCreated(identifier))
@@ -269,16 +276,24 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
           updateCommand match {
             case UpdateRestaurant(id, restaurantInfo) =>
-              readerFilterByCategories ! ReaderFilterByCategories.Command.UpdateRestaurant(id,
-                                                                                            restaurantInfo.categories)
+              // sending message to writer.
+              //readerFilterByCategories ! ReaderFilterByCategories.Command.UpdateRestaurant(id, restaurantInfo.categories)
+              writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateRestaurant(id, restaurantInfo)
+
               log.info(s"UpdateRestaurant Command for id: $id has been handle by Administration.")
 
             case UpdateReview(id, reviewInfo) =>
-              readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.UpdateReview(id, reviewInfo.restaurantId)
+              // sending message to writer.
+              //readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.UpdateReview(id, reviewInfo.restaurantId)
+              writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateReview(id, reviewInfo)
+
               log.info(s"UpdateReview Command for id: $id has been handle by Administration.")
 
-            case UpdateUser(userInfo) => log.info(s"UpdateUser Command for username: ${userInfo.username} " +
-              s"has been handle by Administration.")
+            case UpdateUser(userInfo) =>
+              // sending message to writer.
+              writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateUser(userInfo)
+
+              log.info(s"UpdateUser Command for username: ${userInfo.username} has been handle by Administration.")
           }
 
       case None =>
@@ -302,6 +317,21 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     actorRefOption match {
       case Some(actorRef) =>
         actorRef.forward(deleteCommand)
+
+        deleteCommand match {
+          case DeleteRestaurant(id) =>
+            writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteRestaurant(id)
+            log.info(s"DeleteRestaurant Command for id: $id has been handle by Administration.")
+
+          case DeleteReview(id) =>
+            writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteReview(id)
+            log.info(s"DeleteReview Command for id: $id has been handle by Administration.")
+
+          case DeleteUser(username) =>
+            writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteReview(username)
+            log.info(s"DeleteUser Command for username: $username has been handle by Administration.")
+        }
+
       case None =>
         sender() ! DeleteResponse(Failure(IdentifierNotFoundException()))
     }

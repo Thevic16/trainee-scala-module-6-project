@@ -1,7 +1,7 @@
-package com.vgomez.app.data.indexDatabase
+package com.vgomez.app.data.database
 
-import com.vgomez.app.data.indexDatabase.Model._
-import com.vgomez.app.data.indexDatabase.Table.{RestaurantTable, restaurantTable}
+import com.vgomez.app.data.database.Model._
+import com.vgomez.app.data.database.Table.{RestaurantTable, restaurantTable}
 import com.vgomez.app.domain.DomainModelOperation.rangeInKmToDegrees
 
 import scala.concurrent.Future

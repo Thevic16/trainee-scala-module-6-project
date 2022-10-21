@@ -1,4 +1,4 @@
-package com.vgomez.app.data.loadDataset
+package com.vgomez.app.data.dataset
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer

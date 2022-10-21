@@ -14,7 +14,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.server.Directives._
 import com.typesafe.config.ConfigFactory
-import com.vgomez.app.data.loadDataset.RunLoadDataSetGraph
+import com.vgomez.app.data.dataset.RunLoadDataSetGraph
 
 object RestaurantReviewApp {
 

@@ -1,4 +1,4 @@
-package com.vgomez.app.data.indexDatabase
+package com.vgomez.app.data.database
 
 import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, Future}

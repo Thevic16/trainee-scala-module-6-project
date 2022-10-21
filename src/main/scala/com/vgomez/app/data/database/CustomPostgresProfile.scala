@@ -1,4 +1,4 @@
-package com.vgomez.app.data.indexDatabase
+package com.vgomez.app.data.database
 
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.github.tminglei.slickpg._

@@ -1,7 +1,7 @@
 package com.vgomez.app.actors.readers
 
 import akka.NotUsed
-import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import akka.persistence.query.EventEnvelope
 import akka.stream.scaladsl.{Flow, RunnableGraph, Source}
@@ -44,7 +44,7 @@ object ReaderFilterByLocation {
 
 }
 
-class ReaderFilterByLocation(system: ActorSystem) extends ActorLogging with Stash {
+class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLogging with Stash {
 
   import ReaderFilterByLocation._
   import Command._
