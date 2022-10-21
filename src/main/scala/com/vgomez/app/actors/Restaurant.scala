@@ -18,8 +18,8 @@ object Restaurant {
   case class RestaurantInfo(username: String , name: String, state: String, city: String, postalCode: String,
                             location: Location, categories: Set[String], schedule: Schedule)
 
-  case class RestaurantState(id: String, username: String,  name: String, state: String, city: String, postalCode: String,
-                             location: Location, categories: Set[String], schedule: Schedule,
+  case class RestaurantState(id: String, index: Int,  username: String,  name: String, state: String, city: String,
+                             postalCode: String, location: Location, categories: Set[String], schedule: Schedule,
                              isDeleted: Boolean)
 
   // commands
@@ -44,11 +44,11 @@ object Restaurant {
     case class UpdateRestaurantResponse(maybeRestaurantState: Try[RestaurantState]) extends UpdateResponse
   }
 
-  def props(id: String): Props =  Props(new Restaurant(id))
+  def props(id: String, index: Int): Props =  Props(new Restaurant(id, index))
 
 }
 
-class Restaurant(id: String) extends PersistentActor with Stash{
+class Restaurant(id: String, index: Int) extends PersistentActor with Stash{
   import Restaurant._
   import Command._
   import Response._
@@ -128,7 +128,8 @@ class Restaurant(id: String) extends PersistentActor with Stash{
   def getState(username: String = "", name:String = "", state: String = "",
                city: String = "", postalCode: String = "", location: Location = Location(0, 0),
                categories: Set[String] = Set(), schedule: Schedule = generateNewEmptySchedule()): RestaurantState = {
-    RestaurantState(id, username, name, state, city, postalCode, location, categories, schedule, isDeleted = false)
+    RestaurantState(id, index, username, name, state, city, postalCode, location, categories, schedule,
+      isDeleted = false)
   }
 
   def getNewState(restaurantInfo: RestaurantInfo): RestaurantState = {

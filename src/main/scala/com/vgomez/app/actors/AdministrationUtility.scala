@@ -19,7 +19,7 @@ object AdministrationUtility {
 
   // Get Commands relate
   def getActorRefOptionByGetCommand(getCommand: GetCommand,
-                                    administrationState: AdministrationState): Option[ActorRef] = {
+                                    administrationState: AdministrationState): Option[(Int, ActorRef)] = {
     getCommand match {
       case GetRestaurant(id) => administrationState.restaurants.get(id)
       case GetReview(id) => administrationState.reviews.get(id)
@@ -46,7 +46,7 @@ object AdministrationUtility {
   }
 
   def getActorRefOptionByCreateCommand(createCommand: CreateCommand, identifier: String,
-                                       administrationState: AdministrationState): Option[ActorRef] = {
+                                       administrationState: AdministrationState): Option[(Int, ActorRef)] = {
     createCommand match {
       case CreateRestaurant(_, _) => administrationState.restaurants.get(identifier)
       case CreateReview(_, _) => administrationState.reviews.get(identifier)
@@ -58,21 +58,29 @@ object AdministrationUtility {
                                  administrationState: AdministrationState): AdministrationState = {
     createCommand match {
       case CreateRestaurant(_, _) => administrationState.copy(
-        restaurants = administrationState.restaurants + (identifier -> newActorRef))
+        restaurants = administrationState.restaurants + (identifier -> (administrationState.currentRestaurantIndex, newActorRef)),
+        currentRestaurantIndex = administrationState.currentRestaurantIndex + 1)
 
       case CreateReview(_, _) => administrationState.copy(
-        reviews = administrationState.reviews + (identifier -> newActorRef))
+        reviews = administrationState.reviews + (identifier -> (administrationState.currentReviewIndex, newActorRef)),
+        currentReviewIndex = administrationState.currentReviewIndex + 1)
 
       case CreateUser(_) => administrationState.copy(
-        users = administrationState.users + (identifier -> newActorRef))
+        users = administrationState.users + (identifier -> (administrationState.currentUserIndex, newActorRef)),
+        currentUserIndex = administrationState.currentUserIndex + 1)
     }
   }
 
-  def getNewActorRefByCreateCommand(context: ActorContext, createCommand: CreateCommand, identifier: String): ActorRef = {
+  def getNewActorRefByCreateCommand(context: ActorContext, administrationState: AdministrationState,
+                                    createCommand: CreateCommand, identifier: String): ActorRef = {
     createCommand match {
-      case CreateRestaurant(_, _) => context.actorOf(Restaurant.props(identifier), identifier)
-      case CreateReview(_, _) => context.actorOf(Review.props(identifier), identifier)
-      case CreateUser(_) => context.actorOf(User.props(identifier), identifier)
+      case CreateRestaurant(_, _) => context.actorOf(Restaurant.props(identifier,
+                                                      administrationState.currentRestaurantIndex), identifier)
+
+      case CreateReview(_, _) => context.actorOf(Review.props(identifier,
+                                                                    administrationState.currentReviewIndex), identifier)
+
+      case CreateUser(_) => context.actorOf(User.props(identifier, administrationState.currentUserIndex), identifier)
     }
   }
 
@@ -87,7 +95,7 @@ object AdministrationUtility {
   }
 
   def getActorRefOptionByUpdateCommand(updateCommand: UpdateCommand, identifier: String,
-                                       administrationState: AdministrationState): Option[ActorRef] = {
+                                       administrationState: AdministrationState): Option[(Int, ActorRef)] = {
     updateCommand match {
       case UpdateRestaurant(_, _) => administrationState.restaurants.get(identifier)
       case UpdateReview(_, _) => administrationState.reviews.get(identifier)
@@ -114,7 +122,7 @@ object AdministrationUtility {
 
   // Delete Command related.
   def getActorRefOptionByDeleteCommand(deleteCommand: DeleteCommand,
-                                       administrationState: AdministrationState): Option[ActorRef] = {
+                                       administrationState: AdministrationState): Option[(Int, ActorRef)] = {
     deleteCommand match {
       case DeleteRestaurant(id) => administrationState.restaurants.get(id)
       case DeleteReview(id) => administrationState.reviews.get(id)

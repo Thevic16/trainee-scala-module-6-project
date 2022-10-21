@@ -11,16 +11,16 @@ import com.vgomez.app.data.database.Operation._
 object WriterToIndexDatabase {
 
   object Command {
-    case class CreateRestaurant(id: String, restaurantInfo: RestaurantInfo)
-    case class UpdateRestaurant(id: String, restaurantInfo: RestaurantInfo)
+    case class CreateRestaurant(id: String, index: Int, restaurantInfo: RestaurantInfo)
+    case class UpdateRestaurant(id: String, index: Int, restaurantInfo: RestaurantInfo)
     case class DeleteRestaurant(id: String)
 
-    case class CreateReview(id: String, reviewInfo: ReviewInfo)
-    case class UpdateReview(id: String, reviewInfo: ReviewInfo)
+    case class CreateReview(id: String, index: Int, reviewInfo: ReviewInfo)
+    case class UpdateReview(id: String, index: Int, reviewInfo: ReviewInfo)
     case class DeleteReview(id: String)
 
-    case class CreateUser(userInfo: UserInfo)
-    case class UpdateUser(userInfo: UserInfo)
+    case class CreateUser(index: Int, userInfo: UserInfo)
+    case class UpdateUser(index: Int, userInfo: UserInfo)
     case class DeleteUser(username: String)
   }
 
@@ -33,29 +33,29 @@ class WriterToIndexDatabase(system: ActorSystem) extends Actor with ActorLogging
   import system.dispatcher
 
   override def receive: Receive = {
-    case CreateRestaurant(id , restaurantInfo) =>
-      insertRestaurantModel(getRestaurantModelByRestaurantInfo(id, restaurantInfo)).mapTo[Int].pipeTo(self)
+    case CreateRestaurant(id, index, restaurantInfo) =>
+      insertRestaurantModel(getRestaurantModelByRestaurantInfo(id, index, restaurantInfo)).mapTo[Int].pipeTo(self)
 
-    case UpdateRestaurant(id , restaurantInfo) =>
-      updateRestaurantModel(id, getRestaurantModelByRestaurantInfo(id, restaurantInfo)).mapTo[Int].pipeTo(self)
+    case UpdateRestaurant(id, index, restaurantInfo) =>
+      updateRestaurantModel(id, getRestaurantModelByRestaurantInfo(id, index, restaurantInfo)).mapTo[Int].pipeTo(self)
 
     case DeleteRestaurant(id) =>
       deleteRestaurantModel(id).mapTo[Int].pipeTo(self)
 
-    case CreateReview(id, reviewInfo) =>
-      insertReviewModel(getReviewModelByReviewInfo(id, reviewInfo)).mapTo[Int].pipeTo(self)
+    case CreateReview(id, index, reviewInfo) =>
+      insertReviewModel(getReviewModelByReviewInfo(id, index, reviewInfo)).mapTo[Int].pipeTo(self)
 
-    case UpdateReview(id, reviewInfo) =>
-      updateReviewModel(id, getReviewModelByReviewInfo(id, reviewInfo)).mapTo[Int].pipeTo(self)
+    case UpdateReview(id, index, reviewInfo) =>
+      updateReviewModel(id, getReviewModelByReviewInfo(id, index, reviewInfo)).mapTo[Int].pipeTo(self)
 
     case DeleteReview(id) =>
       deleteRestaurantModel(id).mapTo[Int].pipeTo(self)
 
-    case CreateUser(userInfo) =>
-      insertUserModel(getUserModelByUserInfo(userInfo)).mapTo[Int].pipeTo(self)
+    case CreateUser(index, userInfo) =>
+      insertUserModel(getUserModelByUserInfo(index, userInfo)).mapTo[Int].pipeTo(self)
 
-    case UpdateUser(userInfo) =>
-      updateUserModel(userInfo.username, getUserModelByUserInfo(userInfo)).mapTo[Int].pipeTo(self)
+    case UpdateUser(index, userInfo) =>
+      updateUserModel(userInfo.username, getUserModelByUserInfo(index, userInfo)).mapTo[Int].pipeTo(self)
 
     case DeleteUser(username) =>
       deleteUserModel(username).mapTo[Int].pipeTo(self)
@@ -65,19 +65,19 @@ class WriterToIndexDatabase(system: ActorSystem) extends Actor with ActorLogging
   }
 
 
-  def getRestaurantModelByRestaurantInfo(id: String, restaurantInfo: RestaurantInfo): RestaurantModel = {
-    RestaurantModel(None, id, restaurantInfo.username, restaurantInfo.name,
+  def getRestaurantModelByRestaurantInfo(id: String, index: Int, restaurantInfo: RestaurantInfo): RestaurantModel = {
+    RestaurantModel(Some(index), id, restaurantInfo.username, restaurantInfo.name,
       restaurantInfo.state, restaurantInfo.city, restaurantInfo.postalCode, restaurantInfo.location.latitude,
       restaurantInfo.location.longitude, restaurantInfo.categories.toList, restaurantInfo.schedule)
   }
 
-  def getReviewModelByReviewInfo(id: String, reviewInfo: ReviewInfo): ReviewModel = {
-    ReviewModel(None, id, reviewInfo.username, reviewInfo.restaurantId, reviewInfo.stars, reviewInfo.text,
+  def getReviewModelByReviewInfo(id: String, index: Int, reviewInfo: ReviewInfo): ReviewModel = {
+    ReviewModel(Some(index), id, reviewInfo.username, reviewInfo.restaurantId, reviewInfo.stars, reviewInfo.text,
       reviewInfo.date)
   }
 
-  def getUserModelByUserInfo(userInfo: UserInfo): UserModel = {
-    UserModel(None, userInfo.username, userInfo.password, userInfo.role, userInfo.location.latitude,
+  def getUserModelByUserInfo(index: Int, userInfo: UserInfo): UserModel = {
+    UserModel(Some(index), userInfo.username, userInfo.password, userInfo.role, userInfo.location.latitude,
       userInfo.location.longitude, userInfo.favoriteCategories.toList)
   }
 

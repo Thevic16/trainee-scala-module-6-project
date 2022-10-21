@@ -33,17 +33,17 @@ object Operation {
   }
 
   def insertRestaurantModel(restaurantModel: RestaurantModel): Future[Int] = {
-    val insertQuery = Table.restaurantTable += restaurantModel
+    val insertQuery = Table.restaurantTable forceInsert restaurantModel
     db.run(insertQuery)
   }
 
   def insertReviewModel(reviewModel: ReviewModel): Future[Int] = {
-    val insertQuery = Table.reviewTable += reviewModel
+    val insertQuery = Table.reviewTable forceInsert reviewModel
     db.run(insertQuery)
   }
 
   def insertUserModel(userModel: UserModel): Future[Int] = {
-    val insertQuery = Table.userTable += userModel
+    val insertQuery = Table.userTable forceInsert userModel
     db.run(insertQuery)
   }
 
