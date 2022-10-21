@@ -15,9 +15,9 @@ import com.vgomez.app.domain.DomainModel.Location
 
 object Administration {
   // state
-  case class AdministrationState(restaurants: Map[String, (Int, ActorRef)], reviews: Map[String, (Int, ActorRef)],
-                                 users: Map[String, (Int, ActorRef)], currentRestaurantIndex: Int,
-                                 currentReviewIndex: Int, currentUserIndex: Int)
+  case class AdministrationState(restaurants: Map[String, (Long, ActorRef)], reviews: Map[String, (Long, ActorRef)],
+                                 users: Map[String, (Long, ActorRef)], currentRestaurantIndex: Long,
+                                 currentReviewIndex: Long, currentUserIndex: Long)
   // commands
   object Command {
     case class GetStarsByRestaurant(restaurantId: String)

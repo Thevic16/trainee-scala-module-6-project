@@ -15,7 +15,7 @@ object User {
   case class UserInfo(username: String, password: String, role: Role, location: Location,
                        favoriteCategories: Set[String])
 
-  case class UserState(username: String, index: Int, password: String, role: Role, location: Location,
+  case class UserState(username: String, index: Long, password: String, role: Role, location: Location,
                        favoriteCategories: Set[String], isDeleted: Boolean)
 
   // commands
@@ -40,11 +40,11 @@ object User {
 
   }
 
-  def props(username: String, index: Int): Props =  Props(new User(username, index))
+  def props(username: String, index: Long): Props =  Props(new User(username, index))
 
 }
 
-class User(username: String, index: Int) extends PersistentActor with ActorLogging{
+class User(username: String, index: Long) extends PersistentActor with ActorLogging{
   import User._
   import Command._
   import Response._

@@ -18,7 +18,7 @@ object Restaurant {
   case class RestaurantInfo(username: String , name: String, state: String, city: String, postalCode: String,
                             location: Location, categories: Set[String], schedule: Schedule)
 
-  case class RestaurantState(id: String, index: Int,  username: String,  name: String, state: String, city: String,
+  case class RestaurantState(id: String, index: Long,  username: String,  name: String, state: String, city: String,
                              postalCode: String, location: Location, categories: Set[String], schedule: Schedule,
                              isDeleted: Boolean)
 
@@ -44,11 +44,11 @@ object Restaurant {
     case class UpdateRestaurantResponse(maybeRestaurantState: Try[RestaurantState]) extends UpdateResponse
   }
 
-  def props(id: String, index: Int): Props =  Props(new Restaurant(id, index))
+  def props(id: String, index: Long): Props =  Props(new Restaurant(id, index))
 
 }
 
-class Restaurant(id: String, index: Int) extends PersistentActor with Stash{
+class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
   import Restaurant._
   import Command._
   import Response._

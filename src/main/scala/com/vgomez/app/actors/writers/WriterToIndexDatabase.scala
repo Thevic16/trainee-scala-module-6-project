@@ -11,16 +11,16 @@ import com.vgomez.app.data.database.Operation._
 object WriterToIndexDatabase {
 
   object Command {
-    case class CreateRestaurant(id: String, index: Int, restaurantInfo: RestaurantInfo)
-    case class UpdateRestaurant(id: String, index: Int, restaurantInfo: RestaurantInfo)
+    case class CreateRestaurant(id: String, index: Long, restaurantInfo: RestaurantInfo)
+    case class UpdateRestaurant(id: String, index: Long, restaurantInfo: RestaurantInfo)
     case class DeleteRestaurant(id: String)
 
-    case class CreateReview(id: String, index: Int, reviewInfo: ReviewInfo)
-    case class UpdateReview(id: String, index: Int, reviewInfo: ReviewInfo)
+    case class CreateReview(id: String, index: Long, reviewInfo: ReviewInfo)
+    case class UpdateReview(id: String, index: Long, reviewInfo: ReviewInfo)
     case class DeleteReview(id: String)
 
-    case class CreateUser(index: Int, userInfo: UserInfo)
-    case class UpdateUser(index: Int, userInfo: UserInfo)
+    case class CreateUser(index: Long, userInfo: UserInfo)
+    case class UpdateUser(index: Long, userInfo: UserInfo)
     case class DeleteUser(username: String)
   }
 
@@ -65,18 +65,18 @@ class WriterToIndexDatabase(system: ActorSystem) extends Actor with ActorLogging
   }
 
 
-  def getRestaurantModelByRestaurantInfo(id: String, index: Int, restaurantInfo: RestaurantInfo): RestaurantModel = {
+  def getRestaurantModelByRestaurantInfo(id: String, index: Long, restaurantInfo: RestaurantInfo): RestaurantModel = {
     RestaurantModel(Some(index), id, restaurantInfo.username, restaurantInfo.name,
       restaurantInfo.state, restaurantInfo.city, restaurantInfo.postalCode, restaurantInfo.location.latitude,
       restaurantInfo.location.longitude, restaurantInfo.categories.toList, restaurantInfo.schedule)
   }
 
-  def getReviewModelByReviewInfo(id: String, index: Int, reviewInfo: ReviewInfo): ReviewModel = {
+  def getReviewModelByReviewInfo(id: String, index: Long, reviewInfo: ReviewInfo): ReviewModel = {
     ReviewModel(Some(index), id, reviewInfo.username, reviewInfo.restaurantId, reviewInfo.stars, reviewInfo.text,
       reviewInfo.date)
   }
 
-  def getUserModelByUserInfo(index: Int, userInfo: UserInfo): UserModel = {
+  def getUserModelByUserInfo(index: Long, userInfo: UserInfo): UserModel = {
     UserModel(Some(index), userInfo.username, userInfo.password, userInfo.role, userInfo.location.latitude,
       userInfo.location.longitude, userInfo.favoriteCategories.toList)
   }

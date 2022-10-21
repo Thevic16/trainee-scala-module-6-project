@@ -13,7 +13,7 @@ object Review {
   // state
   case class ReviewInfo(username: String, restaurantId: String, stars: Int, text: String, date: String)
 
-  case class ReviewState(id: String, index: Int, username: String, restaurantId: String, stars: Int, text: String, date: String,
+  case class ReviewState(id: String, index: Long, username: String, restaurantId: String, stars: Int, text: String, date: String,
                          isDeleted: Boolean)
 
   // commands
@@ -37,11 +37,11 @@ object Review {
     case class UpdateReviewResponse(maybeReviewState: Try[ReviewState]) extends UpdateResponse
   }
 
-  def props(id: String, index: Int): Props =  Props(new Review(id, index))
+  def props(id: String, index: Long): Props =  Props(new Review(id, index))
 
 }
 
-class Review(id: String, index: Int) extends PersistentActor{
+class Review(id: String, index: Long) extends PersistentActor{
   import Review._
   import Command._
   import Response._
