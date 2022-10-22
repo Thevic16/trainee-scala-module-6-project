@@ -49,7 +49,7 @@ class WriterToIndexDatabase(system: ActorSystem) extends Actor with ActorLogging
       updateReviewModel(id, getReviewModelByReviewInfo(id, index, reviewInfo)).mapTo[Int].pipeTo(self)
 
     case DeleteReview(id) =>
-      deleteRestaurantModel(id).mapTo[Int].pipeTo(self)
+      deleteReviewModel(id).mapTo[Int].pipeTo(self)
 
     case CreateUser(index, userInfo) =>
       insertUserModel(getUserModelByUserInfo(index, userInfo)).mapTo[Int].pipeTo(self)

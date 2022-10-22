@@ -195,7 +195,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   // Methods to process CRUD Commands
   def processGetCommand(getCommand: GetCommand, administrationState: AdministrationState): Unit = {
-    val actorRefOption: Option[(Int, ActorRef)] = getActorRefOptionByGetCommand(getCommand, administrationState)
+    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByGetCommand(getCommand, administrationState)
 
     actorRefOption match {
       case Some((_, actorRef)) =>
@@ -208,7 +208,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   def processCreateCommand(createCommand: CreateCommand, administrationState: AdministrationState): Unit = {
     val identifier: String = getIdentifierByCreateCommand(createCommand)
-    val actorRefOption: Option[(Int, ActorRef)] = getActorRefOptionByCreateCommand(createCommand, identifier,
+    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByCreateCommand(createCommand, identifier,
                                                                             administrationState)
     actorRefOption match {
       case Some(_) =>
@@ -279,7 +279,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   def processUpdateCommand(updateCommand: UpdateCommand, administrationState: AdministrationState): Unit = {
     val identifier: String = getIdentifierByUpdateCommand(updateCommand)
-    val actorRefOption: Option[(Int, ActorRef)] = getActorRefOptionByUpdateCommand(updateCommand, identifier,
+    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByUpdateCommand(updateCommand, identifier,
                                                                             administrationState)
     actorRefOption match {
       case Some((index, actorRef)) =>
@@ -324,7 +324,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   }
 
   def processDeleteCommand(deleteCommand: DeleteCommand, administrationState: AdministrationState): Unit = {
-    val actorRefOption: Option[(Int, ActorRef)] = getActorRefOptionByDeleteCommand(deleteCommand, administrationState)
+    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByDeleteCommand(deleteCommand, administrationState)
     actorRefOption match {
       case Some((_, actorRef)) =>
         actorRef.forward(deleteCommand)
@@ -339,7 +339,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
             log.info(s"DeleteReview Command for id: $id has been handle by Administration.")
 
           case DeleteUser(username) =>
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteReview(username)
+            writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteUser(username)
             log.info(s"DeleteUser Command for username: $username has been handle by Administration.")
         }
 

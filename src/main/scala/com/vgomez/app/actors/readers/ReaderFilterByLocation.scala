@@ -9,6 +9,8 @@ import com.vgomez.app.domain.DomainModel.Location
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
 import com.vgomez.app.data.database.Model.RestaurantModel
 import com.vgomez.app.data.database.Operation
+import com.vgomez.app.data.database.Response.{GetRestaurantModelsResponse, GetSequenceReviewModelsStarsResponse}
+import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
 
 object ReaderFilterByLocation {
@@ -37,9 +39,9 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
     case GetRecommendationCloseToLocation(location, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByLocation has receive a GetRecommendationCloseToLocation command.")
       Operation.getPosiblesRestaurantsModelByLocation(location.latitude, location.longitude, rangeInKm, pageNumber,
-        numberOfElementPerPage).mapTo[Seq[RestaurantModel]].pipeTo(self)
+        numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllRestaurantState(sender()))
+      context.become(getAllRestaurantState(sender(), location, rangeInKm))
 
     case GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByLocation has receive a GetRecommendationCloseToMe command.")
@@ -51,13 +53,16 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
       stash()
   }
 
-  def getAllRestaurantState(originalSender: ActorRef, restaurantModels: Seq[RestaurantModel] = Seq()): Receive = {
+  def getAllRestaurantState(originalSender: ActorRef, queryLocation: Location, rangeInKm: Double,
+                            restaurantModels: Seq[RestaurantModel] = Seq()): Receive = {
 
-    case restaurantModels: Seq[RestaurantModel] =>
-      if (restaurantModels.nonEmpty) {
-        val seqRestaurantId = restaurantModels.map(model => model.id)
-        Operation.getReviewsStarsByListRestaurantId(seqRestaurantId).mapTo[Seq[Seq[Int]]].pipeTo(self)
-        context.become(getAllRestaurantState(originalSender, restaurantModels))
+    case GetRestaurantModelsResponse(restaurantModels) =>
+      val seqRestaurantId = restaurantModels.filter(model => calculateDistanceInKm(Location(model.latitude,
+        model.longitude), Some(queryLocation)) <= rangeInKm).map(model => model.id)
+
+      if (seqRestaurantId.nonEmpty) {
+        Operation.getReviewsStarsByListRestaurantId(seqRestaurantId).mapTo[GetSequenceReviewModelsStarsResponse].pipeTo(self)
+        context.become(getAllRestaurantState(originalSender, queryLocation, rangeInKm, restaurantModels))
       }
       else {
         originalSender ! GetRecommendationResponse(None)
@@ -65,9 +70,9 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
         context.become(state())
       }
 
-    case reviewsStars: Seq[Seq[Int]] =>
+    case GetSequenceReviewModelsStarsResponse(seqReviewModelsStars) =>
       originalSender ! GetRecommendationResponse(Some(getListRestaurantResponsesBySeqRestaurantModels(restaurantModels,
-        reviewsStars)))
+                                                      seqReviewModelsStars)))
       unstashAll()
       context.become(state())
 
@@ -79,10 +84,11 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
                                         numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
       Operation.getPosiblesRestaurantsModelByLocation(userState.location.latitude, userState.location.longitude,
-        rangeInKm, pageNumber, numberOfElementPerPage).mapTo[Seq[RestaurantModel]].pipeTo(self)
+                          rangeInKm, pageNumber, numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
 
       unstashAll()
-      context.become(getAllRestaurantState(originalSender))
+      context.become(getAllRestaurantState(originalSender,
+        Location(userState.location.latitude, userState.location.longitude), rangeInKm))
 
     case GetUserResponse(None) =>
       originalSender ! GetRecommendationResponse(None)

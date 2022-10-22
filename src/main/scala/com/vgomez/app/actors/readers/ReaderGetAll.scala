@@ -7,8 +7,10 @@ import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.readers.ReaderUtility._
-import com.vgomez.app.data.database.Model.{RestaurantModel, ReviewModel, UserModel}
-import com.vgomez.app.data.database.{Model, Operation}
+import com.vgomez.app.data.database.Model.RestaurantModel
+import com.vgomez.app.data.database.Response.{GetRestaurantModelsResponse, GetReviewModelsResponse,
+  GetSequenceReviewModelsStarsResponse, GetUserModelsResponse}
+import com.vgomez.app.data.database.Operation
 
 object ReaderGetAll {
   // commands
@@ -40,22 +42,21 @@ class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Sta
 
 
   def state(): Receive = {
-    case CreateRestaurant(id) =>
     case GetAllRestaurant(pageNumber, numberOfElementPerPage) =>
       log.info("ReaderGetAll has receive a GetAllRestaurant command.")
-      Operation.getAllRestaurantModel(pageNumber, numberOfElementPerPage).mapTo[Seq[RestaurantModel]].pipeTo(self)
+      Operation.getAllRestaurantModel(pageNumber, numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllRestaurantState(sender()))
 
     case GetAllReview(pageNumber, numberOfElementPerPage) =>
       log.info("ReaderGetAll has receive a GetAllReview command.")
-      Operation.getAllReviewModel(pageNumber, numberOfElementPerPage).mapTo[Seq[ReviewModel]].pipeTo(self)
+      Operation.getAllReviewModel(pageNumber, numberOfElementPerPage).mapTo[GetReviewModelsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllReviewState(sender()))
 
     case GetAllUser(pageNumber, numberOfElementPerPage) =>
       log.info("ReaderGetAll has receive a GetAllUser command.")
-      Operation.getAllUserModel(pageNumber, numberOfElementPerPage).mapTo[Seq[UserModel]].pipeTo(self)
+      Operation.getAllUserModel(pageNumber, numberOfElementPerPage).mapTo[GetUserModelsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllUserState(sender()))
 
@@ -63,16 +64,17 @@ class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Sta
       stash()
   }
   
-  def getAllRestaurantState(originalSender: ActorRef, restaurantModels: Seq[Model.RestaurantModel] = Seq()): Receive = {
+  def getAllRestaurantState(originalSender: ActorRef, restaurantModels: Seq[RestaurantModel] = Seq()): Receive = {
 
-    case restaurantModels: Seq[Model.RestaurantModel] =>
+    case GetRestaurantModelsResponse(restaurantModels) =>
       val seqRestaurantId = restaurantModels.map(model => model.id)
-      Operation.getReviewsStarsByListRestaurantId(seqRestaurantId).mapTo[Seq[Seq[Int]]].pipeTo(self)
+      Operation.getReviewsStarsByListRestaurantId(
+                                               seqRestaurantId).mapTo[GetSequenceReviewModelsStarsResponse].pipeTo(self)
       context.become(getAllRestaurantState(originalSender, restaurantModels))
 
-    case reviewsStars: Seq[Seq[Int]] =>
+    case GetSequenceReviewModelsStarsResponse(seqReviewModelsStars) =>
       originalSender ! GetAllRestaurantResponse(Some(getListRestaurantResponsesBySeqRestaurantModels(restaurantModels,
-                                                reviewsStars)))
+                                                    seqReviewModelsStars)))
       unstashAll()
       context.become(state())
 
@@ -82,7 +84,7 @@ class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Sta
 
   def getAllReviewState(originalSender: ActorRef): Receive = {
 
-    case reviewModels: Seq[ReviewModel] =>
+    case GetReviewModelsResponse(reviewModels) =>
       val optionGetReviewResponses: Option[List[GetReviewResponse]] =
                                                            Some(reviewModels.map(getReviewResponseByReviewModel).toList)
       originalSender ! GetAllReviewResponse(optionGetReviewResponses)
@@ -97,7 +99,7 @@ class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Sta
 
   def getAllUserState(originalSender: ActorRef): Receive = {
 
-    case userModels: Seq[UserModel] =>
+    case GetUserModelsResponse(userModels) =>
       val optionGetUserResponses: Option[List[GetUserResponse]] =
                                                                 Some(userModels.map(getUserResponseByUserModel).toList)
       originalSender ! GetAllUserResponse(optionGetUserResponses)

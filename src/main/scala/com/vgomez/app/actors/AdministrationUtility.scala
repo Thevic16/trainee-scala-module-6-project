@@ -19,7 +19,7 @@ object AdministrationUtility {
 
   // Get Commands relate
   def getActorRefOptionByGetCommand(getCommand: GetCommand,
-                                    administrationState: AdministrationState): Option[(Int, ActorRef)] = {
+                                    administrationState: AdministrationState): Option[(Long, ActorRef)] = {
     getCommand match {
       case GetRestaurant(id) => administrationState.restaurants.get(id)
       case GetReview(id) => administrationState.reviews.get(id)
@@ -46,7 +46,7 @@ object AdministrationUtility {
   }
 
   def getActorRefOptionByCreateCommand(createCommand: CreateCommand, identifier: String,
-                                       administrationState: AdministrationState): Option[(Int, ActorRef)] = {
+                                       administrationState: AdministrationState): Option[(Long, ActorRef)] = {
     createCommand match {
       case CreateRestaurant(_, _) => administrationState.restaurants.get(identifier)
       case CreateReview(_, _) => administrationState.reviews.get(identifier)
@@ -95,7 +95,7 @@ object AdministrationUtility {
   }
 
   def getActorRefOptionByUpdateCommand(updateCommand: UpdateCommand, identifier: String,
-                                       administrationState: AdministrationState): Option[(Int, ActorRef)] = {
+                                       administrationState: AdministrationState): Option[(Long, ActorRef)] = {
     updateCommand match {
       case UpdateRestaurant(_, _) => administrationState.restaurants.get(identifier)
       case UpdateReview(_, _) => administrationState.reviews.get(identifier)
@@ -122,7 +122,7 @@ object AdministrationUtility {
 
   // Delete Command related.
   def getActorRefOptionByDeleteCommand(deleteCommand: DeleteCommand,
-                                       administrationState: AdministrationState): Option[(Int, ActorRef)] = {
+                                       administrationState: AdministrationState): Option[(Long, ActorRef)] = {
     deleteCommand match {
       case DeleteRestaurant(id) => administrationState.restaurants.get(id)
       case DeleteReview(id) => administrationState.reviews.get(id)

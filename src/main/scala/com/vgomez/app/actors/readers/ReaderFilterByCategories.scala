@@ -10,6 +10,7 @@ import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesByS
 import com.vgomez.app.data.database.Operation
 import com.vgomez.app.data.database.Model
 import com.vgomez.app.data.database.Model.RestaurantModel
+import com.vgomez.app.data.database.Response.{GetRestaurantModelsResponse, GetReviewModelsStarsResponse, GetSequenceReviewModelsStarsResponse}
 
 
 object ReaderFilterByCategories {
@@ -35,7 +36,7 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
     case GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByFavoriteCategories command.")
       Operation.getRestaurantsModelByCategories(favoriteCategories.toList, pageNumber,
-        numberOfElementPerPage).mapTo[Seq[RestaurantModel]].pipeTo(self)
+        numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
       unstashAll()
       context.become(getAllRestaurantState(sender()))
 
@@ -53,10 +54,10 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
   def getAllRestaurantState(originalSender: ActorRef,
                             restaurantModels: Seq[Model.RestaurantModel] = Seq()): Receive = {
 
-    case restaurantModels: Seq[Model.RestaurantModel] =>
+    case GetRestaurantModelsResponse(restaurantModels) =>
       if(restaurantModels.nonEmpty){
         val seqRestaurantId = restaurantModels.map(model => model.id)
-        Operation.getReviewsStarsByListRestaurantId(seqRestaurantId).mapTo[Seq[Seq[Int]]].pipeTo(self)
+        Operation.getReviewsStarsByListRestaurantId(seqRestaurantId).mapTo[GetSequenceReviewModelsStarsResponse].pipeTo(self)
         context.become(getAllRestaurantState(originalSender, restaurantModels))
       }
       else{
@@ -65,9 +66,9 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
         context.become(state())
       }
 
-    case reviewsStars: Seq[Seq[Int]] =>
+    case GetSequenceReviewModelsStarsResponse(seqReviewModelsStars) =>
       originalSender ! GetRecommendationResponse(Some(getListRestaurantResponsesBySeqRestaurantModels(restaurantModels,
-                                                            reviewsStars)))
+                                                      seqReviewModelsStars)))
       unstashAll()
       context.become(state())
 
@@ -80,7 +81,7 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
                                                              numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
       Operation.getRestaurantsModelByCategories(userState.favoriteCategories.toList, pageNumber,
-        numberOfElementPerPage).mapTo[Seq[RestaurantModel]].pipeTo(self)
+                                                 numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
 
       unstashAll()
       context.become(getAllRestaurantState(originalSender))

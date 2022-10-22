@@ -3,6 +3,7 @@ package com.vgomez.app.actors.readers
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import com.vgomez.app.data.database.Operation
+import com.vgomez.app.data.database.Response.GetReviewModelsStarsResponse
 
 
 object ReaderStarsByRestaurant {
@@ -30,7 +31,7 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLoggi
   def state(): Receive = {
     case GetStarsByRestaurant(restaurantId) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByFavoriteCategories command.")
-      Operation.getReviewsStarsByRestaurantId(restaurantId).mapTo[Seq[Int]].pipeTo(self)
+      Operation.getReviewsStarsByRestaurantId(restaurantId).mapTo[GetReviewModelsStarsResponse].pipeTo(self)
       unstashAll()
       context.become(getStartByRestaurantState(sender()))
 
@@ -40,9 +41,9 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLoggi
   
   def getStartByRestaurantState(originalSender: ActorRef): Receive = {
 
-    case reviewsStars: Seq[Int] =>
-      if(reviewsStars.nonEmpty)
-        originalSender ! GetStarsByRestaurantResponse(reviewsStars.sum / reviewsStars.length)
+    case GetReviewModelsStarsResponse(reviewModelsStars) =>
+      if(reviewModelsStars.nonEmpty)
+        originalSender ! GetStarsByRestaurantResponse(reviewModelsStars.sum / reviewModelsStars.length)
       else
         originalSender ! GetStarsByRestaurantResponse(0)
 
