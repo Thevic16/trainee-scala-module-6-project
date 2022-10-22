@@ -1,7 +1,8 @@
 package com.vgomez.app.app
 
 import akka.actor.{ActorRef, ActorSystem}
-import com.vgomez.app.http.{RecommendationFilterByCategoriesRouter, RecommendationFilterByLocationRouter, RestaurantRouter, ReviewRouter, UserRouter}
+import com.vgomez.app.http.{RecommendationFilterByCategoriesRouter, RecommendationFilterByLocationRouter,
+                            RestaurantRouter, ReviewRouter, UserRouter}
 
 import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.Http
@@ -13,7 +14,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.server.Directives._
 import com.typesafe.config.ConfigFactory
-import com.vgomez.app.loadDataset.RunLoadDataSetGraph
+import com.vgomez.app.data.dataset.RunLoadDataSetGraph
 
 object RestaurantReviewApp {
 

@@ -75,6 +75,11 @@ object DomainModelOperation {
     (AVERAGE_RADIUS_OF_EARTH_KM * c)
   }
 
+  def rangeInKmToDegrees(rangeInKm: Double): Double = {
+    val OneDegreesInKm = 111
+    rangeInKm/OneDegreesInKm
+  }
+
   def restaurantCategoriesIsContainsByQueryCategories(restaurantCategories: Set[String],
                                                       queryCategories: Set[String]): Boolean = {
     def go(restaurantCategories: Set[String]): Boolean = {

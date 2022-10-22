@@ -13,7 +13,7 @@ object Review {
   // state
   case class ReviewInfo(username: String, restaurantId: String, stars: Int, text: String, date: String)
 
-  case class ReviewState(id: String, username: String, restaurantId: String, stars: Int, text: String, date: String,
+  case class ReviewState(id: String, index: Long, username: String, restaurantId: String, stars: Int, text: String, date: String,
                          isDeleted: Boolean)
 
   // commands
@@ -37,11 +37,11 @@ object Review {
     case class UpdateReviewResponse(maybeReviewState: Try[ReviewState]) extends UpdateResponse
   }
 
-  def props(id: String): Props =  Props(new Review(id))
+  def props(id: String, index: Long): Props =  Props(new Review(id, index))
 
 }
 
-class Review(id: String) extends PersistentActor{
+class Review(id: String, index: Long) extends PersistentActor{
   import Review._
   import Command._
   import Response._
@@ -106,7 +106,7 @@ class Review(id: String) extends PersistentActor{
 
   def getState(username: String = "", restaurantId: String = "", stars: Int = 0, text: String = "",
                date: String = ""): ReviewState = {
-    ReviewState(id, username, restaurantId, stars, text, date, isDeleted = false)
+    ReviewState(id, index, username, restaurantId, stars, text, date, isDeleted = false)
   }
 
   def getNewState(reviewInfo: ReviewInfo): ReviewState = {

@@ -1,9 +1,27 @@
 services:
+  index-db:
+    image: postgres:14.1-alpine
+    container_name: postgres-akka-restaurant-reviews
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - '8016:5432'
+    volumes:
+      - index-db:/var/lib/postgresql11/data
+      - ./index-db-scripts/init-scripts.sql:/docker-entrypoint-initdb.d/scripts.sql
+
   cassandra:
     image: cassandra:3
-    container_name: cassandra
+    container_name: cassandra-akka-restaurant-reviews
     ports:
       - "7000:7000"
       - "9042:9042"
     environment:
       - "CASSANDRA_CLUSTER_NAME=OUR_DOCKERIZED_CASSANDRA_SINGLE_NODE_CLUSTER"
+
+
+volumes:
+  index-db:
+    driver: local

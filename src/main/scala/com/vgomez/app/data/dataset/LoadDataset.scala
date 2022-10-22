@@ -1,9 +1,10 @@
-package com.vgomez.app.loadDataset
-import com.github.tototoshi.csv._
+package com.vgomez.app.data.dataset
+
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.Timeout
+import com.github.tototoshi.csv._
 import com.vgomez.app.actors.Restaurant.Command.CreateRestaurant
 import com.vgomez.app.actors.Restaurant.RestaurantInfo
 import com.vgomez.app.actors.Review.Command.CreateReview

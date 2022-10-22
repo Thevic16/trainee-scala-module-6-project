@@ -22,7 +22,6 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
 
-
   // akka persistence
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
@@ -41,7 +40,15 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.github.tototoshi" %% "scala-csv" % "1.3.10",
 
   // Config
-  "com.github.andyglow" %% "typesafe-config-scala" % "2.0.0"
+  "com.github.andyglow" %% "typesafe-config-scala" % "2.0.0",
+
+  // Database query/access library
+  "com.typesafe.slick" %% "slick" % "3.3.3",
+  "org.postgresql" % "postgresql" % "42.3.4",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
+  "com.github.tminglei" %% "slick-pg" % "0.20.3",
+  "com.github.tminglei" %% "slick-pg_play-json" % "0.20.3"
+
 )
 
 lazy val root = (project in file("."))

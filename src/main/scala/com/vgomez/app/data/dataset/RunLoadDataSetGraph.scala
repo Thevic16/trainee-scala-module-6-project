@@ -1,4 +1,5 @@
-package com.vgomez.app.loadDataset
+package com.vgomez.app.data.dataset
+
 import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
 
