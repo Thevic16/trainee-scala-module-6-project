@@ -3,36 +3,23 @@ package com.vgomez.app.actors.readers
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.actors.Restaurant.RestaurantState
 import com.vgomez.app.actors.Review.Response.GetReviewResponse
+import com.vgomez.app.actors.Review.ReviewState
 import com.vgomez.app.actors.User.Response.GetUserResponse
-import com.vgomez.app.actors.abtractions.Abstract.Response.GetResponse
+import com.vgomez.app.actors.User.UserState
 import com.vgomez.app.data.database.Model
-import com.vgomez.app.data.database.Model.RestaurantModel
+import com.vgomez.app.data.database.Model.{RestaurantModel, ReviewModel, UserModel}
 import com.vgomez.app.domain.DomainModel.Location
 
 object ReaderUtility {
-
-  def getRestaurantResponseList(accResponses: List[GetResponse]): List[GetRestaurantResponse] = {
-    accResponses.collect {
-      case getRestaurantResponse@GetRestaurantResponse(_, _) => getRestaurantResponse
-    }
-  }
-
-  def getReviewResponseList(accResponses: List[GetResponse]): List[GetReviewResponse] = {
-    accResponses.collect {
-      case getReviewResponse@GetReviewResponse(_) => getReviewResponse
-    }
-  }
-
-  def getUserResponseList(accResponses: List[GetResponse]): List[GetUserResponse] = {
-    accResponses.collect {
-      case getUserResponse@GetUserResponse(_) => getUserResponse
-    }
-  }
-
   def getRestaurantResponseByRestaurantModel(restaurantModel: RestaurantModel,
                                              reviewsStars: Seq[Int]): GetRestaurantResponse = {
-    GetRestaurantResponse(Some(getRestaurantStateByRestaurantModel(restaurantModel)),
-      Some(reviewsStars.sum / reviewsStars.length))
+    if(reviewsStars.nonEmpty){
+      GetRestaurantResponse(Some(getRestaurantStateByRestaurantModel(restaurantModel)),
+        Some(reviewsStars.sum / reviewsStars.length))
+    }
+    else {
+      GetRestaurantResponse(Some(getRestaurantStateByRestaurantModel(restaurantModel)), Some(0))
+    }
   }
 
   def getRestaurantStateByRestaurantModel(restaurantModel: RestaurantModel): RestaurantState = {
@@ -53,6 +40,24 @@ object ReaderUtility {
     }
 
     go(restaurantModels, reviewsStars)
+  }
+
+  def getReviewStateByReviewModel(reviewModel: ReviewModel): ReviewState = {
+    ReviewState(reviewModel.id, reviewModel.index.getOrElse(0L), reviewModel.username, reviewModel.restaurantId,
+      reviewModel.stars, reviewModel.text, reviewModel.date, isDeleted = false)
+  }
+
+  def getReviewResponseByReviewModel(reviewModel: ReviewModel): GetReviewResponse = {
+    GetReviewResponse(Some(getReviewStateByReviewModel(reviewModel)))
+  }
+
+  def getUserStateByUserModel(userModel: UserModel): UserState = {
+    UserState(userModel.username, userModel.index.getOrElse(0L), userModel.password, userModel.role,
+      Location(userModel.latitude, userModel.longitude), userModel.favoriteCategories.toSet, isDeleted = false)
+  }
+
+  def getUserResponseByUserModel(userModel: UserModel): GetUserResponse = {
+    GetUserResponse(Some(getUserStateByUserModel(userModel)))
   }
 
 }
