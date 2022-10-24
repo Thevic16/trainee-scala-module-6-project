@@ -317,7 +317,11 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     verifyIdsOnUpdateCommand(updateCommand, administrationState) match {
       case Success(_) =>
         processUpdateCommand(updateCommand, administrationState)
-      case Failure(IdentifierNotFoundException(message)) =>
+      case Failure(RestaurantNotFoundException(message)) =>
+        sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
+      case Failure(ReviewNotFoundException(message)) =>
+        sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
+      case Failure(UserNotFoundException(message)) =>
         sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
     }
   }
@@ -346,7 +350,15 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
         }
 
       case None =>
-        sender() ! DeleteResponse(Failure(IdentifierNotFoundException()))
+        deleteCommand match {
+          case DeleteRestaurant(_) =>
+            sender() ! DeleteResponse(Failure(RestaurantNotFoundException()))
+          case DeleteReview(_) =>
+            sender() ! DeleteResponse(Failure(ReviewNotFoundException()))
+          case DeleteUser(_) =>
+            sender() ! DeleteResponse(Failure(UserNotFoundException()))
+        }
+
     }
   }
 }
