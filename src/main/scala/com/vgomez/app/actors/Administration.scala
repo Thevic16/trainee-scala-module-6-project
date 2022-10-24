@@ -4,9 +4,9 @@ import akka.persistence.PersistentActor
 import com.vgomez.app.exception.CustomException._
 
 import scala.util.{Failure, Success}
-import com.vgomez.app.actors.abtractions.Abstract.Command._
-import com.vgomez.app.actors.abtractions.Abstract.Response._
-import com.vgomez.app.actors.abtractions.Abstract.Event._
+import com.vgomez.app.actors.messages.AbstractMessage.Command._
+import com.vgomez.app.actors.messages.AbstractMessage.Response._
+import com.vgomez.app.actors.messages.AbstractMessage.Event._
 import com.vgomez.app.actors.AdministrationUtility._
 import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll,
                                       ReaderStarsByRestaurant}

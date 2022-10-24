@@ -6,8 +6,8 @@ import com.vgomez.app.actors.Administration.Command.GetStarsByRestaurant
 import scala.util.{Failure, Success, Try}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
-import com.vgomez.app.actors.abtractions.Abstract.Command._
-import com.vgomez.app.actors.abtractions.Abstract.Response._
+import com.vgomez.app.actors.messages.AbstractMessage.Command._
+import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsByRestaurantResponse
 import com.vgomez.app.exception.CustomException.EntityIsDeletedException
 

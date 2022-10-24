@@ -1,10 +1,10 @@
-package com.vgomez.app.actors.abtractions
+package com.vgomez.app.actors.messages
 
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 
 import scala.util.Try
 
-object Abstract {
+object AbstractMessage {
 
   object Command {
     abstract class GetCommand

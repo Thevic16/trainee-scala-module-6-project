@@ -16,7 +16,7 @@ import com.vgomez.app.http.messages.HttpResponse._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.actors.Administration.Command.GetAllReview
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.actors.abtractions.Abstract.Response._
+import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllReviewResponse
 import com.vgomez.app.http.validators._
 import com.vgomez.app.http.RouterUtility._
