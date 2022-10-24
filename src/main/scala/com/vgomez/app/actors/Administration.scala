@@ -163,7 +163,8 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                                                administrationRecoveryState.currentRestaurantIndex), id))
 
         administrationRecoveryState = administrationRecoveryState.copy(
-          restaurants = administrationRecoveryState.restaurants + (id -> (administrationRecoveryState.currentRestaurantIndex, restaurant)),
+          restaurants = administrationRecoveryState.restaurants +
+                                               (id -> (administrationRecoveryState.currentRestaurantIndex, restaurant)),
           currentRestaurantIndex = administrationRecoveryState.currentRestaurantIndex + 1)
 
         context.become(state(administrationRecoveryState))
@@ -238,8 +239,6 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     createCommand match {
       case CreateRestaurant(_, restaurantInfo) =>
         // sending message to writer.
-        //readerGetAll ! ReaderGetAll.Command.CreateRestaurant(identifier)
-        //readerFilterByCategories ! ReaderFilterByCategories.Command.CreateRestaurant(identifier, restaurantInfo.categories)
         writerToIndexDatabase ! WriterToIndexDatabase.Command.CreateRestaurant(identifier,
                                                  newStateAdministrationState.currentRestaurantIndex - 1, restaurantInfo)
 
@@ -248,8 +247,6 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
       case CreateReview(_, reviewInfo) =>
         // sending message to writer.
-        //readerGetAll ! ReaderGetAll.Command.CreateReview(identifier)
-        //readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.CreateReview(identifier, reviewInfo.restaurantId)
         writerToIndexDatabase ! WriterToIndexDatabase.Command.CreateReview(identifier,
                                                          newStateAdministrationState.currentReviewIndex - 1, reviewInfo)
 
@@ -258,7 +255,6 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
       case CreateUser(userInfo) =>
         // sending message to writer.
-        //readerGetAll ! ReaderGetAll.Command.CreateUser(identifier)
         writerToIndexDatabase ! WriterToIndexDatabase.Command.CreateUser(
                                                              newStateAdministrationState.currentUserIndex - 1, userInfo)
 
@@ -288,22 +284,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
           updateCommand match {
             case UpdateRestaurant(id, restaurantInfo) =>
               // sending message to writer.
-              //readerFilterByCategories ! ReaderFilterByCategories.Command.UpdateRestaurant(id, restaurantInfo.categories)
               writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateRestaurant(id, index, restaurantInfo)
-
               log.info(s"UpdateRestaurant Command for id: $id has been handle by Administration.")
 
             case UpdateReview(id, reviewInfo) =>
               // sending message to writer.
-              //readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.UpdateReview(id, reviewInfo.restaurantId)
               writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateReview(id, index, reviewInfo)
-
               log.info(s"UpdateReview Command for id: $id has been handle by Administration.")
 
             case UpdateUser(userInfo) =>
               // sending message to writer.
               writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateUser(index, userInfo)
-
               log.info(s"UpdateUser Command for username: ${userInfo.username} has been handle by Administration.")
           }
 
@@ -331,14 +322,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
         deleteCommand match {
           case DeleteRestaurant(id) =>
+            // sending message to writer.
             writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteRestaurant(id)
             log.info(s"DeleteRestaurant Command for id: $id has been handle by Administration.")
 
           case DeleteReview(id) =>
+            // sending message to writer.
             writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteReview(id)
             log.info(s"DeleteReview Command for id: $id has been handle by Administration.")
 
           case DeleteUser(username) =>
+            // sending message to writer.
             writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteUser(username)
             log.info(s"DeleteUser Command for username: $username has been handle by Administration.")
         }
@@ -347,5 +341,4 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
         sender() ! DeleteResponse(Failure(IdentifierNotFoundException()))
     }
   }
-
 }
