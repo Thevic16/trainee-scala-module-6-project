@@ -1,6 +1,6 @@
 package com.vgomez.app.actors
 import akka.Done
-import akka.actor.Props
+import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 
 import scala.util.{Failure, Success}
@@ -42,7 +42,7 @@ object Review {
 
 }
 
-class Review(id: String, index: Long) extends PersistentActor{
+class Review(id: String, index: Long) extends PersistentActor with ActorLogging{
   import Review._
   import Command._
   import Response._
@@ -80,15 +80,18 @@ class Review(id: String, index: Long) extends PersistentActor{
       }
 
     case DeleteReview(_) =>
-    case RegisterReviewState(_, _, _, _, _, _, _) =>
-      val newState: ReviewState = UnregisterReviewState
+      log.info(s"Review with id $id has receive a DeleteReview command.")
+      reviewState match {
+        case RegisterReviewState(_, _, _, _, _, _, _) =>
+          val newState: ReviewState = UnregisterReviewState
 
-      persist(ReviewDeleted(newState)) { _ =>
-        sender() ! DeleteResponse(Success(Done))
-        context.become(state(newState))
+          persist(ReviewDeleted(newState)) { _ =>
+            sender() ! DeleteResponse(Success(Done))
+            context.become(state(newState))
+          }
+        case UnregisterReviewState =>
+          sender() ! DeleteResponse(Failure(EntityIsDeletedException))
       }
-    case UnregisterReviewState =>
-      sender() ! DeleteResponse(Failure(EntityIsDeletedException))
   }
 
   override def receiveCommand: Receive = state(getState())

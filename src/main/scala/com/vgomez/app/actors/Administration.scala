@@ -71,7 +71,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   override def persistenceId: String = "administration"
 
   def state(administrationState: AdministrationState): Receive = {
-    // Restaurants CRUD Commands
+    // Restaurants Commands
     case getCommand@GetRestaurant(_) =>
       processGetCommand(getCommand, administrationState)
 
@@ -92,7 +92,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     case deleteCommand@DeleteRestaurant(_) =>
       processDeleteCommand(deleteCommand, administrationState)
 
-    // Reviews CRUD Commands
+    // Reviews Commands
     case getCommand@GetReview(_) =>
       processGetCommand(getCommand, administrationState)
 
@@ -107,9 +107,10 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       processUpdateCommandWithVerifyIds(updateCommand, administrationState)
 
     case deleteCommand@DeleteReview(_) =>
+      log.info("Administration has receive a DeleteReview command.")
       processDeleteCommand(deleteCommand, administrationState)
 
-    // Users CRUD Commands
+    // Users Commands
     case getCommand@GetUser(_) =>
       processGetCommand(getCommand, administrationState)
 
