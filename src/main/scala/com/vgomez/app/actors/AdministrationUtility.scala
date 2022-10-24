@@ -58,7 +58,8 @@ object AdministrationUtility {
                                  administrationState: AdministrationState): AdministrationState = {
     createCommand match {
       case CreateRestaurant(_, _) => administrationState.copy(
-        restaurants = administrationState.restaurants + (identifier -> (administrationState.currentRestaurantIndex, newActorRef)),
+        restaurants = administrationState.restaurants + (identifier -> (administrationState.currentRestaurantIndex,
+                                                                        newActorRef)),
         currentRestaurantIndex = administrationState.currentRestaurantIndex + 1)
 
       case CreateReview(_, _) => administrationState.copy(
@@ -105,17 +106,18 @@ object AdministrationUtility {
 
   def getUpdateResponseFailureByUpdateCommand(updateCommand: UpdateCommand): UpdateResponse = {
     updateCommand match {
-      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(IdentifierNotFoundException()))
-      case UpdateReview(_, _) => UpdateReviewResponse(Failure(IdentifierNotFoundException()))
-      case UpdateUser(_) => UpdateUserResponse(Failure(IdentifierNotFoundException()))
+      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(RestaurantNotFoundException()))
+      case UpdateReview(_, _) => UpdateReviewResponse(Failure(ReviewNotFoundException()))
+      case UpdateUser(_) => UpdateUserResponse(Failure(UserNotFoundException()))
     }
   }
 
-  def getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand: UpdateCommand, message: String): UpdateResponse = {
+  def getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand: UpdateCommand,
+                                                         message: String): UpdateResponse = {
     updateCommand match {
-      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(IdentifierNotFoundException(message)))
-      case UpdateReview(_, _) => UpdateReviewResponse(Failure(IdentifierNotFoundException(message)))
-      case UpdateUser(_) => UpdateUserResponse(Failure(IdentifierNotFoundException(message)))
+      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(RestaurantNotFoundException(message)))
+      case UpdateReview(_, _) => UpdateReviewResponse(Failure(ReviewNotFoundException(message)))
+      case UpdateUser(_) => UpdateUserResponse(Failure(UserNotFoundException(message)))
     }
   }
 
@@ -139,14 +141,15 @@ object AdministrationUtility {
         if(usernameExist(restaurantInfo.username, administrationState))
           Success(createCommand)
         else
-          Failure(IdentifierNotFoundException("username identifier field is no found."))
+          Failure(UserNotFoundException())
 
       case CreateReview(_, reviewInfo) =>
-        if (usernameExist(reviewInfo.username, administrationState) &&
-            restaurantExist(reviewInfo.restaurantId, administrationState))
-          Success(createCommand)
+        if (!usernameExist(reviewInfo.username, administrationState))
+          Failure(UserNotFoundException())
+        else if (!restaurantExist(reviewInfo.restaurantId, administrationState))
+          Failure(RestaurantNotFoundException())
         else
-          Failure(IdentifierNotFoundException("Username/RestaurantId identifier field is no found."))
+          Success(createCommand)
 
       case CreateUser(_) => Success(createCommand)
     }
@@ -173,14 +176,15 @@ object AdministrationUtility {
         if (usernameExist(restaurantInfo.username, administrationState))
           Success(updateCommand)
         else
-          Failure(IdentifierNotFoundException("Username identifier is no found."))
+          Failure(UserNotFoundException())
 
       case UpdateReview(_, reviewInfo) =>
-        if (usernameExist(reviewInfo.username, administrationState) &&
-          restaurantExist(reviewInfo.restaurantId, administrationState))
-          Success(updateCommand)
+        if(!usernameExist(reviewInfo.username, administrationState))
+          Failure(UserNotFoundException())
+        else if(!restaurantExist(reviewInfo.restaurantId, administrationState))
+          Failure(RestaurantNotFoundException())
         else
-          Failure(IdentifierNotFoundException("Username/RestaurantId identifier is no found."))
+          Success(updateCommand)
 
       case UpdateUser(_) => Success(updateCommand)
     }

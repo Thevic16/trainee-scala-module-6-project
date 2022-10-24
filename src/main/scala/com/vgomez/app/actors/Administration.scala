@@ -213,7 +213,15 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                                                             administrationState)
     actorRefOption match {
       case Some(_) =>
-        sender() ! CreateResponse(Failure(IdentifierExistsException()))
+        createCommand match {
+          case CreateRestaurant(_, _) =>
+            sender() ! CreateResponse(Failure(RestaurantExistsException()))
+          case CreateReview(_, _) =>
+            sender() ! CreateResponse(Failure(ReviewExistsException()))
+          case CreateUser(_) =>
+            sender() ! CreateResponse(Failure(UserExistsException()))
+        }
+
       case None =>
         val newActorRef: ActorRef = getNewActorRefByCreateCommand(context, administrationState, createCommand,
                                                                  identifier)
