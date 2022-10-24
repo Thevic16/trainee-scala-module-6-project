@@ -1,19 +1,20 @@
-package com.vgomez.app.actors.abtractions
+package com.vgomez.app.actors.messages
 
+import akka.Done
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 
 import scala.util.Try
 
-object Abstract {
+object AbstractMessage {
 
   object Command {
     abstract class GetCommand
 
-    abstract class CreateCommand
+    abstract class RegisterCommand
 
     abstract class UpdateCommand
 
-    abstract class DeleteCommand
+    abstract class UnregisterCommand
   }
 
   object Event {
@@ -23,11 +24,11 @@ object Abstract {
   object Response {
     abstract class GetResponse
 
-    case class CreateResponse(maybeIdentifier: Try[String])
+    case class RegisterResponse(maybeIdentifier: Try[String])
 
-    abstract class UpdateResponse
+    case class UpdateResponse(maybeDone: Try[Done])
 
-    case class DeleteResponse(maybeIdentifier: Try[String])
+    case class UnregisterResponse(maybeDone: Try[Done])
 
     case class GetRecommendationResponse(optionGetRestaurantResponses: Option[List[GetRestaurantResponse]])
   }

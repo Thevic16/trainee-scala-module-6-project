@@ -1,43 +1,42 @@
 package com.vgomez.app.actors
+import akka.Done
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
-import com.vgomez.app.actors.abtractions.Abstract.Command._
-import com.vgomez.app.actors.abtractions.Abstract.Response._
-import com.vgomez.app.exception.CustomException.EntityIsDeletedException
+import com.vgomez.app.actors.messages.AbstractMessage.Command._
+import com.vgomez.app.actors.messages.AbstractMessage.Response._
+import com.vgomez.app.exception.CustomException.UserUnRegisteredException
 
 
 object User {
+  case class UserInfo(username: String, password: String, role: Role, location: Location,
+                      favoriteCategories: Set[String])
 
   // state
-  case class UserInfo(username: String, password: String, role: Role, location: Location,
-                       favoriteCategories: Set[String])
-
-  case class UserState(username: String, index: Long, password: String, role: Role, location: Location,
-                       favoriteCategories: Set[String], isDeleted: Boolean)
+  sealed abstract class UserState
+  case class RegisterUserState(username: String, index: Long, password: String, role: Role, location: Location,
+                       favoriteCategories: Set[String]) extends UserState
+  case object UnregisterUserState extends UserState
 
   // commands
   object Command {
     case class GetUser(username: String) extends GetCommand
-    case class CreateUser(userInfo: UserInfo) extends CreateCommand
+    case class RegisterUser(userInfo: UserInfo) extends RegisterCommand
     case class UpdateUser(userInfo: UserInfo) extends UpdateCommand
-    case class DeleteUser(username: String) extends DeleteCommand
+    case class UnregisterUser(username: String) extends UnregisterCommand
   }
 
   // events
-  case class UserCreated(UserState: UserState)
+  case class UserRegistered(UserState: UserState)
   case class UserUpdated(UserState: UserState)
-  case class UserDeleted(UserState: UserState)
+  case class UserUnregistered(UserState: UserState)
 
 
   // responses
   object Response {
     case class GetUserResponse(maybeUserState: Option[UserState]) extends GetResponse
-
-    case class UpdateUserResponse(maybeUserState: Try[UserState]) extends UpdateResponse
-
   }
 
   def props(username: String, index: Long): Props =  Props(new User(username, index))
@@ -53,61 +52,64 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
 
   def state(userState: UserState): Receive = {
     case GetUser(_) =>
-      if(userState.isDeleted){
-        sender() ! GetUserResponse(None)
+      userState match {
+        case RegisterUserState(_, _, _, _, _, _) =>
+          sender() ! GetUserResponse(Some(userState))
+        case UnregisterUserState =>
+          sender() ! GetUserResponse(None)
       }
-      else
-        sender() ! GetUserResponse(Some(userState))
 
-    case CreateUser(userInfo) =>
+    case RegisterUser(userInfo) =>
       val newState: UserState = getNewState(userInfo)
 
-      persist(UserCreated(newState)) { _ =>
-        sender() ! CreateResponse(Success(username))
+      persist(UserRegistered(newState)) { _ =>
+        sender() ! RegisterResponse(Success(username))
         context.become(state(newState))
       }
 
     case UpdateUser(userInfo) =>
-      if(userState.isDeleted)
-        sender() ! UpdateUserResponse(Failure(EntityIsDeletedException))
-      else {
-        val newState: UserState = getNewState(userInfo)
+      userState match {
+        case RegisterUserState(_, _, _, _, _, _) =>
+          val newState: UserState = getNewState(userInfo)
 
-        persist(UserUpdated(newState)) { _ =>
-          sender() ! UpdateUserResponse(Success(newState))
-          context.become(state(newState))
-        }
+          persist(UserUpdated(newState)) { _ =>
+            sender() ! UpdateResponse(Success(Done))
+            context.become(state(newState))
+          }
+        case UnregisterUserState =>
+          sender() ! UpdateResponse(Failure(UserUnRegisteredException))
       }
 
-    case DeleteUser(id) =>
-      if(userState.isDeleted)
-        sender() ! DeleteResponse(Failure(EntityIsDeletedException))
-      else {
-        val newState: UserState = userState.copy(isDeleted = true)
+    case UnregisterUser(_) =>
+      userState match {
+        case RegisterUserState(_, _, _, _, _, _) =>
+          val newState: UserState = UnregisterUserState
 
-        persist(UserDeleted(newState)) { _ =>
-          sender() ! DeleteResponse(Success(id))
-          context.become(state(newState))
-        }
+          persist(UserUnregistered(newState)) { _ =>
+            sender() ! UnregisterResponse(Success(Done))
+            context.become(state(newState))
+          }
+        case UnregisterUserState =>
+          sender() ! UnregisterResponse(Failure(UserUnRegisteredException))
       }
   }
 
   override def receiveCommand: Receive = state(getState())
 
   override def receiveRecover: Receive = {
-    case UserCreated(userState) =>
+    case UserRegistered(userState) =>
       context.become(state(userState))
 
     case UserUpdated(userState) =>
       context.become(state(userState))
 
-    case UserDeleted(userState) =>
+    case UserUnregistered(userState) =>
       context.become(state(userState))
   }
 
   def getState(username: String = username, password: String = "", role: Role = Normal,
                location: Location = Location(0,0), favoriteCategories: Set[String] = Set()): UserState = {
-      UserState(username, index, password, role, location, favoriteCategories, isDeleted = false)
+      RegisterUserState(username, index, password, role, location, favoriteCategories)
   }
 
   def getNewState(userInfo: UserInfo): UserState = {

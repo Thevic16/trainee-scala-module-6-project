@@ -4,9 +4,9 @@ import akka.persistence.PersistentActor
 import com.vgomez.app.exception.CustomException._
 
 import scala.util.{Failure, Success}
-import com.vgomez.app.actors.abtractions.Abstract.Command._
-import com.vgomez.app.actors.abtractions.Abstract.Response._
-import com.vgomez.app.actors.abtractions.Abstract.Event._
+import com.vgomez.app.actors.messages.AbstractMessage.Command._
+import com.vgomez.app.actors.messages.AbstractMessage.Response._
+import com.vgomez.app.actors.messages.AbstractMessage.Event._
 import com.vgomez.app.actors.AdministrationUtility._
 import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll,
                                       ReaderStarsByRestaurant}
@@ -39,9 +39,9 @@ object Administration {
   }
 
   // events
-  case class RestaurantCreated(id: String) extends Event
-  case class ReviewCreated(id: String) extends Event
-  case class UserCreated(username: String) extends Event
+  case class RestaurantRegistered(id: String) extends Event
+  case class ReviewRegistered(id: String) extends Event
+  case class UserRegistered(username: String) extends Event
   def props(system: ActorSystem): Props =  Props(new Administration(system))
 }
 
@@ -71,7 +71,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   override def persistenceId: String = "administration"
 
   def state(administrationState: AdministrationState): Receive = {
-    // Restaurants CRUD Commands
+    // Restaurants Commands
     case getCommand@GetRestaurant(_) =>
       processGetCommand(getCommand, administrationState)
 
@@ -83,16 +83,16 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetAllRestaurant command.")
       readerGetAll.forward(ReaderGetAll.Command.GetAllRestaurant(pageNumber, numberOfElementPerPage))
 
-    case createCommand@CreateRestaurant(_, _) =>
-      processCreateCommandWithVerifyIds(createCommand, administrationState)
+    case registerCommand@RegisterRestaurant(_, _) =>
+      processRegisterCommandWithVerifyIds(registerCommand, administrationState)
 
     case updateCommand@UpdateRestaurant(_, _) =>
       processUpdateCommandWithVerifyIds(updateCommand, administrationState)
 
-    case deleteCommand@DeleteRestaurant(_) =>
-      processDeleteCommand(deleteCommand, administrationState)
+    case unregisterCommand@UnregisterRestaurant(_) =>
+      processUnregisterCommand(unregisterCommand, administrationState)
 
-    // Reviews CRUD Commands
+    // Reviews Commands
     case getCommand@GetReview(_) =>
       processGetCommand(getCommand, administrationState)
 
@@ -100,16 +100,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetAllReview command.")
       readerGetAll.forward(ReaderGetAll.Command.GetAllReview(pageNumber, numberOfElementPerPage))
 
-    case createCommand@CreateReview(_, _) =>
-      processCreateCommandWithVerifyIds(createCommand, administrationState)
+    case registerCommand@RegisterReview(_, _) =>
+      processRegisterCommandWithVerifyIds(registerCommand, administrationState)
 
     case updateCommand@UpdateReview(_, _) =>
       processUpdateCommandWithVerifyIds(updateCommand, administrationState)
 
-    case deleteCommand@DeleteReview(_) =>
-      processDeleteCommand(deleteCommand, administrationState)
+    case unregisterCommand@UnregisterReview(_) =>
+      log.info("Administration has receive a UnregisterReview command.")
+      processUnregisterCommand(unregisterCommand, administrationState)
 
-    // Users CRUD Commands
+    // Users Commands
     case getCommand@GetUser(_) =>
       processGetCommand(getCommand, administrationState)
 
@@ -117,14 +118,14 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetAllUser command.")
       readerGetAll.forward(ReaderGetAll.Command.GetAllUser(pageNumber, numberOfElementPerPage))
 
-    case createCommand@CreateUser(_) =>
-      processCreateCommand(createCommand, administrationState)
+    case registerCommand@RegisterUser(_) =>
+      processRegisterCommand(registerCommand, administrationState)
 
     case updateCommand@UpdateUser(_) =>
       processUpdateCommand(updateCommand, administrationState)
 
-    case deleteCommand@DeleteUser(_) =>
-      processDeleteCommand(deleteCommand, administrationState)
+    case unregisterCommand@UnregisterUser(_) =>
+      processUnregisterCommand(unregisterCommand, administrationState)
 
 
     // Recommendations By Categories Commands
@@ -157,18 +158,19 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   override def receiveCommand: Receive = state(administrationRecoveryState)
 
   override def receiveRecover: Receive = {
-    case RestaurantCreated(id) =>
+    case RestaurantRegistered(id) =>
         log.info(s"Administration has recovered a restaurant with id: $id")
         val restaurant = context.child(id).getOrElse(context.actorOf(Restaurant.props(id,
                                                                administrationRecoveryState.currentRestaurantIndex), id))
 
         administrationRecoveryState = administrationRecoveryState.copy(
-          restaurants = administrationRecoveryState.restaurants + (id -> (administrationRecoveryState.currentRestaurantIndex, restaurant)),
+          restaurants = administrationRecoveryState.restaurants +
+                                               (id -> (administrationRecoveryState.currentRestaurantIndex, restaurant)),
           currentRestaurantIndex = administrationRecoveryState.currentRestaurantIndex + 1)
 
         context.become(state(administrationRecoveryState))
 
-    case ReviewCreated(id) =>
+    case ReviewRegistered(id) =>
       log.info(s"Administration has recovered a review with id: $id")
       val review = context.child(id).getOrElse(context.actorOf(Review.props(id,
                                                                    administrationRecoveryState.currentReviewIndex), id))
@@ -180,7 +182,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       context.become(state(administrationRecoveryState))
 
 
-    case UserCreated(username) =>
+    case UserRegistered(username) =>
       log.info(s"Administration has recovered a user with username: $username")
       val user = context.child(username).getOrElse(context.actorOf(User.props(username,
                                                                administrationRecoveryState.currentUserIndex), username))
@@ -206,73 +208,76 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     }
   }
 
-  def processCreateCommand(createCommand: CreateCommand, administrationState: AdministrationState): Unit = {
-    val identifier: String = getIdentifierByCreateCommand(createCommand)
-    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByCreateCommand(createCommand, identifier,
+  def processRegisterCommand(registerCommand: RegisterCommand, administrationState: AdministrationState): Unit = {
+    val identifier: String = getIdentifierByRegisterCommand(registerCommand)
+    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByRegisterCommand(registerCommand, identifier,
                                                                             administrationState)
     actorRefOption match {
       case Some(_) =>
-        sender() ! CreateResponse(Failure(IdentifierExistsException()))
+        registerCommand match {
+          case RegisterRestaurant(_, _) =>
+            sender() ! RegisterResponse(Failure(RestaurantExistsException()))
+          case RegisterReview(_, _) =>
+            sender() ! RegisterResponse(Failure(ReviewExistsException()))
+          case RegisterUser(_) =>
+            sender() ! RegisterResponse(Failure(UserExistsException()))
+        }
+
       case None =>
-        val newActorRef: ActorRef = getNewActorRefByCreateCommand(context, administrationState, createCommand,
+        val newActorRef: ActorRef = getNewActorRefByRegisterCommand(context, administrationState, registerCommand,
                                                                  identifier)
-        val newStateAdministrationState: AdministrationState = getNewStateByCreateCommand(createCommand, newActorRef,
+        val newStateAdministrationState: AdministrationState = getNewStateByRegisterCommand(registerCommand, newActorRef,
                                                                                         identifier, administrationState)
 
-        persistCreateCommand(createCommand, newActorRef, identifier, newStateAdministrationState)
+        persistRegisterCommand(registerCommand, newActorRef, identifier, newStateAdministrationState)
     }
   }
 
-  def processCreateCommandWithVerifyIds(createCommand: CreateCommand,
+  def processRegisterCommandWithVerifyIds(registerCommand: RegisterCommand,
                                         administrationState: AdministrationState): Unit = {
-    verifyIdsOnCreateCommand(createCommand, administrationState) match {
+    verifyIdsOnRegisterCommand(registerCommand, administrationState) match {
       case Success(_) =>
-        processCreateCommand(createCommand, administrationState)
+        processRegisterCommand(registerCommand, administrationState)
       case Failure(exception) =>
-        sender() ! CreateResponse(Failure(exception))
+        sender() ! RegisterResponse(Failure(exception))
     }
   }
 
-  def persistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
+  def persistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
                            newStateAdministrationState: AdministrationState): Unit = {
-    createCommand match {
-      case CreateRestaurant(_, restaurantInfo) =>
+    registerCommand match {
+      case RegisterRestaurant(_, restaurantInfo) =>
         // sending message to writer.
-        //readerGetAll ! ReaderGetAll.Command.CreateRestaurant(identifier)
-        //readerFilterByCategories ! ReaderFilterByCategories.Command.CreateRestaurant(identifier, restaurantInfo.categories)
-        writerToIndexDatabase ! WriterToIndexDatabase.Command.CreateRestaurant(identifier,
+        writerToIndexDatabase ! WriterToIndexDatabase.Command.RegisterRestaurant(identifier,
                                                  newStateAdministrationState.currentRestaurantIndex - 1, restaurantInfo)
 
-        helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
-          newStateAdministrationState: AdministrationState, "restaurant", RestaurantCreated(identifier))
+        helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
+          newStateAdministrationState: AdministrationState, "restaurant", RestaurantRegistered(identifier))
 
-      case CreateReview(_, reviewInfo) =>
+      case RegisterReview(_, reviewInfo) =>
         // sending message to writer.
-        //readerGetAll ! ReaderGetAll.Command.CreateReview(identifier)
-        //readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.CreateReview(identifier, reviewInfo.restaurantId)
-        writerToIndexDatabase ! WriterToIndexDatabase.Command.CreateReview(identifier,
+        writerToIndexDatabase ! WriterToIndexDatabase.Command.RegisterReview(identifier,
                                                          newStateAdministrationState.currentReviewIndex - 1, reviewInfo)
 
-        helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
-          newStateAdministrationState: AdministrationState, "review", ReviewCreated(identifier))
+        helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
+          newStateAdministrationState: AdministrationState, "review", ReviewRegistered(identifier))
 
-      case CreateUser(userInfo) =>
+      case RegisterUser(userInfo) =>
         // sending message to writer.
-        //readerGetAll ! ReaderGetAll.Command.CreateUser(identifier)
-        writerToIndexDatabase ! WriterToIndexDatabase.Command.CreateUser(
+        writerToIndexDatabase ! WriterToIndexDatabase.Command.RegisterUser(
                                                              newStateAdministrationState.currentUserIndex - 1, userInfo)
 
-        helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
-          newStateAdministrationState: AdministrationState, "user", UserCreated(identifier))
+        helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
+          newStateAdministrationState: AdministrationState, "user", UserRegistered(identifier))
     }
   }
 
-  def helperPersistCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
+  def helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
                                  newStateAdministrationState: AdministrationState , actorName: String,
                                  event: Event):Unit = {
     persist(event) { _ =>
-      log.info(s"Administration has created a $actorName with id: ${identifier}")
-      newActorRef.forward(createCommand)
+      log.info(s"Administration has Registered a $actorName with id: ${identifier}")
+      newActorRef.forward(registerCommand)
       context.become(state(newStateAdministrationState))
     }
   }
@@ -288,22 +293,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
           updateCommand match {
             case UpdateRestaurant(id, restaurantInfo) =>
               // sending message to writer.
-              //readerFilterByCategories ! ReaderFilterByCategories.Command.UpdateRestaurant(id, restaurantInfo.categories)
               writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateRestaurant(id, index, restaurantInfo)
-
               log.info(s"UpdateRestaurant Command for id: $id has been handle by Administration.")
 
             case UpdateReview(id, reviewInfo) =>
               // sending message to writer.
-              //readerStarsByRestaurant ! ReaderStarsByRestaurant.Command.UpdateReview(id, reviewInfo.restaurantId)
               writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateReview(id, index, reviewInfo)
-
               log.info(s"UpdateReview Command for id: $id has been handle by Administration.")
 
             case UpdateUser(userInfo) =>
               // sending message to writer.
               writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateUser(index, userInfo)
-
               log.info(s"UpdateUser Command for username: ${userInfo.username} has been handle by Administration.")
           }
 
@@ -318,34 +318,48 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     verifyIdsOnUpdateCommand(updateCommand, administrationState) match {
       case Success(_) =>
         processUpdateCommand(updateCommand, administrationState)
-      case Failure(IdentifierNotFoundException(message)) =>
+      case Failure(RestaurantNotFoundException(message)) =>
+        sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
+      case Failure(ReviewNotFoundException(message)) =>
+        sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
+      case Failure(UserNotFoundException(message)) =>
         sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
     }
   }
 
-  def processDeleteCommand(deleteCommand: DeleteCommand, administrationState: AdministrationState): Unit = {
-    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByDeleteCommand(deleteCommand, administrationState)
+  def processUnregisterCommand(unregisterCommand: UnregisterCommand, administrationState: AdministrationState): Unit = {
+    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByUnregisterCommand(unregisterCommand, administrationState)
     actorRefOption match {
       case Some((_, actorRef)) =>
-        actorRef.forward(deleteCommand)
+        actorRef.forward(unregisterCommand)
 
-        deleteCommand match {
-          case DeleteRestaurant(id) =>
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteRestaurant(id)
-            log.info(s"DeleteRestaurant Command for id: $id has been handle by Administration.")
+        unregisterCommand match {
+          case UnregisterRestaurant(id) =>
+            // sending message to writer.
+            writerToIndexDatabase ! WriterToIndexDatabase.Command.UnregisterRestaurant(id)
+            log.info(s"UnregisterRestaurant Command for id: $id has been handle by Administration.")
 
-          case DeleteReview(id) =>
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteReview(id)
-            log.info(s"DeleteReview Command for id: $id has been handle by Administration.")
+          case UnregisterReview(id) =>
+            // sending message to writer.
+            writerToIndexDatabase ! WriterToIndexDatabase.Command.UnregisterReview(id)
+            log.info(s"UnregisterReview Command for id: $id has been handle by Administration.")
 
-          case DeleteUser(username) =>
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.DeleteUser(username)
-            log.info(s"DeleteUser Command for username: $username has been handle by Administration.")
+          case UnregisterUser(username) =>
+            // sending message to writer.
+            writerToIndexDatabase ! WriterToIndexDatabase.Command.UnregisterUser(username)
+            log.info(s"UnregisterUser Command for username: $username has been handle by Administration.")
         }
 
       case None =>
-        sender() ! DeleteResponse(Failure(IdentifierNotFoundException()))
+        unregisterCommand match {
+          case UnregisterRestaurant(_) =>
+            sender() ! UnregisterResponse(Failure(RestaurantNotFoundException()))
+          case UnregisterReview(_) =>
+            sender() ! UnregisterResponse(Failure(ReviewNotFoundException()))
+          case UnregisterUser(_) =>
+            sender() ! UnregisterResponse(Failure(UserNotFoundException()))
+        }
+
     }
   }
-
 }

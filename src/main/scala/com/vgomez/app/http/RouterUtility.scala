@@ -1,8 +1,10 @@
 package com.vgomez.app.http
 
 import com.vgomez.app.actors.Restaurant.Response._
-import com.vgomez.app.actors.Restaurant.RestaurantState
+import com.vgomez.app.actors.Restaurant.{RegisterRestaurantState, RestaurantState}
+import com.vgomez.app.actors.Review.RegisterReviewState
 import com.vgomez.app.actors.Review.Response.GetReviewResponse
+import com.vgomez.app.actors.User.RegisterUserState
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.domain.Transformer._
 import com.vgomez.app.http.messages.HttpResponse._
@@ -20,24 +22,30 @@ object RouterUtility {
   def getReviewResponseByGetReviewResponse(getReviewResponse: GetReviewResponse): ReviewResponse = {
     getReviewResponse match {
       case GetReviewResponse(Some(reviewState)) =>
-        ReviewResponse(reviewState.id, reviewState.username, reviewState.restaurantId, reviewState.stars, reviewState.text,
-          reviewState.date)
+        reviewState match {
+          case RegisterReviewState(id, _, username, restaurantId, stars, text, date) =>
+            ReviewResponse(id, username, restaurantId, stars, text, date)
+        }
     }
   }
 
   def getUserResponseByGetUserResponse(getUserResponse: GetUserResponse): UserResponse = {
     getUserResponse match {
       case GetUserResponse(Some(userState)) =>
-        UserResponse(userState.username, userState.password, transformRoleToStringRole(userState.role),
-          userState.location.latitude, userState.location.longitude, userState.favoriteCategories)
+        userState match {
+          case RegisterUserState(username, index, password, role, location, favoriteCategories) =>
+            UserResponse(username, password, transformRoleToStringRole(role),
+              location.latitude, location.longitude, favoriteCategories)
+        }
     }
   }
 
   def getRestaurantResponseByRestaurantState(restaurantState: RestaurantState, stars: Int): RestaurantResponse = {
-    RestaurantResponse(restaurantState.id, restaurantState.username, restaurantState.name,
-      restaurantState.state, restaurantState.city, restaurantState.postalCode,
-      restaurantState.location.latitude, restaurantState.location.longitude,
-      restaurantState.categories, transformScheduleToSimpleScheduler(restaurantState.schedule), stars)
+    restaurantState match {
+      case RegisterRestaurantState(id, _, username, name, state, city, postalCode, location, categories, schedule) =>
+        RestaurantResponse(id, username, name,
+          state, city, postalCode,
+          location.latitude, location.longitude, categories, transformScheduleToSimpleScheduler(schedule), stars)
+    }
   }
-
 }

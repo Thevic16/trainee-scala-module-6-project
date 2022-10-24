@@ -1,7 +1,7 @@
 package com.vgomez.app.http
+import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
-
 import akka.util.Timeout
 import akka.http.scaladsl.model.headers.Location
 
@@ -15,9 +15,10 @@ import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.actors.Administration.Command.GetAllUser
+import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
 import com.vgomez.app.domain.Transformer.transformRoleToStringRole
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.actors.abtractions.Abstract.Response._
+import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllUserResponse
 import com.vgomez.app.http.validators._
 import com.vgomez.app.http.RouterUtility._
@@ -34,14 +35,14 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
   def getUser(username: String): Future[GetUserResponse] =
     (administration ? GetUser(username)).mapTo[GetUserResponse]
 
-  def createUser(userCreationRequest: UserCreationRequest): Future[CreateResponse] =
-    (administration ? userCreationRequest.toCommand).mapTo[CreateResponse]
+  def registerUser(userCreationRequest: UserCreationRequest): Future[RegisterResponse] =
+    (administration ? userCreationRequest.toCommand).mapTo[RegisterResponse]
 
-  def updateUser(userUpdateRequest: UserUpdateRequest): Future[UpdateUserResponse] =
-    (administration ? userUpdateRequest.toCommand).mapTo[UpdateUserResponse]
+  def updateUser(userUpdateRequest: UserUpdateRequest): Future[UpdateResponse] =
+    (administration ? userUpdateRequest.toCommand).mapTo[UpdateResponse]
 
-  def deleteUser(username: String): Future[DeleteResponse] =
-    (administration ? DeleteUser(username)).mapTo[DeleteResponse]
+  def unregisterUser(username: String): Future[UnregisterResponse] =
+    (administration ? UnregisterUser(username)).mapTo[UnregisterResponse]
 
   def getAllUser(pageNumber: Long, numberOfElementPerPage: Long): Future[GetAllUserResponse] =
     (administration ? GetAllUser(pageNumber, numberOfElementPerPage)).mapTo[GetAllUserResponse]
@@ -52,10 +53,16 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
         get {
           onSuccess(getUser(username)) {
             case GetUserResponse(Some(userState)) =>
-              complete {
-                UserResponse(userState.username,userState.password, transformRoleToStringRole(userState.role),
-                  userState.location.latitude,  userState.location.longitude,userState.favoriteCategories)
+              userState match {
+                case RegisterUserState(username, _, password, role, location, favoriteCategories) =>
+                  complete {
+                    UserResponse(username, password, transformRoleToStringRole(role),
+                      location.latitude, location.longitude, favoriteCategories)
+                  }
+                case UnregisterUserState =>
+                  complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
               }
+
             case GetUserResponse(None) =>
               complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
           }
@@ -66,11 +73,11 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
                 request.favoriteCategories).run() match {
                 case Success(_) =>
                   onSuccess(updateUser(request)) {
-                    case UpdateUserResponse(Success(_)) =>
+                    case UpdateResponse(Success(Done)) =>
                       respondWithHeader(Location(s"/users/$username")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateUserResponse(Failure(_)) =>
+                    case UpdateResponse(Failure(_)) =>
                       complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
                   }
                 case Failure(e: ValidationFailException) =>
@@ -79,10 +86,10 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
             }
           } ~
           delete {
-            onSuccess(deleteUser(username)) {
-              case DeleteResponse(Success(_)) =>
+            onSuccess(unregisterUser(username)) {
+              case UnregisterResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteResponse(Failure(_)) =>
+              case UnregisterResponse(Failure(_)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
             }
           }
@@ -93,12 +100,12 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
               ValidatorUserRequest(request.username, request.password, request.role, request.latitude, request.longitude,
                 request.favoriteCategories).run() match {
                 case Success(_) =>
-                  onSuccess(createUser(request)) {
-                    case CreateResponse(Success(id)) =>
+                  onSuccess(registerUser(request)) {
+                    case RegisterResponse(Success(id)) =>
                       respondWithHeader(Location(s"/users/$id")) {
                         complete(StatusCodes.Created)
                       }
-                    case CreateResponse(Failure(e: RuntimeException)) =>
+                    case RegisterResponse(Failure(e: RuntimeException)) =>
                       complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                   }
                 case Failure(e: ValidationFailException) =>

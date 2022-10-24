@@ -13,7 +13,7 @@ object HttpRequest{
   case class RestaurantCreationRequest(username: String, name: String, state: String, city: String, postalCode: String,
                                        latitude: Double, longitude: Double, categories: Set[String],
                                        schedule: SimpleScheduler) {
-    def toCommand: CreateRestaurant = CreateRestaurant(None, RestaurantInfo(username, name, state, city, postalCode,
+    def toCommand: RegisterRestaurant = RegisterRestaurant(None, RestaurantInfo(username, name, state, city, postalCode,
       DomainModel.Location(latitude, longitude), categories: Set[String], transformSimpleSchedulerToSchedule(schedule)))
   }
 
@@ -33,7 +33,7 @@ object HttpRequest{
   }
 
   case class ReviewCreationRequest(username: String, restaurantId: String, stars: Int, text: String, date: String) {
-    def toCommand: CreateReview = CreateReview(None, ReviewInfo(username, restaurantId, stars, text, date))
+    def toCommand: RegisterReview = RegisterReview(None, ReviewInfo(username, restaurantId, stars, text, date))
   }
 
   trait ReviewCreationRequestJsonProtocol extends DefaultJsonProtocol {
@@ -50,7 +50,7 @@ object HttpRequest{
 
   case class UserCreationRequest(username: String, password: String, role: String, latitude: Double, longitude: Double,
                                  favoriteCategories: Set[String]) {
-    def toCommand: CreateUser = CreateUser(UserInfo(username, password, transformStringRoleToRole(role),
+    def toCommand: RegisterUser = RegisterUser(UserInfo(username, password, transformStringRoleToRole(role),
       DomainModel.Location(latitude, longitude), favoriteCategories))
   }
 

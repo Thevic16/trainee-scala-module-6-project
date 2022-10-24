@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.util.Timeout
 import com.vgomez.app.actors.Administration.Command.{GetRecommendationCloseToLocation, GetRecommendationCloseToMe}
-import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
+import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
 import com.vgomez.app.http.messages.HttpRequest.{GetRecommendationCloseToLocationRequest,
                                                 GetRecommendationCloseToLocationRequestJsonProtocol,
                                                 GetRecommendationCloseToMeRequest,

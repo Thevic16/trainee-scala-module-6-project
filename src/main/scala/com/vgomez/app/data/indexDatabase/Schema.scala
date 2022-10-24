@@ -1,4 +1,4 @@
-package com.vgomez.app.data.database
+package com.vgomez.app.data.indexDatabase
 
 import com.vgomez.app.domain.DomainModel.{Role, Schedule}
 import com.vgomez.app.domain.Transformer.FromDomainToRawData.transformScheduleToScheduleString

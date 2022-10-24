@@ -4,13 +4,14 @@ package com.vgomez.app.actors.readers
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import com.vgomez.app.actors.User.Command.GetUser
+import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
 import com.vgomez.app.actors.User.Response.GetUserResponse
-import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
+import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
-import com.vgomez.app.data.database.Operation
-import com.vgomez.app.data.database.Model
-import com.vgomez.app.data.database.Model.RestaurantModel
-import com.vgomez.app.data.database.Response.{GetRestaurantModelsResponse, GetReviewModelsStarsResponse, GetSequenceReviewModelsStarsResponse}
+import com.vgomez.app.data.indexDatabase.Operation
+import com.vgomez.app.data.indexDatabase.Model
+import com.vgomez.app.data.indexDatabase.Model.RestaurantModel
+import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, GetSequenceReviewModelsStarsResponse}
 
 
 object ReaderFilterByCategories {
@@ -57,7 +58,8 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
     case GetRestaurantModelsResponse(restaurantModels) =>
       if(restaurantModels.nonEmpty){
         val seqRestaurantId = restaurantModels.map(model => model.id)
-        Operation.getReviewsStarsByListRestaurantId(seqRestaurantId).mapTo[GetSequenceReviewModelsStarsResponse].pipeTo(self)
+        Operation.getReviewsStarsByListRestaurantId(
+                                               seqRestaurantId).mapTo[GetSequenceReviewModelsStarsResponse].pipeTo(self)
         context.become(getAllRestaurantState(originalSender, restaurantModels))
       }
       else{
@@ -80,11 +82,18 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
   def halfwayGetRecommendationFilterByUserFavoriteCategories(originalSender: ActorRef, pageNumber: Long,
                                                              numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
-      Operation.getRestaurantsModelByCategories(userState.favoriteCategories.toList, pageNumber,
-                                                 numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
+      userState match {
+        case RegisterUserState(_, _, _, _, _, favoriteCategories) =>
+          Operation.getRestaurantsModelByCategories(favoriteCategories.toList, pageNumber,
+            numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
+          unstashAll()
+          context.become(getAllRestaurantState(originalSender))
 
-      unstashAll()
-      context.become(getAllRestaurantState(originalSender))
+        case UnregisterUserState =>
+          originalSender ! GetRecommendationResponse(None)
+          unstashAll()
+          context.become(state())
+      }
 
     case GetUserResponse(None) =>
       originalSender ! GetRecommendationResponse(None)

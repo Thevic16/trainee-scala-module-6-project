@@ -5,11 +5,11 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.Timeout
 import com.github.tototoshi.csv._
-import com.vgomez.app.actors.Restaurant.Command.CreateRestaurant
+import com.vgomez.app.actors.Restaurant.Command.RegisterRestaurant
 import com.vgomez.app.actors.Restaurant.RestaurantInfo
-import com.vgomez.app.actors.Review.Command.CreateReview
+import com.vgomez.app.actors.Review.Command.RegisterReview
 import com.vgomez.app.actors.Review.ReviewInfo
-import com.vgomez.app.actors.User.Command.CreateUser
+import com.vgomez.app.actors.User.Command.RegisterUser
 import com.vgomez.app.actors.User.UserInfo
 import com.vgomez.app.domain.DomainModel.{Location, Normal}
 import com.vgomez.app.domain.Transformer.transformScheduleStringToSchedule
@@ -30,30 +30,30 @@ object LoadDataset{
     val username: String = row.getOrElse("user_id", UUID.randomUUID().toString)
 
 
-    val createUserCommand = getCreateUserCommand(row, locationField, categoriesField)
-    val createRestaurantCommand = getCreateRestaurantCommand(row, locationField, categoriesField, restaurantId,
+    val registerUserCommand = getRegisterUserCommand(row, locationField, categoriesField)
+    val registerRestaurantCommand = getRegisterRestaurantCommand(row, locationField, categoriesField, restaurantId,
                                                               username)
-    val createReviewCommand = getCreateReviewCommand(row, restaurantId, reviewId, username)
+    val registerReviewCommand = getRegisterReviewCommand(row, restaurantId, reviewId, username)
 
-    Map("createUserCommand" -> createUserCommand, "createRestaurantCommand" -> createRestaurantCommand,
-      "createReviewCommand" -> createReviewCommand)
+    Map("registerUserCommand" -> registerUserCommand, "registerRestaurantCommand" -> registerRestaurantCommand,
+      "registerReviewCommand" -> registerReviewCommand)
   }
 
-  def getCreateUserCommand(row: Map[String, String], locationField: Location,
-                           categoriesField: Set[String]): CreateUser = {
-    CreateUser(UserInfo(username = row.getOrElse("user_id", UUID.randomUUID().toString),
+  def getRegisterUserCommand(row: Map[String, String], locationField: Location,
+                           categoriesField: Set[String]): RegisterUser = {
+    RegisterUser(UserInfo(username = row.getOrElse("user_id", UUID.randomUUID().toString),
       password = UUID.randomUUID().toString,
       role = Normal,
       location = locationField,
       favoriteCategories = categoriesField))
   }
 
-  def getCreateRestaurantCommand(row: Map[String, String], locationField: Location,
+  def getRegisterRestaurantCommand(row: Map[String, String], locationField: Location,
                                  categoriesField: Set[String], restaurantId: String,
-                                 username: String): CreateRestaurant = {
+                                 username: String): RegisterRestaurant = {
     val defaultHours: String = "{'Monday': '0:0-0:0'}"
 
-    CreateRestaurant(maybeId = Some(restaurantId), RestaurantInfo(
+    RegisterRestaurant(maybeId = Some(restaurantId), RestaurantInfo(
       username = username, name = row.getOrElse("name", "Unknown name"),
       state = row.getOrElse("state_", "Unknown state"), city = row.getOrElse("city", "Unknown city"),
       postalCode = row.getOrElse("postal_code", "UnKnown postal code"),
@@ -62,9 +62,9 @@ object LoadDataset{
     ))
   }
 
-  def getCreateReviewCommand(row: Map[String, String], restaurantId: String, reviewId: String,
-                             username: String): CreateReview = {
-    CreateReview(maybeId = Some(reviewId),
+  def getRegisterReviewCommand(row: Map[String, String], restaurantId: String, reviewId: String,
+                             username: String): RegisterReview = {
+    RegisterReview(maybeId = Some(reviewId),
       ReviewInfo(username = username, restaurantId = restaurantId,
         stars = row.getOrElse("customer_stars", "0").toInt, text = row.getOrElse("text_", "No text"),
         date = row.getOrElse("date_", "Unknown date")))
@@ -109,9 +109,9 @@ class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administratio
     val source = Source(readerStream)
     val flow = Flow[Map[String, String]].map(row => convertRowToMapCommands(row))
     val sink = Sink.foreach[Map[String, Product]](commandsMap => {
-      administration ! commandsMap("createUserCommand")
-      administration ! commandsMap("createRestaurantCommand")
-      administration ! commandsMap("createReviewCommand")
+      administration ! commandsMap("registerUserCommand")
+      administration ! commandsMap("registerRestaurantCommand")
+      administration ! commandsMap("registerReviewCommand")
     })
 
     source.via(flow).to(sink).run()

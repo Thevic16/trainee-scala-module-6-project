@@ -9,8 +9,8 @@ import com.vgomez.app.actors.Review.Command._
 import com.vgomez.app.actors.Review.Response._
 import com.vgomez.app.actors.User.Command._
 import com.vgomez.app.actors.User.Response._
-import com.vgomez.app.actors.abtractions.Abstract.Command._
-import com.vgomez.app.actors.abtractions.Abstract.Response._
+import com.vgomez.app.actors.messages.AbstractMessage.Command._
+import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.exception.CustomException._
 
 import java.util.UUID
@@ -35,52 +35,53 @@ object AdministrationUtility {
     }
   }
 
-  // Create Command related.
-  def getIdentifierByCreateCommand(createCommand: CreateCommand): String = {
-    val identifierOption: Option[String] = createCommand match {
-      case CreateRestaurant(maybeId, _) => maybeId
-      case CreateReview(maybeId, _) => maybeId
-      case CreateUser(userInfo) => Some(userInfo.username)
+  // Register Command related.
+  def getIdentifierByRegisterCommand(registerCommand: RegisterCommand): String = {
+    val identifierOption: Option[String] = registerCommand match {
+      case RegisterRestaurant(maybeId, _) => maybeId
+      case RegisterReview(maybeId, _) => maybeId
+      case RegisterUser(userInfo) => Some(userInfo.username)
     }
     identifierOption.getOrElse(UUID.randomUUID().toString)
   }
 
-  def getActorRefOptionByCreateCommand(createCommand: CreateCommand, identifier: String,
+  def getActorRefOptionByRegisterCommand(registerCommand: RegisterCommand, identifier: String,
                                        administrationState: AdministrationState): Option[(Long, ActorRef)] = {
-    createCommand match {
-      case CreateRestaurant(_, _) => administrationState.restaurants.get(identifier)
-      case CreateReview(_, _) => administrationState.reviews.get(identifier)
-      case CreateUser(_) => administrationState.users.get(identifier)
+    registerCommand match {
+      case RegisterRestaurant(_, _) => administrationState.restaurants.get(identifier)
+      case RegisterReview(_, _) => administrationState.reviews.get(identifier)
+      case RegisterUser(_) => administrationState.users.get(identifier)
     }
   }
 
-  def getNewStateByCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
+  def getNewStateByRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
                                  administrationState: AdministrationState): AdministrationState = {
-    createCommand match {
-      case CreateRestaurant(_, _) => administrationState.copy(
-        restaurants = administrationState.restaurants + (identifier -> (administrationState.currentRestaurantIndex, newActorRef)),
+    registerCommand match {
+      case RegisterRestaurant(_, _) => administrationState.copy(
+        restaurants = administrationState.restaurants + (identifier -> (administrationState.currentRestaurantIndex,
+                                                                        newActorRef)),
         currentRestaurantIndex = administrationState.currentRestaurantIndex + 1)
 
-      case CreateReview(_, _) => administrationState.copy(
+      case RegisterReview(_, _) => administrationState.copy(
         reviews = administrationState.reviews + (identifier -> (administrationState.currentReviewIndex, newActorRef)),
         currentReviewIndex = administrationState.currentReviewIndex + 1)
 
-      case CreateUser(_) => administrationState.copy(
+      case RegisterUser(_) => administrationState.copy(
         users = administrationState.users + (identifier -> (administrationState.currentUserIndex, newActorRef)),
         currentUserIndex = administrationState.currentUserIndex + 1)
     }
   }
 
-  def getNewActorRefByCreateCommand(context: ActorContext, administrationState: AdministrationState,
-                                    createCommand: CreateCommand, identifier: String): ActorRef = {
-    createCommand match {
-      case CreateRestaurant(_, _) => context.actorOf(Restaurant.props(identifier,
+  def getNewActorRefByRegisterCommand(context: ActorContext, administrationState: AdministrationState,
+                                    registerCommand: RegisterCommand, identifier: String): ActorRef = {
+    registerCommand match {
+      case RegisterRestaurant(_, _) => context.actorOf(Restaurant.props(identifier,
                                                       administrationState.currentRestaurantIndex), identifier)
 
-      case CreateReview(_, _) => context.actorOf(Review.props(identifier,
+      case RegisterReview(_, _) => context.actorOf(Review.props(identifier,
                                                                     administrationState.currentReviewIndex), identifier)
 
-      case CreateUser(_) => context.actorOf(User.props(identifier, administrationState.currentUserIndex), identifier)
+      case RegisterUser(_) => context.actorOf(User.props(identifier, administrationState.currentUserIndex), identifier)
     }
   }
 
@@ -105,50 +106,52 @@ object AdministrationUtility {
 
   def getUpdateResponseFailureByUpdateCommand(updateCommand: UpdateCommand): UpdateResponse = {
     updateCommand match {
-      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(IdentifierNotFoundException()))
-      case UpdateReview(_, _) => UpdateReviewResponse(Failure(IdentifierNotFoundException()))
-      case UpdateUser(_) => UpdateUserResponse(Failure(IdentifierNotFoundException()))
+      case UpdateRestaurant(_, _) => UpdateResponse(Failure(RestaurantNotFoundException()))
+      case UpdateReview(_, _) => UpdateResponse(Failure(ReviewNotFoundException()))
+      case UpdateUser(_) => UpdateResponse(Failure(UserNotFoundException()))
     }
   }
 
-  def getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand: UpdateCommand, message: String): UpdateResponse = {
+  def getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand: UpdateCommand,
+                                                         message: String): UpdateResponse = {
     updateCommand match {
-      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(IdentifierNotFoundException(message)))
-      case UpdateReview(_, _) => UpdateReviewResponse(Failure(IdentifierNotFoundException(message)))
-      case UpdateUser(_) => UpdateUserResponse(Failure(IdentifierNotFoundException(message)))
+      case UpdateRestaurant(_, _) => UpdateResponse(Failure(RestaurantNotFoundException(message)))
+      case UpdateReview(_, _) => UpdateResponse(Failure(ReviewNotFoundException(message)))
+      case UpdateUser(_) => UpdateResponse(Failure(UserNotFoundException(message)))
     }
   }
 
 
-  // Delete Command related.
-  def getActorRefOptionByDeleteCommand(deleteCommand: DeleteCommand,
+  // Unregister Command related.
+  def getActorRefOptionByUnregisterCommand(unregisterCommand: UnregisterCommand,
                                        administrationState: AdministrationState): Option[(Long, ActorRef)] = {
-    deleteCommand match {
-      case DeleteRestaurant(id) => administrationState.restaurants.get(id)
-      case DeleteReview(id) => administrationState.reviews.get(id)
-      case DeleteUser(username) => administrationState.users.get(username)
+    unregisterCommand match {
+      case UnregisterRestaurant(id) => administrationState.restaurants.get(id)
+      case UnregisterReview(id) => administrationState.reviews.get(id)
+      case UnregisterUser(username) => administrationState.users.get(username)
     }
   }
 
 
   // Verify Ids query commands related
-  def verifyIdsOnCreateCommand(createCommand: CreateCommand,
-                               administrationState: AdministrationState): Try[CreateCommand] = {
-    createCommand match {
-      case CreateRestaurant(_, restaurantInfo) =>
+  def verifyIdsOnRegisterCommand(registerCommand: RegisterCommand,
+                               administrationState: AdministrationState): Try[RegisterCommand] = {
+    registerCommand match {
+      case RegisterRestaurant(_, restaurantInfo) =>
         if(usernameExist(restaurantInfo.username, administrationState))
-          Success(createCommand)
+          Success(registerCommand)
         else
-          Failure(IdentifierNotFoundException("username identifier field is no found."))
+          Failure(UserNotFoundException())
 
-      case CreateReview(_, reviewInfo) =>
-        if (usernameExist(reviewInfo.username, administrationState) &&
-            restaurantExist(reviewInfo.restaurantId, administrationState))
-          Success(createCommand)
+      case RegisterReview(_, reviewInfo) =>
+        if (!usernameExist(reviewInfo.username, administrationState))
+          Failure(UserNotFoundException())
+        else if (!restaurantExist(reviewInfo.restaurantId, administrationState))
+          Failure(RestaurantNotFoundException())
         else
-          Failure(IdentifierNotFoundException("Username/RestaurantId identifier field is no found."))
+          Success(registerCommand)
 
-      case CreateUser(_) => Success(createCommand)
+      case RegisterUser(_) => Success(registerCommand)
     }
   }
 
@@ -173,14 +176,15 @@ object AdministrationUtility {
         if (usernameExist(restaurantInfo.username, administrationState))
           Success(updateCommand)
         else
-          Failure(IdentifierNotFoundException("Username identifier is no found."))
+          Failure(UserNotFoundException())
 
       case UpdateReview(_, reviewInfo) =>
-        if (usernameExist(reviewInfo.username, administrationState) &&
-          restaurantExist(reviewInfo.restaurantId, administrationState))
-          Success(updateCommand)
+        if(!usernameExist(reviewInfo.username, administrationState))
+          Failure(UserNotFoundException())
+        else if(!restaurantExist(reviewInfo.restaurantId, administrationState))
+          Failure(RestaurantNotFoundException())
         else
-          Failure(IdentifierNotFoundException("Username/RestaurantId identifier is no found."))
+          Success(updateCommand)
 
       case UpdateUser(_) => Success(updateCommand)
     }

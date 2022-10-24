@@ -8,7 +8,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.vgomez.app.actors.Administration.Command.{GetRecommendationFilterByFavoriteCategories,
                                                      GetRecommendationFilterByUserFavoriteCategories}
-import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
+import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
 import com.vgomez.app.http.messages.HttpRequest.{GetRecommendationFilterByFavoriteCategoriesRequest,
                                                 GetRecommendationFilterByFavoriteCategoriesRequestJsonProtocol,
                                                 GetRecommendationFilterByUserFavoriteCategoriesRequest,

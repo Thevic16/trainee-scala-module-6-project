@@ -1,47 +1,49 @@
 package com.vgomez.app.actors
+import akka.Done
 import akka.actor.{ActorRef, Props, Stash}
 import akka.persistence.PersistentActor
 import com.vgomez.app.actors.Administration.Command.GetStarsByRestaurant
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
-import com.vgomez.app.actors.abtractions.Abstract.Command._
-import com.vgomez.app.actors.abtractions.Abstract.Response._
+import com.vgomez.app.actors.messages.AbstractMessage.Command._
+import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsByRestaurantResponse
-import com.vgomez.app.exception.CustomException.EntityIsDeletedException
+import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 
 
 object Restaurant {
-
-  // state
-  case class RestaurantInfo(username: String , name: String, state: String, city: String, postalCode: String,
+  case class RestaurantInfo(username: String, name: String, state: String, city: String, postalCode: String,
                             location: Location, categories: Set[String], schedule: Schedule)
 
-  case class RestaurantState(id: String, index: Long,  username: String,  name: String, state: String, city: String,
-                             postalCode: String, location: Location, categories: Set[String], schedule: Schedule,
-                             isDeleted: Boolean)
+  // state
+  sealed abstract class RestaurantState
+
+  case class RegisterRestaurantState(id: String, index: Long,  username: String,  name: String, state: String, city: String,
+                             postalCode: String, location: Location, categories: Set[String], schedule: Schedule)
+                              extends RestaurantState
+
+  case object UnregisterRestaurantState extends RestaurantState
 
   // commands
   object Command {
     case class GetRestaurant(id: String) extends GetCommand
-    case class CreateRestaurant(maybeId: Option[String], restaurantInfo: RestaurantInfo) extends CreateCommand
+    case class RegisterRestaurant(maybeId: Option[String], restaurantInfo: RestaurantInfo) extends RegisterCommand
     case class UpdateRestaurant(id: String, restaurantInfo: RestaurantInfo) extends UpdateCommand
-    case class DeleteRestaurant(id: String) extends DeleteCommand
+    case class UnregisterRestaurant(id: String) extends UnregisterCommand
   }
 
   // events
-  case class RestaurantCreated(restaurantState: RestaurantState)
+  case class RestaurantRegistered(restaurantState: RestaurantState)
   case class RestaurantUpdated(restaurantState: RestaurantState)
-  case class RestaurantDeleted(restaurantState: RestaurantState)
+  case class RestaurantUnregistered(restaurantState: RestaurantState)
 
 
   // responses
   object Response {
     case class GetRestaurantResponse(maybeRestaurantState: Option[RestaurantState], maybeStars: Option[Int])
       extends GetResponse
-
-    case class UpdateRestaurantResponse(maybeRestaurantState: Try[RestaurantState]) extends UpdateResponse
   }
 
   def props(id: String, index: Long): Props =  Props(new Restaurant(id, index))
@@ -57,44 +59,49 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
 
   def state(restaurantState: RestaurantState): Receive = {
     case GetRestaurant(_) =>
-      if (restaurantState.isDeleted)
-        sender() ! GetRestaurantResponse(None, None)
-      else {
-        context.parent ! GetStarsByRestaurant(id)
-        unstashAll()
-        context.become(getStarsState(restaurantState, sender()))
+      restaurantState match {
+        case restaurantState@RegisterRestaurantState(_, _, _, _, _, _, _, _, _, _) =>
+          context.parent ! GetStarsByRestaurant(id)
+          unstashAll()
+          context.become(getStarsState(restaurantState, sender()))
+        case UnregisterRestaurantState =>
+          sender() ! GetRestaurantResponse(None, None)
       }
 
-    case CreateRestaurant(_, restaurantInfo) =>
+    case RegisterRestaurant(_, restaurantInfo) =>
       val newState: RestaurantState = getNewState(restaurantInfo)
 
-      persist(RestaurantCreated(newState)){_ =>
-        sender() ! CreateResponse(Success(id))
+      persist(RestaurantRegistered(newState)){_ =>
+        sender() ! RegisterResponse(Success(id))
         context.become(state(newState))
       }
 
     case UpdateRestaurant(_, restaurantInfo) =>
-      if(restaurantState.isDeleted)
-        sender() ! UpdateRestaurantResponse(Failure(EntityIsDeletedException))
-      else{
-        val newState: RestaurantState = getNewState(restaurantInfo)
+      restaurantState match {
+        case RegisterRestaurantState(_, _, _, _, _, _, _, _, _, _) =>
+          val newState: RestaurantState = getNewState(restaurantInfo)
 
-        persist(RestaurantUpdated(newState)) { _ =>
-          sender() ! UpdateRestaurantResponse(Success(newState))
-          context.become(state(newState))
-        }
+          persist(RestaurantUpdated(newState)) { _ =>
+            sender() ! UpdateResponse(Success(Done))
+            context.become(state(newState))
+          }
+
+        case UnregisterRestaurantState =>
+          sender() ! UpdateResponse(Failure(RestaurantUnRegisteredException))
       }
 
-    case DeleteRestaurant(id) =>
-      if (restaurantState.isDeleted)
-        sender() ! DeleteResponse(Failure(EntityIsDeletedException))
-      else {
-        val newState: RestaurantState = restaurantState.copy(isDeleted = true)
+    case UnregisterRestaurant(_) =>
+      restaurantState match {
+        case RegisterRestaurantState(_, _, _, _, _, _, _, _, _, _) =>
+          val newState: RestaurantState = UnregisterRestaurantState
 
-        persist(RestaurantDeleted(newState)) { _ =>
-          sender() ! DeleteResponse(Success(id))
-          context.become(state(newState))
-        }
+          persist(RestaurantUnregistered(newState)) { _ =>
+            sender() ! UnregisterResponse(Success(Done))
+            context.become(state(newState))
+          }
+
+        case UnregisterRestaurantState =>
+          sender() ! UnregisterResponse(Failure(RestaurantUnRegisteredException))
       }
 
     case _ =>
@@ -115,21 +122,20 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
   override def receiveCommand: Receive = state(getState())
 
   override def receiveRecover: Receive = {
-    case RestaurantCreated(restaurantState) =>
+    case RestaurantRegistered(restaurantState) =>
       context.become(state(restaurantState))
 
     case RestaurantUpdated(restaurantState) =>
       context.become(state(restaurantState))
 
-    case RestaurantDeleted(restaurantState) =>
+    case RestaurantUnregistered(restaurantState) =>
       context.become(state(restaurantState))
   }
 
   def getState(username: String = "", name:String = "", state: String = "",
                city: String = "", postalCode: String = "", location: Location = Location(0, 0),
                categories: Set[String] = Set(), schedule: Schedule = generateNewEmptySchedule()): RestaurantState = {
-    RestaurantState(id, index, username, name, state, city, postalCode, location, categories, schedule,
-      isDeleted = false)
+    RegisterRestaurantState(id, index, username, name, state, city, postalCode, location, categories, schedule)
   }
 
   def getNewState(restaurantInfo: RestaurantInfo): RestaurantState = {
