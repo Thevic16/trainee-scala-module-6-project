@@ -15,6 +15,7 @@ import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.actors.Administration.Command.GetAllReview
+import com.vgomez.app.actors.Review.{RegisterReviewState, UnregisterReviewState}
 import com.vgomez.app.exception.CustomException.ValidationFailException
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllReviewResponse
@@ -52,9 +53,13 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
         get {
           onSuccess(getReview(id)) {
             case GetReviewResponse(Some(reviewState)) =>
-              complete {
-                ReviewResponse(reviewState.id, reviewState.username, reviewState.restaurantId, reviewState.stars,
-                  reviewState.text, reviewState.date)
+              reviewState match {
+                case RegisterReviewState(id, _, username, restaurantId, stars, text, date) =>
+                  complete {
+                    ReviewResponse(id, username, restaurantId, stars, text, date)
+                  }
+                case UnregisterReviewState =>
+                  complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
               }
 
             case GetReviewResponse(None) =>

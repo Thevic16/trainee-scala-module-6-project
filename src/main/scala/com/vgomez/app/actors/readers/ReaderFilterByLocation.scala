@@ -3,6 +3,7 @@ package com.vgomez.app.actors.readers
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import com.vgomez.app.actors.User.Command.GetUser
+import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
 import com.vgomez.app.domain.DomainModel.Location
@@ -61,7 +62,8 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
         model.longitude), Some(queryLocation)) <= rangeInKm).map(model => model.id)
 
       if (seqRestaurantId.nonEmpty) {
-        Operation.getReviewsStarsByListRestaurantId(seqRestaurantId).mapTo[GetSequenceReviewModelsStarsResponse].pipeTo(self)
+        Operation.getReviewsStarsByListRestaurantId(
+                                               seqRestaurantId).mapTo[GetSequenceReviewModelsStarsResponse].pipeTo(self)
         context.become(getAllRestaurantState(originalSender, queryLocation, rangeInKm, restaurantModels))
       }
       else {
@@ -83,12 +85,20 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
   def halfwayGetRecommendationCloseToMe(originalSender: ActorRef, rangeInKm: Double, pageNumber: Long,
                                         numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
-      Operation.getPosiblesRestaurantsModelByLocation(userState.location.latitude, userState.location.longitude,
-                          rangeInKm, pageNumber, numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
+      userState match {
+        case RegisterUserState(_, _, _, _, location, _) =>
+          Operation.getPosiblesRestaurantsModelByLocation(location.latitude, location.longitude,
+            rangeInKm, pageNumber, numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
 
-      unstashAll()
-      context.become(getAllRestaurantState(originalSender,
-        Location(userState.location.latitude, userState.location.longitude), rangeInKm))
+          unstashAll()
+          context.become(getAllRestaurantState(originalSender,
+            Location(location.latitude, location.longitude), rangeInKm))
+
+        case UnregisterUserState =>
+          originalSender ! GetRecommendationResponse(None)
+          unstashAll()
+          context.become(state())
+      }
 
     case GetUserResponse(None) =>
       originalSender ! GetRecommendationResponse(None)

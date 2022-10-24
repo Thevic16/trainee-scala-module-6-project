@@ -2,7 +2,7 @@ package com.vgomez.app.data.indexDatabase
 
 import com.vgomez.app.data.indexDatabase.Model._
 import com.vgomez.app.data.indexDatabase.Response._
-import com.vgomez.app.data.indexDatabase.Table.{RestaurantTable, restaurantTable}
+import com.vgomez.app.data.indexDatabase.Table.RestaurantTable
 import com.vgomez.app.domain.DomainModelOperation.rangeInKmToDegrees
 import ExecContext._
 import akka.Done
@@ -13,9 +13,7 @@ object Operation {
   import Table.api._
   val db = Connection.db
 
-  /*
-  Todo take into account pagination in getAllQueries and others
-  */
+
   def getAllRestaurantModel(pageNumber: Long, numberOfElementPerPage: Long): Future[GetRestaurantModelsResponse] = {
     val query = Table.restaurantTable.filter(restaurant => restaurant.index >= pageNumber*numberOfElementPerPage &&
                                   restaurant.index <= pageNumber*numberOfElementPerPage + numberOfElementPerPage).result
@@ -113,7 +111,8 @@ object Operation {
     val rangeInDegrees = rangeInKmToDegrees(rangeInKm)
 
     (restaurant.latitude >= queryLatitude - rangeInDegrees || restaurant.latitude <= queryLatitude + rangeInDegrees) &&
-      (restaurant.longitude >= queryLongitude - rangeInDegrees || restaurant.longitude <= queryLongitude + rangeInDegrees)
+      (restaurant.longitude >= queryLongitude - rangeInDegrees || restaurant.longitude <= queryLongitude +
+        rangeInDegrees)
   }
 
 }

@@ -1,11 +1,11 @@
 package com.vgomez.app.actors.readers
 
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
-import com.vgomez.app.actors.Restaurant.RestaurantState
+import com.vgomez.app.actors.Restaurant.{RegisterRestaurantState, RestaurantState}
 import com.vgomez.app.actors.Review.Response.GetReviewResponse
-import com.vgomez.app.actors.Review.ReviewState
+import com.vgomez.app.actors.Review.{RegisterReviewState, ReviewState}
 import com.vgomez.app.actors.User.Response.GetUserResponse
-import com.vgomez.app.actors.User.UserState
+import com.vgomez.app.actors.User.{RegisterUserState, UserState}
 import com.vgomez.app.data.indexDatabase.Model
 import com.vgomez.app.data.indexDatabase.Model.{RestaurantModel, ReviewModel, UserModel}
 import com.vgomez.app.domain.DomainModel.Location
@@ -23,10 +23,10 @@ object ReaderUtility {
   }
 
   def getRestaurantStateByRestaurantModel(restaurantModel: RestaurantModel): RestaurantState = {
-    RestaurantState(restaurantModel.id, restaurantModel.index.getOrElse(0L),restaurantModel.username,
+    RegisterRestaurantState(restaurantModel.id, restaurantModel.index.getOrElse(0L),restaurantModel.username,
       restaurantModel.name, restaurantModel.state, restaurantModel.city, restaurantModel.postalCode,
       Location(restaurantModel.latitude, restaurantModel.longitude), restaurantModel.categories.toSet,
-      restaurantModel.schedule, isDeleted = false)
+      restaurantModel.schedule)
   }
 
   def getListRestaurantResponsesBySeqRestaurantModels(restaurantModels: Seq[Model.RestaurantModel],
@@ -43,8 +43,8 @@ object ReaderUtility {
   }
 
   def getReviewStateByReviewModel(reviewModel: ReviewModel): ReviewState = {
-    ReviewState(reviewModel.id, reviewModel.index.getOrElse(0L), reviewModel.username, reviewModel.restaurantId,
-      reviewModel.stars, reviewModel.text, reviewModel.date, isDeleted = false)
+    RegisterReviewState(reviewModel.id, reviewModel.index.getOrElse(0L), reviewModel.username, reviewModel.restaurantId,
+      reviewModel.stars, reviewModel.text, reviewModel.date)
   }
 
   def getReviewResponseByReviewModel(reviewModel: ReviewModel): GetReviewResponse = {
@@ -52,8 +52,8 @@ object ReaderUtility {
   }
 
   def getUserStateByUserModel(userModel: UserModel): UserState = {
-    UserState(userModel.username, userModel.index.getOrElse(0L), userModel.password, userModel.role,
-      Location(userModel.latitude, userModel.longitude), userModel.favoriteCategories.toSet, isDeleted = false)
+    RegisterUserState(userModel.username, userModel.index.getOrElse(0L), userModel.password, userModel.role,
+      Location(userModel.latitude, userModel.longitude), userModel.favoriteCategories.toSet)
   }
 
   def getUserResponseByUserModel(userModel: UserModel): GetUserResponse = {

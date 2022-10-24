@@ -15,6 +15,7 @@ import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.actors.Administration.Command.GetAllUser
+import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
 import com.vgomez.app.domain.Transformer.transformRoleToStringRole
 import com.vgomez.app.exception.CustomException.ValidationFailException
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
@@ -52,10 +53,16 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
         get {
           onSuccess(getUser(username)) {
             case GetUserResponse(Some(userState)) =>
-              complete {
-                UserResponse(userState.username,userState.password, transformRoleToStringRole(userState.role),
-                  userState.location.latitude,  userState.location.longitude,userState.favoriteCategories)
+              userState match {
+                case RegisterUserState(username, _, password, role, location, favoriteCategories) =>
+                  complete {
+                    UserResponse(username, password, transformRoleToStringRole(role),
+                      location.latitude, location.longitude, favoriteCategories)
+                  }
+                case UnregisterUserState =>
+                  complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
               }
+
             case GetUserResponse(None) =>
               complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
           }

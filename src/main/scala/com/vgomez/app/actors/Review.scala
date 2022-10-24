@@ -10,12 +10,14 @@ import com.vgomez.app.exception.CustomException.EntityIsDeletedException
 
 
 object Review {
-
-  // state
   case class ReviewInfo(username: String, restaurantId: String, stars: Int, text: String, date: String)
 
-  case class ReviewState(id: String, index: Long, username: String, restaurantId: String, stars: Int, text: String, date: String,
-                         isDeleted: Boolean)
+  // state
+  sealed abstract class ReviewState
+  case class RegisterReviewState(id: String, index: Long, username: String, restaurantId: String, stars: Int,
+                                 text: String, date: String) extends ReviewState
+
+  case object UnregisterReviewState extends ReviewState
 
   // commands
   object Command {
@@ -49,11 +51,11 @@ class Review(id: String, index: Long) extends PersistentActor{
 
   def state(reviewState: ReviewState): Receive = {
     case GetReview(_) =>
-      if(reviewState.isDeleted){
-        sender() ! GetReviewResponse(None)
-      }
-      else {
-        sender() ! GetReviewResponse(Some(reviewState))
+      reviewState match {
+        case RegisterReviewState(_, _, _, _, _, _, _) =>
+          sender() ! GetReviewResponse(Some(reviewState))
+        case UnregisterReviewState =>
+          sender() ! GetReviewResponse(None)
       }
 
     case CreateReview(_, reviewInfo) =>
@@ -65,29 +67,28 @@ class Review(id: String, index: Long) extends PersistentActor{
       }
 
     case UpdateReview(_, reviewInfo) =>
-      if(reviewState.isDeleted)
-        sender() ! UpdateResponse(Failure(EntityIsDeletedException))
-      else {
-        val newState: ReviewState = getNewState(reviewInfo)
+      reviewState match {
+        case RegisterReviewState(_, _, _, _, _, _, _) =>
+          val newState: ReviewState = getNewState(reviewInfo)
 
-        persist(ReviewUpdated(newState)) { _ =>
-          sender() ! UpdateResponse(Success(Done))
-          context.become(state(newState))
-        }
+          persist(ReviewUpdated(newState)) { _ =>
+            sender() ! UpdateResponse(Success(Done))
+            context.become(state(newState))
+          }
+        case UnregisterReviewState =>
+          sender() ! UpdateResponse(Failure(EntityIsDeletedException))
       }
 
-    case DeleteReview(id) =>
-      if (reviewState.isDeleted){
-        sender() ! DeleteResponse(Failure(EntityIsDeletedException))
-      }
-      else {
-        val newState: ReviewState = reviewState.copy(isDeleted = true)
+    case DeleteReview(_) =>
+    case RegisterReviewState(_, _, _, _, _, _, _) =>
+      val newState: ReviewState = UnregisterReviewState
 
-        persist(ReviewDeleted(newState)) { _ =>
-          sender() ! DeleteResponse(Success(Done))
-          context.become(state(newState))
-        }
+      persist(ReviewDeleted(newState)) { _ =>
+        sender() ! DeleteResponse(Success(Done))
+        context.become(state(newState))
       }
+    case UnregisterReviewState =>
+      sender() ! DeleteResponse(Failure(EntityIsDeletedException))
   }
 
   override def receiveCommand: Receive = state(getState())
@@ -105,7 +106,7 @@ class Review(id: String, index: Long) extends PersistentActor{
 
   def getState(username: String = "", restaurantId: String = "", stars: Int = 0, text: String = "",
                date: String = ""): ReviewState = {
-    ReviewState(id, index, username, restaurantId, stars, text, date, isDeleted = false)
+    RegisterReviewState(id, index, username, restaurantId, stars, text, date)
   }
 
   def getNewState(reviewInfo: ReviewInfo): ReviewState = {

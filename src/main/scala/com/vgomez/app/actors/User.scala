@@ -11,13 +11,14 @@ import com.vgomez.app.exception.CustomException.EntityIsDeletedException
 
 
 object User {
+  case class UserInfo(username: String, password: String, role: Role, location: Location,
+                      favoriteCategories: Set[String])
 
   // state
-  case class UserInfo(username: String, password: String, role: Role, location: Location,
-                       favoriteCategories: Set[String])
-
-  case class UserState(username: String, index: Long, password: String, role: Role, location: Location,
-                       favoriteCategories: Set[String], isDeleted: Boolean)
+  sealed abstract class UserState
+  case class RegisterUserState(username: String, index: Long, password: String, role: Role, location: Location,
+                       favoriteCategories: Set[String]) extends UserState
+  case object UnregisterUserState extends UserState
 
   // commands
   object Command {
@@ -51,11 +52,12 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
 
   def state(userState: UserState): Receive = {
     case GetUser(_) =>
-      if(userState.isDeleted){
-        sender() ! GetUserResponse(None)
+      userState match {
+        case RegisterUserState(_, _, _, _, _, _) =>
+          sender() ! GetUserResponse(Some(userState))
+        case UnregisterUserState =>
+          sender() ! GetUserResponse(None)
       }
-      else
-        sender() ! GetUserResponse(Some(userState))
 
     case CreateUser(userInfo) =>
       val newState: UserState = getNewState(userInfo)
@@ -66,27 +68,29 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
       }
 
     case UpdateUser(userInfo) =>
-      if(userState.isDeleted)
-        sender() ! UpdateResponse(Failure(EntityIsDeletedException))
-      else {
-        val newState: UserState = getNewState(userInfo)
+      userState match {
+        case RegisterUserState(_, _, _, _, _, _) =>
+          val newState: UserState = getNewState(userInfo)
 
-        persist(UserUpdated(newState)) { _ =>
-          sender() ! UpdateResponse(Success(Done))
-          context.become(state(newState))
-        }
+          persist(UserUpdated(newState)) { _ =>
+            sender() ! UpdateResponse(Success(Done))
+            context.become(state(newState))
+          }
+        case UnregisterUserState =>
+          sender() ! UpdateResponse(Failure(EntityIsDeletedException))
       }
 
-    case DeleteUser(id) =>
-      if(userState.isDeleted)
-        sender() ! DeleteResponse(Failure(EntityIsDeletedException))
-      else {
-        val newState: UserState = userState.copy(isDeleted = true)
+    case DeleteUser(_) =>
+      userState match {
+        case RegisterUserState(_, _, _, _, _, _) =>
+          val newState: UserState = UnregisterUserState
 
-        persist(UserDeleted(newState)) { _ =>
-          sender() ! DeleteResponse(Success(Done))
-          context.become(state(newState))
-        }
+          persist(UserDeleted(newState)) { _ =>
+            sender() ! DeleteResponse(Success(Done))
+            context.become(state(newState))
+          }
+        case UnregisterUserState =>
+          sender() ! DeleteResponse(Failure(EntityIsDeletedException))
       }
   }
 
@@ -105,7 +109,7 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
 
   def getState(username: String = username, password: String = "", role: Role = Normal,
                location: Location = Location(0,0), favoriteCategories: Set[String] = Set()): UserState = {
-      UserState(username, index, password, role, location, favoriteCategories, isDeleted = false)
+      RegisterUserState(username, index, password, role, location, favoriteCategories)
   }
 
   def getNewState(userInfo: UserInfo): UserState = {
