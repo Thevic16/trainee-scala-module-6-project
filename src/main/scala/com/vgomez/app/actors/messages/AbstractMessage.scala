@@ -10,11 +10,11 @@ object AbstractMessage {
   object Command {
     abstract class GetCommand
 
-    abstract class CreateCommand
+    abstract class RegisterCommand
 
     abstract class UpdateCommand
 
-    abstract class DeleteCommand
+    abstract class UnregisterCommand
   }
 
   object Event {
@@ -24,11 +24,11 @@ object AbstractMessage {
   object Response {
     abstract class GetResponse
 
-    case class CreateResponse(maybeIdentifier: Try[String])
+    case class RegisterResponse(maybeIdentifier: Try[String])
 
     case class UpdateResponse(maybeDone: Try[Done])
 
-    case class DeleteResponse(maybeDone: Try[Done])
+    case class UnregisterResponse(maybeDone: Try[Done])
 
     case class GetRecommendationResponse(optionGetRestaurantResponses: Option[List[GetRestaurantResponse]])
   }

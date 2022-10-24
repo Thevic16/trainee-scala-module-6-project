@@ -35,53 +35,53 @@ object AdministrationUtility {
     }
   }
 
-  // Create Command related.
-  def getIdentifierByCreateCommand(createCommand: CreateCommand): String = {
-    val identifierOption: Option[String] = createCommand match {
-      case CreateRestaurant(maybeId, _) => maybeId
-      case CreateReview(maybeId, _) => maybeId
-      case CreateUser(userInfo) => Some(userInfo.username)
+  // Register Command related.
+  def getIdentifierByRegisterCommand(registerCommand: RegisterCommand): String = {
+    val identifierOption: Option[String] = registerCommand match {
+      case RegisterRestaurant(maybeId, _) => maybeId
+      case RegisterReview(maybeId, _) => maybeId
+      case RegisterUser(userInfo) => Some(userInfo.username)
     }
     identifierOption.getOrElse(UUID.randomUUID().toString)
   }
 
-  def getActorRefOptionByCreateCommand(createCommand: CreateCommand, identifier: String,
+  def getActorRefOptionByRegisterCommand(registerCommand: RegisterCommand, identifier: String,
                                        administrationState: AdministrationState): Option[(Long, ActorRef)] = {
-    createCommand match {
-      case CreateRestaurant(_, _) => administrationState.restaurants.get(identifier)
-      case CreateReview(_, _) => administrationState.reviews.get(identifier)
-      case CreateUser(_) => administrationState.users.get(identifier)
+    registerCommand match {
+      case RegisterRestaurant(_, _) => administrationState.restaurants.get(identifier)
+      case RegisterReview(_, _) => administrationState.reviews.get(identifier)
+      case RegisterUser(_) => administrationState.users.get(identifier)
     }
   }
 
-  def getNewStateByCreateCommand(createCommand: CreateCommand, newActorRef: ActorRef, identifier: String,
+  def getNewStateByRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
                                  administrationState: AdministrationState): AdministrationState = {
-    createCommand match {
-      case CreateRestaurant(_, _) => administrationState.copy(
+    registerCommand match {
+      case RegisterRestaurant(_, _) => administrationState.copy(
         restaurants = administrationState.restaurants + (identifier -> (administrationState.currentRestaurantIndex,
                                                                         newActorRef)),
         currentRestaurantIndex = administrationState.currentRestaurantIndex + 1)
 
-      case CreateReview(_, _) => administrationState.copy(
+      case RegisterReview(_, _) => administrationState.copy(
         reviews = administrationState.reviews + (identifier -> (administrationState.currentReviewIndex, newActorRef)),
         currentReviewIndex = administrationState.currentReviewIndex + 1)
 
-      case CreateUser(_) => administrationState.copy(
+      case RegisterUser(_) => administrationState.copy(
         users = administrationState.users + (identifier -> (administrationState.currentUserIndex, newActorRef)),
         currentUserIndex = administrationState.currentUserIndex + 1)
     }
   }
 
-  def getNewActorRefByCreateCommand(context: ActorContext, administrationState: AdministrationState,
-                                    createCommand: CreateCommand, identifier: String): ActorRef = {
-    createCommand match {
-      case CreateRestaurant(_, _) => context.actorOf(Restaurant.props(identifier,
+  def getNewActorRefByRegisterCommand(context: ActorContext, administrationState: AdministrationState,
+                                    registerCommand: RegisterCommand, identifier: String): ActorRef = {
+    registerCommand match {
+      case RegisterRestaurant(_, _) => context.actorOf(Restaurant.props(identifier,
                                                       administrationState.currentRestaurantIndex), identifier)
 
-      case CreateReview(_, _) => context.actorOf(Review.props(identifier,
+      case RegisterReview(_, _) => context.actorOf(Review.props(identifier,
                                                                     administrationState.currentReviewIndex), identifier)
 
-      case CreateUser(_) => context.actorOf(User.props(identifier, administrationState.currentUserIndex), identifier)
+      case RegisterUser(_) => context.actorOf(User.props(identifier, administrationState.currentUserIndex), identifier)
     }
   }
 
@@ -122,36 +122,36 @@ object AdministrationUtility {
   }
 
 
-  // Delete Command related.
-  def getActorRefOptionByDeleteCommand(deleteCommand: DeleteCommand,
+  // Unregister Command related.
+  def getActorRefOptionByUnregisterCommand(unregisterCommand: UnregisterCommand,
                                        administrationState: AdministrationState): Option[(Long, ActorRef)] = {
-    deleteCommand match {
-      case DeleteRestaurant(id) => administrationState.restaurants.get(id)
-      case DeleteReview(id) => administrationState.reviews.get(id)
-      case DeleteUser(username) => administrationState.users.get(username)
+    unregisterCommand match {
+      case UnregisterRestaurant(id) => administrationState.restaurants.get(id)
+      case UnregisterReview(id) => administrationState.reviews.get(id)
+      case UnregisterUser(username) => administrationState.users.get(username)
     }
   }
 
 
   // Verify Ids query commands related
-  def verifyIdsOnCreateCommand(createCommand: CreateCommand,
-                               administrationState: AdministrationState): Try[CreateCommand] = {
-    createCommand match {
-      case CreateRestaurant(_, restaurantInfo) =>
+  def verifyIdsOnRegisterCommand(registerCommand: RegisterCommand,
+                               administrationState: AdministrationState): Try[RegisterCommand] = {
+    registerCommand match {
+      case RegisterRestaurant(_, restaurantInfo) =>
         if(usernameExist(restaurantInfo.username, administrationState))
-          Success(createCommand)
+          Success(registerCommand)
         else
           Failure(UserNotFoundException())
 
-      case CreateReview(_, reviewInfo) =>
+      case RegisterReview(_, reviewInfo) =>
         if (!usernameExist(reviewInfo.username, administrationState))
           Failure(UserNotFoundException())
         else if (!restaurantExist(reviewInfo.restaurantId, administrationState))
           Failure(RestaurantNotFoundException())
         else
-          Success(createCommand)
+          Success(registerCommand)
 
-      case CreateUser(_) => Success(createCommand)
+      case RegisterUser(_) => Success(registerCommand)
     }
   }
 

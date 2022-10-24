@@ -25,14 +25,14 @@ object CustomException {
                                        "The provided user already exist in the system.") extends
     RuntimeException(message)
 
-  /*
-  * Todo specify more clases for this later.
-  * */
-  case object EntityIsDeletedException extends
-    RuntimeException("This entity is delete in the system.")
+  case object RestaurantUnRegisteredException extends
+    RuntimeException("This restaurant is delete in the system.")
+
+  case object ReviewUnRegisteredException extends
+    RuntimeException("This review is delete in the system.")
+
+  case object UserUnRegisteredException extends
+    RuntimeException("This user is delete in the system.")
 
   case class ValidationFailException(message: String) extends IllegalArgumentException(message)
-
-  case object UnknownConfigurationPathException extends
-    RuntimeException("Unknown Actor system configuration path, please check application.conf actor-system-config section.")
 }

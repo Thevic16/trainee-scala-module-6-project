@@ -34,15 +34,15 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
   def getReview(id: String): Future[GetReviewResponse] =
     (administration ? GetReview(id)).mapTo[GetReviewResponse]
 
-  def createReview(reviewCreationRequest: ReviewCreationRequest): Future[CreateResponse] =
-    (administration ? reviewCreationRequest.toCommand).mapTo[CreateResponse]
+  def createReview(reviewCreationRequest: ReviewCreationRequest): Future[RegisterResponse] =
+    (administration ? reviewCreationRequest.toCommand).mapTo[RegisterResponse]
 
   def updateReview(id: String,
                    reviewUpdateRequest: ReviewUpdateRequest): Future[UpdateResponse] =
     (administration ? reviewUpdateRequest.toCommand(id)).mapTo[UpdateResponse]
 
-  def deleteReview(id: String): Future[DeleteResponse] =
-    (administration ? DeleteReview(id)).mapTo[DeleteResponse]
+  def unregisterReview(id: String): Future[UnregisterResponse] =
+    (administration ? UnregisterReview(id)).mapTo[UnregisterResponse]
 
   def getAllReview(pageNumber: Long, numberOfElementPerPage: Long): Future[GetAllReviewResponse] =
     (administration ? GetAllReview(pageNumber, numberOfElementPerPage)).mapTo[GetAllReviewResponse]
@@ -85,10 +85,10 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
             }
           } ~
           delete {
-            onSuccess(deleteReview(id)) {
-              case DeleteResponse(Success(_)) =>
+            onSuccess(unregisterReview(id)) {
+              case UnregisterResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteResponse(Failure(_)) =>
+              case UnregisterResponse(Failure(_)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
             }
           }
@@ -100,11 +100,11 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
                 request.text, request.date).run() match {
                 case Success(_) =>
                   onSuccess(createReview(request)) {
-                    case CreateResponse(Success(id)) =>
+                    case RegisterResponse(Success(id)) =>
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.Created)
                       }
-                    case CreateResponse(Failure(e: RuntimeException)) =>
+                    case RegisterResponse(Failure(e: RuntimeException)) =>
                       complete(StatusCodes.BadRequest, e.getMessage)
                   }
                 case Failure(e: ValidationFailException) =>

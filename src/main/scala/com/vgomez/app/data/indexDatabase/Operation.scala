@@ -32,17 +32,17 @@ object Operation {
     db.run(query).map(GetUserModelsResponse)
   }
 
-  def insertRestaurantModel(restaurantModel: RestaurantModel): Future[Done] = {
+  def registerRestaurantModel(restaurantModel: RestaurantModel): Future[Done] = {
     val insertQuery = Table.restaurantTable forceInsert restaurantModel
     db.run(insertQuery).map(_ => Done)
   }
 
-  def insertReviewModel(reviewModel: ReviewModel): Future[Done] = {
+  def registerReviewModel(reviewModel: ReviewModel): Future[Done] = {
     val insertQuery = Table.reviewTable forceInsert reviewModel
     db.run(insertQuery).map(_ => Done)
   }
 
-  def insertUserModel(userModel: UserModel): Future[Done] = {
+  def registerUserModel(userModel: UserModel): Future[Done] = {
     val insertQuery = Table.userTable forceInsert userModel
     db.run(insertQuery).map(_ => Done)
   }
@@ -62,17 +62,17 @@ object Operation {
     db.run(updateQuery).map(_ => Done)
   }
 
-  def deleteRestaurantModel(id: String): Future[Done] = {
+  def unregisterRestaurantModel(id: String): Future[Done] = {
     val deleteQuery = Table.restaurantTable.filter(_.id === id).delete
     db.run(deleteQuery).map(_ => Done)
   }
 
-  def deleteReviewModel(id: String): Future[Done] = {
+  def unregisterReviewModel(id: String): Future[Done] = {
     val deleteQuery = Table.reviewTable.filter(_.id === id).delete
     db.run(deleteQuery).map(_ => Done)
   }
 
-  def deleteUserModel(username: String): Future[Done] = {
+  def unregisterUserModel(username: String): Future[Done] = {
     val deleteQuery = Table.userTable.filter(_.username === username).delete
     db.run(deleteQuery).map(_ => Done)
   }

@@ -35,14 +35,14 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
   def getUser(username: String): Future[GetUserResponse] =
     (administration ? GetUser(username)).mapTo[GetUserResponse]
 
-  def createUser(userCreationRequest: UserCreationRequest): Future[CreateResponse] =
-    (administration ? userCreationRequest.toCommand).mapTo[CreateResponse]
+  def registerUser(userCreationRequest: UserCreationRequest): Future[RegisterResponse] =
+    (administration ? userCreationRequest.toCommand).mapTo[RegisterResponse]
 
   def updateUser(userUpdateRequest: UserUpdateRequest): Future[UpdateResponse] =
     (administration ? userUpdateRequest.toCommand).mapTo[UpdateResponse]
 
-  def deleteUser(username: String): Future[DeleteResponse] =
-    (administration ? DeleteUser(username)).mapTo[DeleteResponse]
+  def unregisterUser(username: String): Future[UnregisterResponse] =
+    (administration ? UnregisterUser(username)).mapTo[UnregisterResponse]
 
   def getAllUser(pageNumber: Long, numberOfElementPerPage: Long): Future[GetAllUserResponse] =
     (administration ? GetAllUser(pageNumber, numberOfElementPerPage)).mapTo[GetAllUserResponse]
@@ -86,10 +86,10 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
             }
           } ~
           delete {
-            onSuccess(deleteUser(username)) {
-              case DeleteResponse(Success(_)) =>
+            onSuccess(unregisterUser(username)) {
+              case UnregisterResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteResponse(Failure(_)) =>
+              case UnregisterResponse(Failure(_)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
             }
           }
@@ -100,12 +100,12 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
               ValidatorUserRequest(request.username, request.password, request.role, request.latitude, request.longitude,
                 request.favoriteCategories).run() match {
                 case Success(_) =>
-                  onSuccess(createUser(request)) {
-                    case CreateResponse(Success(id)) =>
+                  onSuccess(registerUser(request)) {
+                    case RegisterResponse(Success(id)) =>
                       respondWithHeader(Location(s"/users/$id")) {
                         complete(StatusCodes.Created)
                       }
-                    case CreateResponse(Failure(e: RuntimeException)) =>
+                    case RegisterResponse(Failure(e: RuntimeException)) =>
                       complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                   }
                 case Failure(e: ValidationFailException) =>

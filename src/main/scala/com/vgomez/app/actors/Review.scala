@@ -6,7 +6,7 @@ import akka.persistence.PersistentActor
 import scala.util.{Failure, Success}
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
-import com.vgomez.app.exception.CustomException.EntityIsDeletedException
+import com.vgomez.app.exception.CustomException.ReviewUnRegisteredException
 
 
 object Review {
@@ -22,15 +22,15 @@ object Review {
   // commands
   object Command {
     case class GetReview(id: String) extends GetCommand
-    case class CreateReview(maybeId: Option[String], reviewInfo: ReviewInfo) extends CreateCommand
+    case class RegisterReview(maybeId: Option[String], reviewInfo: ReviewInfo) extends RegisterCommand
     case class UpdateReview(id: String, reviewInfo: ReviewInfo) extends UpdateCommand
-    case class DeleteReview(id: String) extends DeleteCommand
+    case class UnregisterReview(id: String) extends UnregisterCommand
   }
 
   // events
-  case class ReviewCreated(ReviewState: ReviewState)
+  case class ReviewRegistered(ReviewState: ReviewState)
   case class ReviewUpdated(ReviewState: ReviewState)
-  case class ReviewDeleted(ReviewState: ReviewState)
+  case class ReviewUnregistered(ReviewState: ReviewState)
 
 
   // responses
@@ -58,11 +58,11 @@ class Review(id: String, index: Long) extends PersistentActor with ActorLogging{
           sender() ! GetReviewResponse(None)
       }
 
-    case CreateReview(_, reviewInfo) =>
+    case RegisterReview(_, reviewInfo) =>
       val newState: ReviewState = getNewState(reviewInfo)
 
-      persist(ReviewCreated(newState)) { _ =>
-        sender() ! CreateResponse(Success(id))
+      persist(ReviewUnregistered(newState)) { _ =>
+        sender() ! RegisterResponse(Success(id))
         context.become(state(newState))
       }
 
@@ -76,34 +76,34 @@ class Review(id: String, index: Long) extends PersistentActor with ActorLogging{
             context.become(state(newState))
           }
         case UnregisterReviewState =>
-          sender() ! UpdateResponse(Failure(EntityIsDeletedException))
+          sender() ! UpdateResponse(Failure(ReviewUnRegisteredException))
       }
 
-    case DeleteReview(_) =>
-      log.info(s"Review with id $id has receive a DeleteReview command.")
+    case UnregisterReview(_) =>
+      log.info(s"Review with id $id has receive a UnregisterReview command.")
       reviewState match {
         case RegisterReviewState(_, _, _, _, _, _, _) =>
           val newState: ReviewState = UnregisterReviewState
 
-          persist(ReviewDeleted(newState)) { _ =>
-            sender() ! DeleteResponse(Success(Done))
+          persist(ReviewUnregistered(newState)) { _ =>
+            sender() ! UnregisterResponse(Success(Done))
             context.become(state(newState))
           }
         case UnregisterReviewState =>
-          sender() ! DeleteResponse(Failure(EntityIsDeletedException))
+          sender() ! UnregisterResponse(Failure(ReviewUnRegisteredException))
       }
   }
 
   override def receiveCommand: Receive = state(getState())
 
   override def receiveRecover: Receive = {
-    case ReviewCreated(reviewState) =>
+    case ReviewRegistered(reviewState) =>
       context.become(state(reviewState))
 
     case ReviewUpdated(reviewState) =>
       context.become(state(reviewState))
 
-    case ReviewDeleted(reviewState) =>
+    case ReviewUnregistered(reviewState) =>
       context.become(state(reviewState))
   }
 

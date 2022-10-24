@@ -10,7 +10,7 @@ import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsByRestaurantResponse
-import com.vgomez.app.exception.CustomException.EntityIsDeletedException
+import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 
 
 object Restaurant {
@@ -29,15 +29,15 @@ object Restaurant {
   // commands
   object Command {
     case class GetRestaurant(id: String) extends GetCommand
-    case class CreateRestaurant(maybeId: Option[String], restaurantInfo: RestaurantInfo) extends CreateCommand
+    case class RegisterRestaurant(maybeId: Option[String], restaurantInfo: RestaurantInfo) extends RegisterCommand
     case class UpdateRestaurant(id: String, restaurantInfo: RestaurantInfo) extends UpdateCommand
-    case class DeleteRestaurant(id: String) extends DeleteCommand
+    case class UnregisterRestaurant(id: String) extends UnregisterCommand
   }
 
   // events
-  case class RestaurantCreated(restaurantState: RestaurantState)
+  case class RestaurantRegistered(restaurantState: RestaurantState)
   case class RestaurantUpdated(restaurantState: RestaurantState)
-  case class RestaurantDeleted(restaurantState: RestaurantState)
+  case class RestaurantUnregistered(restaurantState: RestaurantState)
 
 
   // responses
@@ -68,11 +68,11 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
           sender() ! GetRestaurantResponse(None, None)
       }
 
-    case CreateRestaurant(_, restaurantInfo) =>
+    case RegisterRestaurant(_, restaurantInfo) =>
       val newState: RestaurantState = getNewState(restaurantInfo)
 
-      persist(RestaurantCreated(newState)){_ =>
-        sender() ! CreateResponse(Success(id))
+      persist(RestaurantRegistered(newState)){_ =>
+        sender() ! RegisterResponse(Success(id))
         context.become(state(newState))
       }
 
@@ -87,21 +87,21 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
           }
 
         case UnregisterRestaurantState =>
-          sender() ! UpdateResponse(Failure(EntityIsDeletedException))
+          sender() ! UpdateResponse(Failure(RestaurantUnRegisteredException))
       }
 
-    case DeleteRestaurant(_) =>
+    case UnregisterRestaurant(_) =>
       restaurantState match {
         case RegisterRestaurantState(_, _, _, _, _, _, _, _, _, _) =>
           val newState: RestaurantState = UnregisterRestaurantState
 
-          persist(RestaurantDeleted(newState)) { _ =>
-            sender() ! DeleteResponse(Success(Done))
+          persist(RestaurantUnregistered(newState)) { _ =>
+            sender() ! UnregisterResponse(Success(Done))
             context.become(state(newState))
           }
 
         case UnregisterRestaurantState =>
-          sender() ! DeleteResponse(Failure(EntityIsDeletedException))
+          sender() ! UnregisterResponse(Failure(RestaurantUnRegisteredException))
       }
 
     case _ =>
@@ -122,13 +122,13 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
   override def receiveCommand: Receive = state(getState())
 
   override def receiveRecover: Receive = {
-    case RestaurantCreated(restaurantState) =>
+    case RestaurantRegistered(restaurantState) =>
       context.become(state(restaurantState))
 
     case RestaurantUpdated(restaurantState) =>
       context.become(state(restaurantState))
 
-    case RestaurantDeleted(restaurantState) =>
+    case RestaurantUnregistered(restaurantState) =>
       context.become(state(restaurantState))
   }
 

@@ -33,15 +33,15 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
   def getRestaurant(id: String): Future[GetRestaurantResponse] =
     (administration ? GetRestaurant(id)).mapTo[GetRestaurantResponse]
 
-  def createRestaurant(restaurantCreationRequest: RestaurantCreationRequest): Future[CreateResponse] =
-    (administration ? restaurantCreationRequest.toCommand).mapTo[CreateResponse]
+  def registerRestaurant(restaurantCreationRequest: RestaurantCreationRequest): Future[RegisterResponse] =
+    (administration ? restaurantCreationRequest.toCommand).mapTo[RegisterResponse]
 
   def updateRestaurant(id: String,
                        restaurantUpdateRequest: RestaurantUpdateRequest): Future[UpdateResponse] =
     (administration ? restaurantUpdateRequest.toCommand(id)).mapTo[UpdateResponse]
 
-  def deleteRestaurant(id: String): Future[DeleteResponse] =
-    (administration ? DeleteRestaurant(id)).mapTo[DeleteResponse]
+  def unregisterRestaurant(id: String): Future[UnregisterResponse] =
+    (administration ? UnregisterRestaurant(id)).mapTo[UnregisterResponse]
 
   def getAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long): Future[GetAllRestaurantResponse] =
     (administration ? GetAllRestaurant(pageNumber, numberOfElementPerPage)).mapTo[GetAllRestaurantResponse]
@@ -81,10 +81,10 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
             }
           } ~
           delete {
-            onSuccess(deleteRestaurant(id)) {
-              case DeleteResponse(Success(_)) =>
+            onSuccess(unregisterRestaurant(id)) {
+              case UnregisterResponse(Success(_)) =>
                 complete(StatusCodes.NoContent)
-              case DeleteResponse(Failure(_)) =>
+              case UnregisterResponse(Failure(_)) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
             }
           }
@@ -96,12 +96,12 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
               request.latitude, request.longitude, request.categories,
               request.schedule).run() match {
               case Success(_) =>
-                onSuccess(createRestaurant(request)) {
-                  case CreateResponse(Success(id)) =>
+                onSuccess(registerRestaurant(request)) {
+                  case RegisterResponse(Success(id)) =>
                     respondWithHeader(Location(s"/restaurants/$id")) {
                       complete(StatusCodes.Created)
                     }
-                  case CreateResponse(Failure(e: RuntimeException)) =>
+                  case RegisterResponse(Failure(e: RuntimeException)) =>
                     complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                 }
               case Failure(e: ValidationFailException) =>
