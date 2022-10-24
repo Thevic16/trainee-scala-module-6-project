@@ -7,9 +7,9 @@ import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
 import com.vgomez.app.domain.DomainModel.Location
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
-import com.vgomez.app.data.database.Model.RestaurantModel
-import com.vgomez.app.data.database.Operation
-import com.vgomez.app.data.database.Response.{GetRestaurantModelsResponse, GetSequenceReviewModelsStarsResponse}
+import com.vgomez.app.data.indexDatabase.Model.RestaurantModel
+import com.vgomez.app.data.indexDatabase.Operation
+import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, GetSequenceReviewModelsStarsResponse}
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
 

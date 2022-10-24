@@ -5,8 +5,8 @@ import akka.pattern.pipe
 import com.vgomez.app.actors.Restaurant.RestaurantInfo
 import com.vgomez.app.actors.Review.ReviewInfo
 import com.vgomez.app.actors.User.UserInfo
-import com.vgomez.app.data.database.Model._
-import com.vgomez.app.data.database.Operation._
+import com.vgomez.app.data.indexDatabase.Model._
+import com.vgomez.app.data.indexDatabase.Operation._
 
 object WriterToIndexDatabase {
 

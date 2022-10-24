@@ -7,10 +7,10 @@ import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.abtractions.Abstract.Response.GetRecommendationResponse
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
-import com.vgomez.app.data.database.Operation
-import com.vgomez.app.data.database.Model
-import com.vgomez.app.data.database.Model.RestaurantModel
-import com.vgomez.app.data.database.Response.{GetRestaurantModelsResponse, GetReviewModelsStarsResponse, GetSequenceReviewModelsStarsResponse}
+import com.vgomez.app.data.indexDatabase.Operation
+import com.vgomez.app.data.indexDatabase.Model
+import com.vgomez.app.data.indexDatabase.Model.RestaurantModel
+import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, GetReviewModelsStarsResponse, GetSequenceReviewModelsStarsResponse}
 
 
 object ReaderFilterByCategories {

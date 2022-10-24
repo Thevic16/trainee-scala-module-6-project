@@ -6,8 +6,8 @@ import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.Review.ReviewState
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.User.UserState
-import com.vgomez.app.data.database.Model
-import com.vgomez.app.data.database.Model.{RestaurantModel, ReviewModel, UserModel}
+import com.vgomez.app.data.indexDatabase.Model
+import com.vgomez.app.data.indexDatabase.Model.{RestaurantModel, ReviewModel, UserModel}
 import com.vgomez.app.domain.DomainModel.Location
 
 object ReaderUtility {

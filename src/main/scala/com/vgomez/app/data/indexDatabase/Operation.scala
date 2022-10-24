@@ -1,8 +1,8 @@
-package com.vgomez.app.data.database
+package com.vgomez.app.data.indexDatabase
 
-import com.vgomez.app.data.database.Model._
-import com.vgomez.app.data.database.Response._
-import com.vgomez.app.data.database.Table.{RestaurantTable, restaurantTable}
+import com.vgomez.app.data.indexDatabase.Model._
+import com.vgomez.app.data.indexDatabase.Response._
+import com.vgomez.app.data.indexDatabase.Table.{RestaurantTable, restaurantTable}
 import com.vgomez.app.domain.DomainModelOperation.rangeInKmToDegrees
 import ExecContext._
 
