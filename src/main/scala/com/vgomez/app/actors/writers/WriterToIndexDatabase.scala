@@ -1,5 +1,6 @@
 package com.vgomez.app.actors.writers
 
+import akka.Done
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.pattern.pipe
 import com.vgomez.app.actors.Restaurant.RestaurantInfo
@@ -60,8 +61,7 @@ class WriterToIndexDatabase(system: ActorSystem) extends Actor with ActorLogging
     case DeleteUser(username) =>
       deleteUserModel(username).mapTo[Int].pipeTo(self)
 
-    case indexDatabaseResponse: Int => log.info(s"Index database has response with $indexDatabaseResponse")
-
+    case Done => log.info(s"Index database has response with Done.")
   }
 
 

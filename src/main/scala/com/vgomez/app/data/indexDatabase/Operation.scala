@@ -5,6 +5,7 @@ import com.vgomez.app.data.indexDatabase.Response._
 import com.vgomez.app.data.indexDatabase.Table.{RestaurantTable, restaurantTable}
 import com.vgomez.app.domain.DomainModelOperation.rangeInKmToDegrees
 import ExecContext._
+import akka.Done
 
 import scala.concurrent.Future
 
@@ -33,49 +34,49 @@ object Operation {
     db.run(query).map(GetUserModelsResponse)
   }
 
-  def insertRestaurantModel(restaurantModel: RestaurantModel): Future[Int] = {
+  def insertRestaurantModel(restaurantModel: RestaurantModel): Future[Done] = {
     val insertQuery = Table.restaurantTable forceInsert restaurantModel
-    db.run(insertQuery)
+    db.run(insertQuery).map(_ => Done)
   }
 
-  def insertReviewModel(reviewModel: ReviewModel): Future[Int] = {
+  def insertReviewModel(reviewModel: ReviewModel): Future[Done] = {
     val insertQuery = Table.reviewTable forceInsert reviewModel
-    db.run(insertQuery)
+    db.run(insertQuery).map(_ => Done)
   }
 
-  def insertUserModel(userModel: UserModel): Future[Int] = {
+  def insertUserModel(userModel: UserModel): Future[Done] = {
     val insertQuery = Table.userTable forceInsert userModel
-    db.run(insertQuery)
+    db.run(insertQuery).map(_ => Done)
   }
 
-  def updateRestaurantModel(id: String, restaurantModel: RestaurantModel): Future[Int] = {
+  def updateRestaurantModel(id: String, restaurantModel: RestaurantModel): Future[Done] = {
     val updateQuery = Table.restaurantTable.filter(_.id === id).update(restaurantModel)
-    db.run(updateQuery)
+    db.run(updateQuery).map(_ => Done)
   }
 
-  def updateReviewModel(id: String, reviewModel: ReviewModel): Future[Int] = {
+  def updateReviewModel(id: String, reviewModel: ReviewModel): Future[Done] = {
     val updateQuery = Table.reviewTable.filter(_.id === id).update(reviewModel)
-    db.run(updateQuery)
+    db.run(updateQuery).map(_ => Done)
   }
 
-  def updateUserModel(username: String, userModel: UserModel): Future[Int] = {
+  def updateUserModel(username: String, userModel: UserModel): Future[Done] = {
     val updateQuery = Table.userTable.filter(_.username === username).update(userModel)
-    db.run(updateQuery)
+    db.run(updateQuery).map(_ => Done)
   }
 
-  def deleteRestaurantModel(id: String): Future[Int] = {
+  def deleteRestaurantModel(id: String): Future[Done] = {
     val deleteQuery = Table.restaurantTable.filter(_.id === id).delete
-    db.run(deleteQuery)
+    db.run(deleteQuery).map(_ => Done)
   }
 
-  def deleteReviewModel(id: String): Future[Int] = {
+  def deleteReviewModel(id: String): Future[Done] = {
     val deleteQuery = Table.reviewTable.filter(_.id === id).delete
-    db.run(deleteQuery)
+    db.run(deleteQuery).map(_ => Done)
   }
 
-  def deleteUserModel(username: String): Future[Int] = {
+  def deleteUserModel(username: String): Future[Done] = {
     val deleteQuery = Table.userTable.filter(_.username === username).delete
-    db.run(deleteQuery)
+    db.run(deleteQuery).map(_ => Done)
   }
 
   def getReviewsStarsByRestaurantId(restaurantId: String): Future[GetReviewModelsStarsResponse] = {
