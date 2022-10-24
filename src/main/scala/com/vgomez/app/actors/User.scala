@@ -1,8 +1,9 @@
 package com.vgomez.app.actors
+import akka.Done
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
@@ -35,9 +36,6 @@ object User {
   // responses
   object Response {
     case class GetUserResponse(maybeUserState: Option[UserState]) extends GetResponse
-
-    case class UpdateUserResponse(maybeUserState: Try[UserState]) extends UpdateResponse
-
   }
 
   def props(username: String, index: Long): Props =  Props(new User(username, index))
@@ -69,12 +67,12 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
 
     case UpdateUser(userInfo) =>
       if(userState.isDeleted)
-        sender() ! UpdateUserResponse(Failure(EntityIsDeletedException))
+        sender() ! UpdateResponse(Failure(EntityIsDeletedException))
       else {
         val newState: UserState = getNewState(userInfo)
 
         persist(UserUpdated(newState)) { _ =>
-          sender() ! UpdateUserResponse(Success(newState))
+          sender() ! UpdateResponse(Success(Done))
           context.become(state(newState))
         }
       }
@@ -86,7 +84,7 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
         val newState: UserState = userState.copy(isDeleted = true)
 
         persist(UserDeleted(newState)) { _ =>
-          sender() ! DeleteResponse(Success(id))
+          sender() ! DeleteResponse(Success(Done))
           context.become(state(newState))
         }
       }

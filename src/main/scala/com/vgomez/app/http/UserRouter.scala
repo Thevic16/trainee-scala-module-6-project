@@ -1,7 +1,7 @@
 package com.vgomez.app.http
+import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
-
 import akka.util.Timeout
 import akka.http.scaladsl.model.headers.Location
 
@@ -37,8 +37,8 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
   def createUser(userCreationRequest: UserCreationRequest): Future[CreateResponse] =
     (administration ? userCreationRequest.toCommand).mapTo[CreateResponse]
 
-  def updateUser(userUpdateRequest: UserUpdateRequest): Future[UpdateUserResponse] =
-    (administration ? userUpdateRequest.toCommand).mapTo[UpdateUserResponse]
+  def updateUser(userUpdateRequest: UserUpdateRequest): Future[UpdateResponse] =
+    (administration ? userUpdateRequest.toCommand).mapTo[UpdateResponse]
 
   def deleteUser(username: String): Future[DeleteResponse] =
     (administration ? DeleteUser(username)).mapTo[DeleteResponse]
@@ -66,11 +66,11 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
                 request.favoriteCategories).run() match {
                 case Success(_) =>
                   onSuccess(updateUser(request)) {
-                    case UpdateUserResponse(Success(_)) =>
+                    case UpdateResponse(Success(Done)) =>
                       respondWithHeader(Location(s"/users/$username")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateUserResponse(Failure(_)) =>
+                    case UpdateResponse(Failure(_)) =>
                       complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
                   }
                 case Failure(e: ValidationFailException) =>

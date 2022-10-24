@@ -1,7 +1,7 @@
 package com.vgomez.app.http
+import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
-
 import akka.util.Timeout
 import akka.http.scaladsl.model.headers.Location
 
@@ -37,8 +37,8 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
     (administration ? restaurantCreationRequest.toCommand).mapTo[CreateResponse]
 
   def updateRestaurant(id: String,
-                       restaurantUpdateRequest: RestaurantUpdateRequest): Future[UpdateRestaurantResponse] =
-    (administration ? restaurantUpdateRequest.toCommand(id)).mapTo[UpdateRestaurantResponse]
+                       restaurantUpdateRequest: RestaurantUpdateRequest): Future[UpdateResponse] =
+    (administration ? restaurantUpdateRequest.toCommand(id)).mapTo[UpdateResponse]
 
   def deleteRestaurant(id: String): Future[DeleteResponse] =
     (administration ? DeleteRestaurant(id)).mapTo[DeleteResponse]
@@ -68,11 +68,11 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
                                             request.schedule).run() match {
                 case Success(_) =>
                   onSuccess(updateRestaurant(id, request)) {
-                    case UpdateRestaurantResponse(Success(_)) =>
+                    case UpdateResponse(Success(Done)) =>
                       respondWithHeader(Location(s"/restaurants/$id")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateRestaurantResponse(Failure(e: RuntimeException)) =>
+                    case UpdateResponse(Failure(e: RuntimeException)) =>
                       complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                   }
                 case Failure(e: ValidationFailException) =>

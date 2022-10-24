@@ -1,9 +1,10 @@
 package com.vgomez.app.actors
+import akka.Done
 import akka.actor.{ActorRef, Props, Stash}
 import akka.persistence.PersistentActor
 import com.vgomez.app.actors.Administration.Command.GetStarsByRestaurant
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
@@ -40,8 +41,6 @@ object Restaurant {
   object Response {
     case class GetRestaurantResponse(maybeRestaurantState: Option[RestaurantState], maybeStars: Option[Int])
       extends GetResponse
-
-    case class UpdateRestaurantResponse(maybeRestaurantState: Try[RestaurantState]) extends UpdateResponse
   }
 
   def props(id: String, index: Long): Props =  Props(new Restaurant(id, index))
@@ -75,12 +74,12 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
 
     case UpdateRestaurant(_, restaurantInfo) =>
       if(restaurantState.isDeleted)
-        sender() ! UpdateRestaurantResponse(Failure(EntityIsDeletedException))
+        sender() ! UpdateResponse(Failure(EntityIsDeletedException))
       else{
         val newState: RestaurantState = getNewState(restaurantInfo)
 
         persist(RestaurantUpdated(newState)) { _ =>
-          sender() ! UpdateRestaurantResponse(Success(newState))
+          sender() ! UpdateResponse(Success(Done))
           context.become(state(newState))
         }
       }
@@ -92,7 +91,7 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
         val newState: RestaurantState = restaurantState.copy(isDeleted = true)
 
         persist(RestaurantDeleted(newState)) { _ =>
-          sender() ! DeleteResponse(Success(id))
+          sender() ! DeleteResponse(Success(Done))
           context.become(state(newState))
         }
       }

@@ -106,18 +106,18 @@ object AdministrationUtility {
 
   def getUpdateResponseFailureByUpdateCommand(updateCommand: UpdateCommand): UpdateResponse = {
     updateCommand match {
-      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(RestaurantNotFoundException()))
-      case UpdateReview(_, _) => UpdateReviewResponse(Failure(ReviewNotFoundException()))
-      case UpdateUser(_) => UpdateUserResponse(Failure(UserNotFoundException()))
+      case UpdateRestaurant(_, _) => UpdateResponse(Failure(RestaurantNotFoundException()))
+      case UpdateReview(_, _) => UpdateResponse(Failure(ReviewNotFoundException()))
+      case UpdateUser(_) => UpdateResponse(Failure(UserNotFoundException()))
     }
   }
 
   def getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand: UpdateCommand,
                                                          message: String): UpdateResponse = {
     updateCommand match {
-      case UpdateRestaurant(_, _) => UpdateRestaurantResponse(Failure(RestaurantNotFoundException(message)))
-      case UpdateReview(_, _) => UpdateReviewResponse(Failure(ReviewNotFoundException(message)))
-      case UpdateUser(_) => UpdateUserResponse(Failure(UserNotFoundException(message)))
+      case UpdateRestaurant(_, _) => UpdateResponse(Failure(RestaurantNotFoundException(message)))
+      case UpdateReview(_, _) => UpdateResponse(Failure(ReviewNotFoundException(message)))
+      case UpdateUser(_) => UpdateResponse(Failure(UserNotFoundException(message)))
     }
   }
 

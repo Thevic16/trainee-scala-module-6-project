@@ -1,5 +1,6 @@
 package com.vgomez.app.actors.messages
 
+import akka.Done
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 
 import scala.util.Try
@@ -25,9 +26,9 @@ object AbstractMessage {
 
     case class CreateResponse(maybeIdentifier: Try[String])
 
-    abstract class UpdateResponse
+    case class UpdateResponse(maybeDone: Try[Done])
 
-    case class DeleteResponse(maybeIdentifier: Try[String])
+    case class DeleteResponse(maybeDone: Try[Done])
 
     case class GetRecommendationResponse(optionGetRestaurantResponses: Option[List[GetRestaurantResponse]])
   }

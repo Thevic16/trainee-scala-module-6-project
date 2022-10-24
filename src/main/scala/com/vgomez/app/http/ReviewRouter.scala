@@ -1,7 +1,7 @@
 package com.vgomez.app.http
+import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
-
 import akka.util.Timeout
 import akka.http.scaladsl.model.headers.Location
 
@@ -37,8 +37,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
     (administration ? reviewCreationRequest.toCommand).mapTo[CreateResponse]
 
   def updateReview(id: String,
-                   reviewUpdateRequest: ReviewUpdateRequest): Future[UpdateReviewResponse] =
-    (administration ? reviewUpdateRequest.toCommand(id)).mapTo[UpdateReviewResponse]
+                   reviewUpdateRequest: ReviewUpdateRequest): Future[UpdateResponse] =
+    (administration ? reviewUpdateRequest.toCommand(id)).mapTo[UpdateResponse]
 
   def deleteReview(id: String): Future[DeleteResponse] =
     (administration ? DeleteReview(id)).mapTo[DeleteResponse]
@@ -67,11 +67,11 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
                 request.text, request.date).run() match {
                 case Success(_) =>
                   onSuccess(updateReview(id, request)) {
-                    case UpdateReviewResponse(Success(_)) =>
+                    case UpdateResponse(Success(Done)) =>
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateReviewResponse(Failure(e: RuntimeException)) =>
+                    case UpdateResponse(Failure(e: RuntimeException)) =>
                       complete(StatusCodes.BadRequest, e.getMessage)
                   }
                 case Failure(e: ValidationFailException) =>

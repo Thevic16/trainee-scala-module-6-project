@@ -1,8 +1,9 @@
 package com.vgomez.app.actors
+import akka.Done
 import akka.actor.Props
 import akka.persistence.PersistentActor
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.exception.CustomException.EntityIsDeletedException
@@ -33,8 +34,6 @@ object Review {
   // responses
   object Response {
     case class GetReviewResponse(maybeReviewState: Option[ReviewState]) extends GetResponse
-
-    case class UpdateReviewResponse(maybeReviewState: Try[ReviewState]) extends UpdateResponse
   }
 
   def props(id: String, index: Long): Props =  Props(new Review(id, index))
@@ -67,12 +66,12 @@ class Review(id: String, index: Long) extends PersistentActor{
 
     case UpdateReview(_, reviewInfo) =>
       if(reviewState.isDeleted)
-        sender() ! UpdateReviewResponse(Failure(EntityIsDeletedException))
+        sender() ! UpdateResponse(Failure(EntityIsDeletedException))
       else {
         val newState: ReviewState = getNewState(reviewInfo)
 
         persist(ReviewUpdated(newState)) { _ =>
-          sender() ! UpdateReviewResponse(Success(newState))
+          sender() ! UpdateResponse(Success(Done))
           context.become(state(newState))
         }
       }
@@ -85,7 +84,7 @@ class Review(id: String, index: Long) extends PersistentActor{
         val newState: ReviewState = reviewState.copy(isDeleted = true)
 
         persist(ReviewDeleted(newState)) { _ =>
-          sender() ! DeleteResponse(Success(id))
+          sender() ! DeleteResponse(Success(Done))
           context.become(state(newState))
         }
       }
