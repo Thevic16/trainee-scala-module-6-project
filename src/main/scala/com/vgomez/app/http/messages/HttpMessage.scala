@@ -7,6 +7,7 @@ import com.vgomez.app.actors.Review.Command._
 import com.vgomez.app.actors.User._
 import com.vgomez.app.actors.User.Command._
 import com.vgomez.app.domain.{DomainModel, SimpleScheduler}
+import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 import com.vgomez.app.domain.Transformer._
 
 object HttpRequest{
@@ -24,8 +25,9 @@ object HttpRequest{
   case class RestaurantUpdateRequest(username: String, name: String, state: String, city: String, postalCode: String,
                                      latitude: Double, longitude: Double, categories: Set[String],
                                      schedule: SimpleScheduler) {
-    def toCommand(id: String): UpdateRestaurant = UpdateRestaurant(id, RestaurantInfo(username, name, state, city, postalCode,
-      DomainModel.Location(latitude, longitude), categories: Set[String], transformSimpleSchedulerToSchedule(schedule)))
+    def toCommand(id: String): UpdateRestaurant = UpdateRestaurant(id, RestaurantInfo(username, name, state, city,
+      postalCode, DomainModel.Location(latitude, longitude), categories: Set[String],
+      transformSimpleSchedulerToSchedule(schedule)))
   }
 
   trait RestaurantUpdateRequestJsonProtocol extends DefaultJsonProtocol {
@@ -99,8 +101,8 @@ object HttpRequest{
 }
 object HttpResponse{
   // Resquest clases
-  case class RestaurantResponse(id: String, username: String, name: String, state: String, city: String, postalCode: String,
-                                latitude: Double, longitude: Double, categories: Set[String],
+  case class RestaurantResponse(id: String, username: String, name: String, state: String, city: String,
+                                postalCode: String, latitude: Double, longitude: Double, categories: Set[String],
                                 schedule: SimpleScheduler, stars: Int)
   trait RestaurantResponseJsonProtocol extends DefaultJsonProtocol {
     implicit val restaurantResponseJson = jsonFormat11(RestaurantResponse)

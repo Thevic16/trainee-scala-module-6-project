@@ -10,7 +10,6 @@ import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendation
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
 import com.vgomez.app.data.indexDatabase.Operation
 import com.vgomez.app.data.indexDatabase.Model
-import com.vgomez.app.data.indexDatabase.Model.RestaurantModel
 import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, GetSequenceReviewModelsStarsResponse}
 
 

@@ -15,100 +15,105 @@ trait SimpleSchedulerJsonProtocol extends DefaultJsonProtocol {
 object Transformer extends SimpleSchedulerJsonProtocol{
   import DomainModel._
 
-  def transformHourStringToHour(hours: String): Hour = {
-    val hrList = hours.split(":").toList
-    Hour(hrList.head.toInt, hrList.tail.head.toInt)
-  }
-
-  def transformHoursStringToHashMapHour(hours: String): HashMap[String, Hour] = {
-      val hoursList = hours.split("-").toList
-      HashMap("startHour" -> transformHourStringToHour(hoursList.head),
-        "endHour" -> transformHourStringToHour(hoursList.tail.head))
-  }
-
-  def transformFromJsonSchedulerDayToScheduleDay(scheduleDay:String, dayWeek: DayWeek): ScheduleDay = {
-    if(scheduleDay != "") {
-      val mondayHashMapHour = transformHoursStringToHashMapHour(scheduleDay)
-      ScheduleDay(dayWeek, mondayHashMapHour("startHour"), mondayHashMapHour("endHour"))
-    }
-    else ScheduleDay(dayWeek, Hour(0,0), Hour(0,0))
-  }
-
-  def scheduleStringFormatter(scheduleString: String): String = {
-    val scheduleStringJsonFormat = scheduleString.stripMargin.replace("'", "\"").toLowerCase
-
-    val dayWeekList = List("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
-
-    def go(dayWeekList: List[String], scheduleStringJsonFormat: String): String = {
-      if(dayWeekList.isEmpty) scheduleStringJsonFormat
-      else {
-        if (!scheduleStringJsonFormat.contains(dayWeekList.head)) {
-          val  newScheduleStringJsonFormat= scheduleStringJsonFormat.replace(
-            "}", "") + ",\""+dayWeekList.head+"\": \"0:0-0:0\" }"
-
-          go(dayWeekList.tail, newScheduleStringJsonFormat)
-        }
-        else go(dayWeekList.tail, scheduleStringJsonFormat)
+  object FromRawDataToDomain {
+    def transformStringRoleToRole(stringRole: String): Role = {
+      stringRole match {
+        case "admin" => Admin
+        case "normal" => Normal
+        case _ => Normal
       }
     }
 
-    go(dayWeekList, scheduleStringJsonFormat)
-  }
-
-  def transformSimpleSchedulerToSchedule(fromJsonScheduler: SimpleScheduler): Schedule = {
-    Schedule(Map(Monday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.monday, Monday),
-      Tuesday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.tuesday, Tuesday),
-      Wednesday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.wednesday, Wednesday),
-      Thursday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.thursday, Thursday),
-      Friday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.friday, Friday),
-      Saturday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.saturday, Saturday),
-      Sunday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.sunday, Sunday),
-    ))
-  }
-
-  def transformScheduleStringToSchedule(scheduleString: String): Schedule = {
-    if(scheduleString != "NULL"){
-      val scheduleStringFormatted = scheduleStringFormatter(scheduleString)
-      val fromJsonScheduler = scheduleStringFormatted.parseJson.convertTo[SimpleScheduler]
-      transformSimpleSchedulerToSchedule(fromJsonScheduler)
+    def transformScheduleStringToSchedule(scheduleString: String): Schedule = {
+      if (scheduleString != "NULL") {
+        val scheduleStringFormatted = scheduleStringFormatter(scheduleString)
+        val fromJsonScheduler = scheduleStringFormatted.parseJson.convertTo[SimpleScheduler]
+        transformSimpleSchedulerToSchedule(fromJsonScheduler)
+      }
+      else
+        generateNewEmptySchedule()
     }
-    else
-      generateNewEmptySchedule()
-  }
 
-  // From Scheduler to JsonScheduler
-  def transformScheduleDayWeekToString(schedule: Schedule, dayWeek: DayWeek): String = {
-    val startHour: Hour = schedule.schedulesForDays(dayWeek).startHour
-    val endHour: Hour = schedule.schedulesForDays(dayWeek).endHour
-    s"${startHour.hr}:${startHour.minutes}-${endHour.hr}:${endHour.minutes}"
-  }
+    def scheduleStringFormatter(scheduleString: String): String = {
+      val scheduleStringJsonFormat = scheduleString.stripMargin.replace("'", "\"").toLowerCase
 
-  def transformScheduleToSimpleScheduler(schedule: Schedule): SimpleScheduler = {
-    SimpleScheduler(monday = transformScheduleDayWeekToString(schedule,Monday),
-      tuesday = transformScheduleDayWeekToString(schedule, Tuesday),
-      wednesday = transformScheduleDayWeekToString(schedule, Wednesday),
-      thursday = transformScheduleDayWeekToString(schedule, Thursday),
-      friday = transformScheduleDayWeekToString(schedule, Friday),
-      saturday = transformScheduleDayWeekToString(schedule, Saturday),
-      sunday = transformScheduleDayWeekToString(schedule, Sunday))
-  }
+      val dayWeekList = List("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
-  def transformStringRoleToRole(stringRole: String): Role = {
-    stringRole match {
-      case "admin" => Admin
-      case "normal" => Normal
-      case _ => Normal
+      def go(dayWeekList: List[String], scheduleStringJsonFormat: String): String = {
+        if (dayWeekList.isEmpty) scheduleStringJsonFormat
+        else {
+          if (!scheduleStringJsonFormat.contains(dayWeekList.head)) {
+            val newScheduleStringJsonFormat = scheduleStringJsonFormat.replace(
+              "}", "") + ",\"" + dayWeekList.head + "\": \"0:0-0:0\" }"
+
+            go(dayWeekList.tail, newScheduleStringJsonFormat)
+          }
+          else go(dayWeekList.tail, scheduleStringJsonFormat)
+        }
+      }
+
+      go(dayWeekList, scheduleStringJsonFormat)
     }
+
+
+    def transformSimpleSchedulerToSchedule(fromJsonScheduler: SimpleScheduler): Schedule = {
+      Schedule(Map(Monday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.monday, Monday),
+        Tuesday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.tuesday, Tuesday),
+        Wednesday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.wednesday, Wednesday),
+        Thursday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.thursday, Thursday),
+        Friday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.friday, Friday),
+        Saturday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.saturday, Saturday),
+        Sunday -> transformFromJsonSchedulerDayToScheduleDay(fromJsonScheduler.sunday, Sunday),
+      ))
+    }
+
+    def transformFromJsonSchedulerDayToScheduleDay(scheduleDay: String, dayWeek: DayWeek): ScheduleDay = {
+      if (scheduleDay != "") {
+        val mondayHashMapHour = transformHoursStringToHashMapHour(scheduleDay)
+        ScheduleDay(dayWeek, mondayHashMapHour("startHour"), mondayHashMapHour("endHour"))
+      }
+      else ScheduleDay(dayWeek, Hour(0, 0), Hour(0, 0))
+    }
+
+    def transformHoursStringToHashMapHour(hours: String): HashMap[String, Hour] = {
+      val hoursList = hours.split("-").toList
+      HashMap("startHour" -> transformHourStringToHour(hoursList.head),
+        "endHour" -> transformHourStringToHour(hoursList.tail.head))
+    }
+
+    def transformHourStringToHour(hours: String): Hour = {
+      val hrList = hours.split(":").toList
+      Hour(hrList.head.toInt, hrList.tail.head.toInt)
+    }
+
   }
 
-  def transformRoleToStringRole(role: Role): String = {
-    role match {
-      case Admin => "admin"
-      case Normal => "normal"
-    }
-  }
 
   object FromDomainToRawData {
+    def transformRoleToStringRole(role: Role): String = {
+      role match {
+        case Admin => "admin"
+        case Normal => "normal"
+      }
+    }
+
+    def transformScheduleToSimpleScheduler(schedule: Schedule): SimpleScheduler = {
+      SimpleScheduler(monday = transformScheduleDayWeekToString(schedule, Monday),
+        tuesday = transformScheduleDayWeekToString(schedule, Tuesday),
+        wednesday = transformScheduleDayWeekToString(schedule, Wednesday),
+        thursday = transformScheduleDayWeekToString(schedule, Thursday),
+        friday = transformScheduleDayWeekToString(schedule, Friday),
+        saturday = transformScheduleDayWeekToString(schedule, Saturday),
+        sunday = transformScheduleDayWeekToString(schedule, Sunday))
+    }
+
+    // From Scheduler to JsonScheduler
+    def transformScheduleDayWeekToString(schedule: Schedule, dayWeek: DayWeek): String = {
+      val startHour: Hour = schedule.schedulesForDays(dayWeek).startHour
+      val endHour: Hour = schedule.schedulesForDays(dayWeek).endHour
+      s"${startHour.hr}:${startHour.minutes}-${endHour.hr}:${endHour.minutes}"
+    }
+
     def transformScheduleToScheduleString(schedule: Schedule): String = {
       val simpleScheduler = SimpleScheduler(monday = transformScheduleDayToString(schedule.schedulesForDays(Monday)),
         tuesday = transformScheduleDayToString(schedule.schedulesForDays(Tuesday)),
@@ -125,6 +130,7 @@ object Transformer extends SimpleSchedulerJsonProtocol{
       s"${scheduleDay.startHour.hr}:${scheduleDay.startHour.minutes}-" +
         s"${scheduleDay.endHour.hr}:${scheduleDay.endHour.minutes}"
     }
+
   }
 
 }

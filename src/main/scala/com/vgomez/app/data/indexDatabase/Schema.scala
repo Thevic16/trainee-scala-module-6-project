@@ -1,16 +1,15 @@
 package com.vgomez.app.data.indexDatabase
 
 import com.vgomez.app.domain.DomainModel.{Role, Schedule}
-import com.vgomez.app.domain.Transformer.FromDomainToRawData.transformScheduleToScheduleString
-import com.vgomez.app.domain.Transformer.{transformRoleToStringRole, transformScheduleStringToSchedule,
-                                          transformStringRoleToRole}
+import com.vgomez.app.domain.Transformer.FromDomainToRawData._
+import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 
 object Model {
   // Models
 
-  final case class RestaurantModel(index: Option[Long], id: String, username: String, name: String, state: String, city: String,
-                                   postalCode: String, latitude: Double, longitude: Double, categories: List[String],
-                                   schedule: Schedule)
+  final case class RestaurantModel(index: Option[Long], id: String, username: String, name: String, state: String,
+                                   city: String, postalCode: String, latitude: Double, longitude: Double,
+                                   categories: List[String], schedule: Schedule)
 
   final case class ReviewModel(index: Option[Long], id: String, username: String, restaurantId: String, stars: Int,
                                text: String, date: String)
@@ -69,8 +68,8 @@ object Table {
 
     def schedule = column[Schedule]("schedule")
 
-    override def * = (index.?, id, username, name, state, city, postalCode, latitude, longitude,
-                            categories, schedule) <> (RestaurantModel.tupled, RestaurantModel.unapply)
+    override def * = (index.?, id, username, name, state, city, postalCode,
+                         latitude, longitude, categories, schedule) <> (RestaurantModel.tupled, RestaurantModel.unapply)
   }
   lazy val restaurantTable = TableQuery[RestaurantTable]
 
