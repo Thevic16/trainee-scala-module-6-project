@@ -24,14 +24,14 @@ object Transformer extends SimpleSchedulerJsonProtocol{
       }
     }
 
-    def transformScheduleStringToSchedule(scheduleString: String): Schedule = {
-      if (scheduleString != "NULL") {
-        val scheduleStringFormatted = scheduleStringFormatter(scheduleString)
+    def transformTimetableStringToTimetable(timetableString: String): Timetable = {
+      if (timetableString != "NULL") {
+        val scheduleStringFormatted = scheduleStringFormatter(timetableString)
         val fromJsonScheduler = scheduleStringFormatted.parseJson.convertTo[SimpleScheduler]
         transformSimpleSchedulerToSchedule(fromJsonScheduler)
       }
       else
-        generateNewEmptySchedule()
+        UnavailableTimetable
     }
 
     def scheduleStringFormatter(scheduleString: String): String = {
@@ -114,16 +114,21 @@ object Transformer extends SimpleSchedulerJsonProtocol{
       s"${startHour.hr}:${startHour.minutes}-${endHour.hr}:${endHour.minutes}"
     }
 
-    def transformScheduleToScheduleString(schedule: Schedule): String = {
-      val simpleScheduler = SimpleScheduler(monday = transformScheduleDayToString(schedule.schedulesForDays(Monday)),
-        tuesday = transformScheduleDayToString(schedule.schedulesForDays(Tuesday)),
-        wednesday = transformScheduleDayToString(schedule.schedulesForDays(Wednesday)),
-        thursday = transformScheduleDayToString(schedule.schedulesForDays(Thursday)),
-        friday = transformScheduleDayToString(schedule.schedulesForDays(Friday)),
-        saturday = transformScheduleDayToString(schedule.schedulesForDays(Saturday)),
-        sunday = transformScheduleDayToString(schedule.schedulesForDays(Sunday)))
+    def transformTimetableToString(timetable: Timetable): String = {
+      timetable match {
+        case schedule@Schedule(_) =>
+          val simpleScheduler = SimpleScheduler(monday = transformScheduleDayToString(schedule.schedulesForDays(Monday)),
+            tuesday = transformScheduleDayToString(schedule.schedulesForDays(Tuesday)),
+            wednesday = transformScheduleDayToString(schedule.schedulesForDays(Wednesday)),
+            thursday = transformScheduleDayToString(schedule.schedulesForDays(Thursday)),
+            friday = transformScheduleDayToString(schedule.schedulesForDays(Friday)),
+            saturday = transformScheduleDayToString(schedule.schedulesForDays(Saturday)),
+            sunday = transformScheduleDayToString(schedule.schedulesForDays(Sunday)))
 
-      simpleScheduler.toJson.toString()
+          simpleScheduler.toJson.toString()
+        case UnavailableTimetable =>
+          "NULL"
+      }
     }
 
     def transformScheduleDayToString(scheduleDay: ScheduleDay): String = {

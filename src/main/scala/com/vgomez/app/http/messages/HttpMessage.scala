@@ -103,7 +103,7 @@ object HttpResponse{
   // Resquest clases
   case class RestaurantResponse(id: String, username: String, name: String, state: String, city: String,
                                 postalCode: String, latitude: Double, longitude: Double, categories: Set[String],
-                                schedule: SimpleScheduler, stars: Int)
+                                timetable: Either[String, SimpleScheduler], stars: Int)
   trait RestaurantResponseJsonProtocol extends DefaultJsonProtocol {
     implicit val restaurantResponseJson = jsonFormat11(RestaurantResponse)
   }

@@ -6,9 +6,10 @@ import com.vgomez.app.actors.Review.RegisterReviewState
 import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.User.RegisterUserState
 import com.vgomez.app.actors.User.Response.GetUserResponse
+import com.vgomez.app.domain.DomainModel.{Schedule, UnavailableTimetable}
+import com.vgomez.app.domain.SimpleScheduler
 import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 import com.vgomez.app.domain.Transformer.FromDomainToRawData._
-
 import com.vgomez.app.http.messages.HttpResponse._
 
 
@@ -43,11 +44,17 @@ object RouterUtility {
   }
 
   def getRestaurantResponseByRestaurantState(restaurantState: RestaurantState, stars: Int): RestaurantResponse = {
+
     restaurantState match {
-      case RegisterRestaurantState(id, _, username, name, state, city, postalCode, location, categories, schedule) =>
-        RestaurantResponse(id, username, name,
+      case RegisterRestaurantState(id, _, username, name, state, city, postalCode, location, categories, timetable) =>
+        val timetableRawData: Either[String, SimpleScheduler] = timetable match {
+          case schedule@Schedule(_) => Right(transformScheduleToSimpleScheduler(schedule))
+          case UnavailableTimetable => Left("NULL")
+        }
+
+          RestaurantResponse(id, username, name,
           state, city, postalCode,
-          location.latitude, location.longitude, categories, transformScheduleToSimpleScheduler(schedule), stars)
+          location.latitude, location.longitude, categories, timetableRawData, stars)
     }
   }
 }

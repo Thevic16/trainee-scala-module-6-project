@@ -1,5 +1,7 @@
 package com.vgomez.app.domain
 
+import scala.annotation.tailrec
+
 object DomainModel {
   case class Location(latitude: Double, longitude: Double)
 
@@ -14,7 +16,19 @@ object DomainModel {
 
   case class Hour(hr: Int, minutes: Int)
   case class ScheduleDay(dayWeek: DayWeek, startHour: Hour, endHour: Hour)
-  case class Schedule(schedulesForDays: Map[DayWeek, ScheduleDay])
+
+  /*
+  Todo
+    Description: Use Null pattern on Schedule class domain model.
+    Status: Done
+    Reported by: Nafer Sanabria.
+  */
+  abstract class Timetable
+  case class Schedule(schedulesForDays: Map[DayWeek, ScheduleDay]) extends Timetable
+
+  case object UnavailableTimetable extends Timetable
+
+
 
   sealed class Role
   case object Normal extends Role
@@ -39,6 +53,7 @@ object DomainModelFactory {
     ))
   }
 
+  @tailrec
   def updateSchedule(oldSchedule: Schedule, newSchedule: Schedule): Schedule = {
     if (newSchedule.schedulesForDays.isEmpty) oldSchedule
     else updateSchedule(Schedule(oldSchedule.schedulesForDays + newSchedule.schedulesForDays.head),

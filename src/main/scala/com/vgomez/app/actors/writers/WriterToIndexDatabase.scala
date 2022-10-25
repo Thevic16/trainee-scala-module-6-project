@@ -41,40 +41,41 @@ class WriterToIndexDatabase(system: ActorSystem) extends Actor with ActorLogging
 
   override def receive: Receive = {
     case RegisterRestaurant(id, index, restaurantInfo) =>
-      registerRestaurantModel(getRestaurantModelByRestaurantInfo(id, index, restaurantInfo)).mapTo[Int].pipeTo(self)
+      registerRestaurantModel(getRestaurantModelByRestaurantInfo(id, index, restaurantInfo)).mapTo[Either[Int, Done]].pipeTo(self)
 
     case UpdateRestaurant(id, index, restaurantInfo) =>
-      updateRestaurantModel(id, getRestaurantModelByRestaurantInfo(id, index, restaurantInfo)).mapTo[Int].pipeTo(self)
+      updateRestaurantModel(id, getRestaurantModelByRestaurantInfo(id, index, restaurantInfo)).mapTo[Either[Int, Done]].pipeTo(self)
 
     case UnregisterRestaurant(id) =>
-      unregisterRestaurantModel(id).mapTo[Int].pipeTo(self)
+      unregisterRestaurantModel(id).mapTo[Either[Int, Done]].pipeTo(self)
 
     case RegisterReview(id, index, reviewInfo) =>
-      registerReviewModel(getReviewModelByReviewInfo(id, index, reviewInfo)).mapTo[Int].pipeTo(self)
+      registerReviewModel(getReviewModelByReviewInfo(id, index, reviewInfo)).mapTo[Either[Int, Done]].pipeTo(self)
 
     case UpdateReview(id, index, reviewInfo) =>
-      updateReviewModel(id, getReviewModelByReviewInfo(id, index, reviewInfo)).mapTo[Int].pipeTo(self)
+      updateReviewModel(id, getReviewModelByReviewInfo(id, index, reviewInfo)).mapTo[Either[Int, Done]].pipeTo(self)
 
     case UnregisterReview(id) =>
-      unregisterReviewModel(id).mapTo[Int].pipeTo(self)
+      unregisterReviewModel(id).mapTo[Either[Int, Done]].pipeTo(self)
 
     case RegisterUser(index, userInfo) =>
-      registerUserModel(getUserModelByUserInfo(index, userInfo)).mapTo[Int].pipeTo(self)
+      registerUserModel(getUserModelByUserInfo(index, userInfo)).mapTo[Either[Int, Done]].pipeTo(self)
 
     case UpdateUser(index, userInfo) =>
-      updateUserModel(userInfo.username, getUserModelByUserInfo(index, userInfo)).mapTo[Int].pipeTo(self)
+      updateUserModel(userInfo.username, getUserModelByUserInfo(index, userInfo)).mapTo[Either[Int, Done]].pipeTo(self)
 
     case UnregisterUser(username) =>
-      unregisterUserModel(username).mapTo[Int].pipeTo(self)
+      unregisterUserModel(username).mapTo[Either[Int, Done]].pipeTo(self)
 
-    case Done => log.info(s"Index database has response with Done.")
+    case Right(Done) => log.info(s"Index database has response with Done.")
+    case Left(response) => log.info(s"Index database has response with $response.")
   }
 
 
   def getRestaurantModelByRestaurantInfo(id: String, index: Long, restaurantInfo: RestaurantInfo): RestaurantModel = {
     RestaurantModel(Some(index), id, restaurantInfo.username, restaurantInfo.name,
       restaurantInfo.state, restaurantInfo.city, restaurantInfo.postalCode, restaurantInfo.location.latitude,
-      restaurantInfo.location.longitude, restaurantInfo.categories.toList, restaurantInfo.schedule)
+      restaurantInfo.location.longitude, restaurantInfo.categories.toList, restaurantInfo.timetable)
   }
 
   def getReviewModelByReviewInfo(id: String, index: Long, reviewInfo: ReviewInfo): ReviewModel = {

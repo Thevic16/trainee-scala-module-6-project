@@ -1,6 +1,6 @@
 package com.vgomez.app.data.indexDatabase
 
-import com.vgomez.app.domain.DomainModel.{Role, Schedule}
+import com.vgomez.app.domain.DomainModel.{Role, Schedule, Timetable}
 import com.vgomez.app.domain.Transformer.FromDomainToRawData._
 import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 
@@ -16,7 +16,7 @@ object Model {
 
   final case class RestaurantModel(index: Option[Long], id: String, username: String, name: String, state: String,
                                    city: String, postalCode: String, latitude: Double, longitude: Double,
-                                   categories: List[String], schedule: Schedule)
+                                   categories: List[String], timetable: Timetable)
 
   final case class ReviewModel(index: Option[Long], id: String, username: String, restaurantId: String, stars: Int,
                                text: String, date: String)
@@ -48,9 +48,9 @@ object Table {
   val schemaName: String = "reviews"
 
   class RestaurantTable(tag: Tag) extends Table[RestaurantModel](tag, Some(schemaName), "Restaurant") {
-    implicit val scheduleMapper = MappedColumnType.base[Schedule, String](
-      e => transformScheduleToScheduleString(e),
-      s => transformScheduleStringToSchedule(s)
+    implicit val timetableMapper = MappedColumnType.base[Timetable, String](
+      e => transformTimetableToString(e),
+      s => transformTimetableStringToTimetable(s)
     )
 
     def index = column[Long]("index", O.PrimaryKey, O.AutoInc)
@@ -73,10 +73,10 @@ object Table {
 
     def categories = column[List[String]]("categories")
 
-    def schedule = column[Schedule]("schedule")
+    def timetable = column[Timetable]("timetable")
 
     override def * = (index.?, id, username, name, state, city, postalCode,
-                         latitude, longitude, categories, schedule) <> (RestaurantModel.tupled, RestaurantModel.unapply)
+                         latitude, longitude, categories, timetable) <> (RestaurantModel.tupled, RestaurantModel.unapply)
   }
   lazy val restaurantTable = TableQuery[RestaurantTable]
 
