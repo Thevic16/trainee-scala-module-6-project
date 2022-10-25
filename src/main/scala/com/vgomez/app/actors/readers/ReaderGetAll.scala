@@ -15,9 +15,6 @@ import com.vgomez.app.data.indexDatabase.Operation
 object ReaderGetAll {
   // commands
   object Command {
-    case class CreateRestaurant(id: String)
-    case class CreateReview(id: String)
-    case class CreateUser(username: String)
     case class GetAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long)
     case class GetAllReview(pageNumber: Long, numberOfElementPerPage: Long)
     case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)

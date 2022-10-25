@@ -8,7 +8,6 @@ object ExecContext {
 }
 
 object DataSetup {
-  import ExecContext._
   import Table.api._
   import Connection._
 
