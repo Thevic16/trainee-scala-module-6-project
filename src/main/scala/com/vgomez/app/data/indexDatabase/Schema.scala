@@ -1,9 +1,8 @@
 package com.vgomez.app.data.indexDatabase
 
 import com.vgomez.app.domain.DomainModel.{Role, Schedule}
-import com.vgomez.app.domain.Transformer.FromDomainToRawData.transformScheduleToScheduleString
-import com.vgomez.app.domain.Transformer.{transformRoleToStringRole, transformScheduleStringToSchedule,
-                                          transformStringRoleToRole}
+import com.vgomez.app.domain.Transformer.FromDomainToRawData._
+import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 
 object Model {
   // Models

@@ -12,7 +12,7 @@ import com.vgomez.app.actors.Review.ReviewInfo
 import com.vgomez.app.actors.User.Command.RegisterUser
 import com.vgomez.app.actors.User.UserInfo
 import com.vgomez.app.domain.DomainModel.{Location, Normal}
-import com.vgomez.app.domain.Transformer.transformScheduleStringToSchedule
+import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 
 import java.io.File
 import java.util.UUID

@@ -6,7 +6,9 @@ import com.vgomez.app.actors.Review.RegisterReviewState
 import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.User.RegisterUserState
 import com.vgomez.app.actors.User.Response.GetUserResponse
-import com.vgomez.app.domain.Transformer._
+import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
+import com.vgomez.app.domain.Transformer.FromDomainToRawData._
+
 import com.vgomez.app.http.messages.HttpResponse._
 
 
