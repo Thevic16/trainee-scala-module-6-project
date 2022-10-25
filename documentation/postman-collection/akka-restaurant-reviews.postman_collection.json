@@ -45,7 +45,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\" : \"{{username}}\",\n    \"name\": \"restaurant1-\",\n    \"state\": \"BO\",\n    \"city\": \"BOSTONN\",\n    \"postalCode\":\"51000\",\n    \"latitude\": 25.25,\n    \"longitude\": -33.25,\n    \"categories\": [\"Sushi\", \"Chicken\"],\n    \"schedule\": {\n        \"monday\": \"01:30-05:01\",\n        \"tuesday\": \"01:30-05:00\",\n        \"wednesday\": \"01:30-05:00\",\n        \"thursday\": \"01:30-05:05\",\n        \"friday\": \"01:30-05:00\",\n        \"saturday\": \"01:30-05:00\",\n        \"sunday\": \"01:30-09:00\"\n    }\n}",
+							"raw": "{\n    \"username\" : \"{{username}}\",\n    \"name\": \"restaurant-modify\",\n    \"state\": \"BO\",\n    \"city\": \"BOSTONN\",\n    \"postalCode\":\"51000\",\n    \"latitude\": 25.25,\n    \"longitude\": -33.25,\n    \"categories\": [\"Sushi\", \"Chicken\"],\n    \"schedule\": {\n        \"monday\": \"01:30-05:01\",\n        \"tuesday\": \"01:30-05:00\",\n        \"wednesday\": \"01:30-05:00\",\n        \"thursday\": \"01:30-05:05\",\n        \"friday\": \"01:30-05:00\",\n        \"saturday\": \"01:30-05:00\",\n        \"sunday\": \"01:30-09:00\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -95,7 +95,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/restaurants?pageNumber=1&numberOfElementPerPage=10",
+							"raw": "http://localhost:8080/api/restaurants?pageNumber=0&numberOfElementPerPage=10",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -108,7 +108,7 @@
 							"query": [
 								{
 									"key": "pageNumber",
-									"value": "1"
+									"value": "0"
 								},
 								{
 									"key": "numberOfElementPerPage",
@@ -182,7 +182,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\" : \"{{username}}\",\n    \"restaurantId\": \"{{id_restaurant}}\",\n    \"stars\": 5,\n    \"text\":\"Very Nice Restaurant!!!\",\n    \"date\": \"2006-04-16 02:58:44\"\n}",
+							"raw": "{\n    \"username\" : \"{{username}}\",\n    \"restaurantId\": \"{{id_restaurant}}\",\n    \"stars\": 3,\n    \"text\":\"Very Nice Restaurant!!!\",\n    \"date\": \"2006-04-16 02:58:44\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -232,7 +232,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/reviews?pageNumber=0&numberOfElementPerPage=2",
+							"raw": "http://localhost:8080/api/reviews?pageNumber=0&numberOfElementPerPage=10",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -249,7 +249,7 @@
 								},
 								{
 									"key": "numberOfElementPerPage",
-									"value": "2"
+									"value": "10"
 								}
 							]
 						}
@@ -434,7 +434,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/recommendations/filter-by-user-categories/?pageNumber=0&numberOfElementPerPage=10",
+							"raw": "http://localhost:8080/api/recommendations/categories/?service=filter-by-user-categories&pageNumber=0&numberOfElementPerPage=10",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -443,10 +443,14 @@
 							"path": [
 								"api",
 								"recommendations",
-								"filter-by-user-categories",
+								"categories",
 								""
 							],
 							"query": [
+								{
+									"key": "service",
+									"value": "filter-by-user-categories"
+								},
 								{
 									"key": "pageNumber",
 									"value": "0"
@@ -480,7 +484,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"favoriteCategories\": [\"Bars\", \"Chicken Wings\", \"DontExist\"]\n}",
+							"raw": "{\n    \"favoriteCategories\": [\"Restaurants\", \"Cafes\", \"DontExist\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -488,7 +492,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/recommendations/filter-by-categories/?pageNumber=0&numberOfElementPerPage=15",
+							"raw": "http://localhost:8080/api/recommendations/categories/?service=filter-by-categories&pageNumber=0&numberOfElementPerPage=10",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -497,17 +501,21 @@
 							"path": [
 								"api",
 								"recommendations",
-								"filter-by-categories",
+								"categories",
 								""
 							],
 							"query": [
+								{
+									"key": "service",
+									"value": "filter-by-categories"
+								},
 								{
 									"key": "pageNumber",
 									"value": "0"
 								},
 								{
 									"key": "numberOfElementPerPage",
-									"value": "15"
+									"value": "10"
 								}
 							]
 						}
@@ -521,7 +529,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"latitude\": 42.3445,\n    \"longitude\": -71.0705,\n    \"rangeInKm\": 10\n}",
+							"raw": "{\n    \"latitude\": 28.3550177689,\n    \"longitude\": -81.678615175,\n    \"rangeInKm\": 1000\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -529,7 +537,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/recommendations/close-to-location/?pageNumber=0&numberOfElementPerPage=10",
+							"raw": "http://localhost:8080/api/recommendations/locations/?service=close-to-location&pageNumber=0&numberOfElementPerPage=10",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -538,10 +546,14 @@
 							"path": [
 								"api",
 								"recommendations",
-								"close-to-location",
+								"locations",
 								""
 							],
 							"query": [
+								{
+									"key": "service",
+									"value": "close-to-location"
+								},
 								{
 									"key": "pageNumber",
 									"value": "0"
@@ -562,7 +574,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"{{username}}\",\n    \"rangeInKm\": 10\n}",
+							"raw": "{\n    \"username\": \"{{username}}\",\n    \"rangeInKm\": 1000\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -570,7 +582,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/recommendations/close-to-me/?pageNumber=0&numberOfElementPerPage=10",
+							"raw": "http://localhost:8080/api/recommendations/locations/?service=close-to-me&pageNumber=0&numberOfElementPerPage=10",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -579,10 +591,14 @@
 							"path": [
 								"api",
 								"recommendations",
-								"close-to-me",
+								"locations",
 								""
 							],
 							"query": [
+								{
+									"key": "service",
+									"value": "close-to-me"
+								},
 								{
 									"key": "pageNumber",
 									"value": "0"
