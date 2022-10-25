@@ -18,6 +18,12 @@ import java.io.File
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
+/*
+Todo
+  Description: LoadDataset should be moved to a more appropriate package.
+  Status: Done
+  Reported by: Nafer Sanabria.
+*/
 object LoadDataset{
   def convertRowToMapCommands(row: Map[String, String]): Map[String, Product] = {
     val locationField: Location = Location(row.getOrElse("latitude", "0").toDouble,

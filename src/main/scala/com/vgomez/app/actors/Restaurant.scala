@@ -12,11 +12,22 @@ import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsByRestaurantResponse
 import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 
-
+/*
+Todo
+  Description: Using the terminology of CRUD is a bad practice, is better to model the app base on the domain.
+  Status: Done
+  Reported by: Sebastian Oliveri and Nafer Sanabria.
+*/
 object Restaurant {
   case class RestaurantInfo(username: String, name: String, state: String, city: String, postalCode: String,
                             location: Location, categories: Set[String], schedule: Schedule)
 
+  /*
+  Todo
+    Description: Use Null Pattern instead of isDeleted parameter.
+    Status: Done
+    Reported by: Sebastian Oliveri and Nafer Sanabria.
+  */
   // state
   sealed abstract class RestaurantState
 

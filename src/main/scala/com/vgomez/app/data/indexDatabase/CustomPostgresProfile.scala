@@ -3,7 +3,13 @@ package com.vgomez.app.data.indexDatabase
 import com.github.tminglei.slickpg.ExPostgresProfile
 import com.github.tminglei.slickpg._
 
-
+/*
+Todo
+  Description: The reading approach of the application is very complicated, it should be better to use a second index
+               database to read the information from there.
+  State: Done
+  Reported by: Sebastian Oliveri.
+*/
 trait CustomPostgresProfile extends ExPostgresProfile with PgArraySupport {
   override val api = CustomPGAPI
 

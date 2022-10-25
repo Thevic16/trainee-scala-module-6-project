@@ -3,6 +3,13 @@ package com.vgomez.app.data.indexDatabase
 import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, Future}
 
+/*
+Todo
+  Description: The reading approach of the application is very complicated, it should be better to use a second index
+               database to read the information from there.
+  State: Done
+  Reported by: Sebastian Oliveri.
+*/
 object ExecContext {
   implicit val ec = ExecutionContext.fromExecutor(Executors.newWorkStealingPool(4))
 }

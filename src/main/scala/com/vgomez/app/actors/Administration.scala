@@ -13,6 +13,12 @@ import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLo
 import com.vgomez.app.actors.writers.WriterToIndexDatabase
 import com.vgomez.app.domain.DomainModel.Location
 
+/*
+Todo
+  Description: Every message passes throughout Administration Actor, finds a way to enhance this. (Bottleneck)
+  Status: No started
+  Reported by: Nafer Sanabria.
+*/
 object Administration {
   // state
   case class AdministrationState(restaurants: Map[String, (Long, ActorRef)], reviews: Map[String, (Long, ActorRef)],

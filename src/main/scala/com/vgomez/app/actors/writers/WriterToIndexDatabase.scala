@@ -9,6 +9,12 @@ import com.vgomez.app.actors.User.UserInfo
 import com.vgomez.app.data.indexDatabase.Model._
 import com.vgomez.app.data.indexDatabase.Operation._
 
+/*
+Todo
+  Description: The reading approach of the application is very complicated, it should be better to use a second index
+               database to read the information from there.
+  Reported by: Sebastian Oliveri.
+*/
 object WriterToIndexDatabase {
 
   object Command {
