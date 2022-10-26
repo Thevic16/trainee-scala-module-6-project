@@ -18,12 +18,13 @@ object DomainModel {
   case class ScheduleDay(dayWeek: DayWeek, startHour: Hour, endHour: Hour)
 
   /*
-  Todo #2
+  Todo #2 part 1
     Description: Change Null pattern abstract class for trait.
     Status: Done
-    Reported by: Nafer Sanabria.
+    Reported by: Sebastian Oliveri.
   */
-  abstract class Timetable
+  trait Timetable
+
   case class Schedule(schedulesForDays: Map[DayWeek, ScheduleDay]) extends Timetable
 
   case object UnavailableTimetable extends Timetable

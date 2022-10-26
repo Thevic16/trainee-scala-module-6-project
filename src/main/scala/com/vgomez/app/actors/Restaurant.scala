@@ -16,7 +16,13 @@ object Restaurant {
                             location: Location, categories: Set[String], timetable: Timetable)
 
   // state
-  sealed abstract class RestaurantState
+  /*
+  Todo #2 part 2
+    Description: Change Null pattern abstract class for trait.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
+  sealed trait RestaurantState
 
   case class RegisterRestaurantState(id: String, index: Long,  username: String,  name: String, state: String, city: String,
                              postalCode: String, location: Location, categories: Set[String], timetable: Timetable)

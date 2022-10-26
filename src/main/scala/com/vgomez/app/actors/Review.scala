@@ -13,7 +13,13 @@ object Review {
   case class ReviewInfo(username: String, restaurantId: String, stars: Int, text: String, date: String)
 
   // state
-  sealed abstract class ReviewState
+  /*
+  Todo #2 part 3
+    Description: Change Null pattern abstract class for trait.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
+  sealed trait ReviewState
   case class RegisterReviewState(id: String, index: Long, username: String, restaurantId: String, stars: Int,
                                  text: String, date: String) extends ReviewState
 

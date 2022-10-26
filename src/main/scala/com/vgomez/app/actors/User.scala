@@ -15,6 +15,12 @@ object User {
                       favoriteCategories: Set[String])
 
   // state
+  /*
+  Todo #2 part 4
+    Description: Change Null pattern abstract class for trait.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
   sealed abstract class UserState
   case class RegisterUserState(username: String, index: Long, password: String, role: Role, location: Location,
                        favoriteCategories: Set[String]) extends UserState
