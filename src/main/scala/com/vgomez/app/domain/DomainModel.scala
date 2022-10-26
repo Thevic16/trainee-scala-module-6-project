@@ -18,7 +18,7 @@ object DomainModel {
   case class ScheduleDay(dayWeek: DayWeek, startHour: Hour, endHour: Hour)
 
   /*
-  Todo
+  Todo #13
     Description: Use Null pattern on Schedule class domain model.
     Status: Done
     Reported by: Nafer Sanabria.

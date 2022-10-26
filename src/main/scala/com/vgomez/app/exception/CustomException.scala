@@ -2,7 +2,7 @@ package com.vgomez.app.exception
 
 object CustomException {
   /*
-  Todo
+  Todo #14
     Description: Change the generalized names of the exceptions for more specific ones.
     Status: Done
     Reported by: Nafer Sanabria.

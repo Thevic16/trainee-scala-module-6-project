@@ -47,7 +47,7 @@ class RecommendationCategoriesRouter(administration: ActorRef)(implicit system: 
       numberOfElementPerPage)).mapTo[GetRecommendationResponse]
 
   /*
-  Todo
+  Todo #15
     Description: Generalize recommendation endpoints (use a parameter to access each available service).
     Status: Done
     Reported by: Nafer Sanabria.

@@ -6,7 +6,7 @@ import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import scala.util.Try
 
 /*
-Todo
+Todo #11
   Description: Change the generalized name of the Abstract class for more specific one.
   Status: Done
   Reported by: Nafer Sanabria.
@@ -28,7 +28,7 @@ object AbstractMessage {
   }
 
   /*
-  Todo
+  Todo #12
     Description: The sender doesn't need to receive redundant information as a response is better just to put a
                   Done object instead.
     State: Done

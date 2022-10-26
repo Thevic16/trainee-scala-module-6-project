@@ -12,7 +12,7 @@ import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsBy
 import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 
 /*
-Todo
+Todo #9
   Description: Using the terminology of CRUD is a bad practice, is better to model the app base on the domain.
   Status: Done
   Reported by: Sebastian Oliveri and Nafer Sanabria.
@@ -22,7 +22,7 @@ object Restaurant {
                             location: Location, categories: Set[String], timetable: Timetable)
 
   /*
-  Todo
+  Todo #10
     Description: Use Null Pattern instead of isDeleted parameter.
     Status: Done
     Reported by: Sebastian Oliveri and Nafer Sanabria.

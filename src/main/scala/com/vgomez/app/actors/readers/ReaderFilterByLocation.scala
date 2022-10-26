@@ -14,10 +14,11 @@ import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, 
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
 /*
-Todo
+Todo #6
   Description: The reading approach of the application is very complicated, it should be better to use a second index
                database to read the information from there.
   State: Done
+  Action: Read information from the index database instead of cassandra events.
   Reported by: Sebastian Oliveri.
 */
 object ReaderFilterByLocation {
