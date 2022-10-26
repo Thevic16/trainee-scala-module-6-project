@@ -26,7 +26,7 @@ object ReaderUtility {
     RegisterRestaurantState(restaurantModel.id, restaurantModel.index.getOrElse(0L),restaurantModel.username,
       restaurantModel.name, restaurantModel.state, restaurantModel.city, restaurantModel.postalCode,
       Location(restaurantModel.latitude, restaurantModel.longitude), restaurantModel.categories.toSet,
-      restaurantModel.schedule)
+      restaurantModel.timetable)
   }
 
   def getListRestaurantResponsesBySeqRestaurantModels(restaurantModels: Seq[Model.RestaurantModel],

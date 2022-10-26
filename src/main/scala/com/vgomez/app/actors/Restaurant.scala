@@ -6,22 +6,32 @@ import com.vgomez.app.actors.Administration.Command.GetStarsByRestaurant
 
 import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
-import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsByRestaurantResponse
 import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 
-
+/*
+Todo
+  Description: Using the terminology of CRUD is a bad practice, is better to model the app base on the domain.
+  Status: Done
+  Reported by: Sebastian Oliveri and Nafer Sanabria.
+*/
 object Restaurant {
   case class RestaurantInfo(username: String, name: String, state: String, city: String, postalCode: String,
-                            location: Location, categories: Set[String], schedule: Schedule)
+                            location: Location, categories: Set[String], timetable: Timetable)
 
+  /*
+  Todo
+    Description: Use Null Pattern instead of isDeleted parameter.
+    Status: Done
+    Reported by: Sebastian Oliveri and Nafer Sanabria.
+  */
   // state
   sealed abstract class RestaurantState
 
   case class RegisterRestaurantState(id: String, index: Long,  username: String,  name: String, state: String, city: String,
-                             postalCode: String, location: Location, categories: Set[String], schedule: Schedule)
+                             postalCode: String, location: Location, categories: Set[String], timetable: Timetable)
                               extends RestaurantState
 
   case object UnregisterRestaurantState extends RestaurantState
@@ -134,14 +144,14 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
 
   def getState(username: String = "", name:String = "", state: String = "",
                city: String = "", postalCode: String = "", location: Location = Location(0, 0),
-               categories: Set[String] = Set(), schedule: Schedule = generateNewEmptySchedule()): RestaurantState = {
-    RegisterRestaurantState(id, index, username, name, state, city, postalCode, location, categories, schedule)
+               categories: Set[String] = Set(), timetable: Timetable = UnavailableTimetable): RestaurantState = {
+    RegisterRestaurantState(id, index, username, name, state, city, postalCode, location, categories, timetable)
   }
 
   def getNewState(restaurantInfo: RestaurantInfo): RestaurantState = {
     getState(restaurantInfo.username, restaurantInfo.name, restaurantInfo.state,
       restaurantInfo.city, restaurantInfo.postalCode, restaurantInfo.location,
-      restaurantInfo.categories, restaurantInfo.schedule)
+      restaurantInfo.categories, restaurantInfo.timetable)
   }
 
 }

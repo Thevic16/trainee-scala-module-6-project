@@ -16,8 +16,15 @@ import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 
 import java.io.File
 import java.util.UUID
+import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 
+/*
+Todo
+  Description: LoadDataset should be moved to a more appropriate package.
+  Status: Done
+  Reported by: Nafer Sanabria.
+*/
 object LoadDataset{
   def convertRowToMapCommands(row: Map[String, String]): Map[String, Product] = {
     val locationField: Location = Location(row.getOrElse("latitude", "0").toDouble,
@@ -58,7 +65,7 @@ object LoadDataset{
       state = row.getOrElse("state_", "Unknown state"), city = row.getOrElse("city", "Unknown city"),
       postalCode = row.getOrElse("postal_code", "UnKnown postal code"),
       location = locationField, categories = categoriesField,
-      schedule = transformScheduleStringToSchedule(row.getOrElse("hours", defaultHours))
+      timetable = transformTimetableStringToTimetable(row.getOrElse("hours", defaultHours))
     ))
   }
 
@@ -83,6 +90,7 @@ class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administratio
   def runLoadDataSetGraph(): Unit = {
     val readerStream = getReaderStream()
 
+    @tailrec
     def go(readerStream: Stream[Map[String, String]], counterRow: Int = 0): Unit = {
       if (readerStream.isEmpty) println(s"All the data ($counterRow rows) have be loaded.")
       else if (counterRow >= maxAmountRow && maxAmountRow != -1) {

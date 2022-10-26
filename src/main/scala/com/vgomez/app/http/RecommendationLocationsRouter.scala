@@ -45,6 +45,12 @@ class RecommendationLocationsRouter(administration: ActorRef)(implicit system: A
     (administration ? GetRecommendationCloseToMe(username, rangeInKm, pageNumber,
                                                    numberOfElementPerPage)).mapTo[GetRecommendationResponse]
 
+  /*
+  Todo
+    Description: Generalize recommendation endpoints (use a parameter to access each available service).
+    Status: Done
+    Reported by: Nafer Sanabria.
+  */
   val routes: Route =
     pathPrefix("api" / "recommendations" / "locations"){
       pathEndOrSingleSlash {

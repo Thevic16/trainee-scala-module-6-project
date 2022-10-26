@@ -9,6 +9,13 @@ import akka.Done
 
 import scala.concurrent.Future
 
+/*
+Todo
+  Description: The reading approach of the application is very complicated, it should be better to use a second index
+               database to read the information from there.
+  State: Done
+  Reported by: Sebastian Oliveri.
+*/
 object Operation {
   import Table.api._
   val db = Connection.db
@@ -32,49 +39,49 @@ object Operation {
     db.run(query).map(GetUserModelsResponse)
   }
 
-  def registerRestaurantModel(restaurantModel: RestaurantModel): Future[Done] = {
+  def registerRestaurantModel(restaurantModel: RestaurantModel): Future[Either[Int, Done]] = {
     val insertQuery = Table.restaurantTable forceInsert restaurantModel
-    db.run(insertQuery).map(_ => Done)
+    db.run(insertQuery).map(response => if(response == 1) Right(Done) else Left(response))
   }
 
-  def registerReviewModel(reviewModel: ReviewModel): Future[Done] = {
+  def registerReviewModel(reviewModel: ReviewModel): Future[Either[Int, Done]] = {
     val insertQuery = Table.reviewTable forceInsert reviewModel
-    db.run(insertQuery).map(_ => Done)
+    db.run(insertQuery).map(response => if(response == 1) Right(Done) else Left(response))
   }
 
-  def registerUserModel(userModel: UserModel): Future[Done] = {
+  def registerUserModel(userModel: UserModel): Future[Either[Int, Done]] = {
     val insertQuery = Table.userTable forceInsert userModel
-    db.run(insertQuery).map(_ => Done)
+    db.run(insertQuery).map(response => if(response == 1) Right(Done) else Left(response))
   }
 
-  def updateRestaurantModel(id: String, restaurantModel: RestaurantModel): Future[Done] = {
+  def updateRestaurantModel(id: String, restaurantModel: RestaurantModel): Future[Either[Int, Done]] = {
     val updateQuery = Table.restaurantTable.filter(_.id === id).update(restaurantModel)
-    db.run(updateQuery).map(_ => Done)
+    db.run(updateQuery).map(response => if(response == 1) Right(Done) else Left(response))
   }
 
-  def updateReviewModel(id: String, reviewModel: ReviewModel): Future[Done] = {
+  def updateReviewModel(id: String, reviewModel: ReviewModel): Future[Either[Int, Done]] = {
     val updateQuery = Table.reviewTable.filter(_.id === id).update(reviewModel)
-    db.run(updateQuery).map(_ => Done)
+    db.run(updateQuery).map(response => if(response == 1) Right(Done) else Left(response))
   }
 
-  def updateUserModel(username: String, userModel: UserModel): Future[Done] = {
+  def updateUserModel(username: String, userModel: UserModel): Future[Either[Int, Done]] = {
     val updateQuery = Table.userTable.filter(_.username === username).update(userModel)
-    db.run(updateQuery).map(_ => Done)
+    db.run(updateQuery).map(response => if(response == 1) Right(Done) else Left(response))
   }
 
-  def unregisterRestaurantModel(id: String): Future[Done] = {
+  def unregisterRestaurantModel(id: String): Future[Either[Int, Done]] = {
     val deleteQuery = Table.restaurantTable.filter(_.id === id).delete
-    db.run(deleteQuery).map(_ => Done)
+    db.run(deleteQuery).map(response => if(response == 1) Right(Done) else Left(response))
   }
 
-  def unregisterReviewModel(id: String): Future[Done] = {
+  def unregisterReviewModel(id: String): Future[Either[Int, Done]] = {
     val deleteQuery = Table.reviewTable.filter(_.id === id).delete
-    db.run(deleteQuery).map(_ => Done)
+    db.run(deleteQuery).map(response => if(response == 1) Right(Done) else Left(response))
   }
 
-  def unregisterUserModel(username: String): Future[Done] = {
+  def unregisterUserModel(username: String): Future[Either[Int, Done]] = {
     val deleteQuery = Table.userTable.filter(_.username === username).delete
-    db.run(deleteQuery).map(_ => Done)
+    db.run(deleteQuery).map(response => if(response == 1) Right(Done) else Left(response))
   }
 
   def getReviewsStarsByRestaurantId(restaurantId: String): Future[GetReviewModelsStarsResponse] = {

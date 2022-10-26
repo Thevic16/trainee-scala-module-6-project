@@ -5,6 +5,12 @@ import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 
 import scala.util.Try
 
+/*
+Todo
+  Description: Change the generalized name of the Abstract class for more specific one.
+  Status: Done
+  Reported by: Nafer Sanabria.
+*/
 object AbstractMessage {
 
   object Command {
@@ -21,6 +27,13 @@ object AbstractMessage {
     abstract class Event
   }
 
+  /*
+  Todo
+    Description: The sender doesn't need to receive redundant information as a response is better just to put a
+                  Done object instead.
+    State: Done
+    Reported by: Sebastian Oliveri.
+  */
   object Response {
     abstract class GetResponse
 
