@@ -12,14 +12,7 @@ import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, 
   GetSequenceReviewModelsStarsResponse, GetUserModelsResponse}
 import com.vgomez.app.data.indexDatabase.Operation
 
-/*
-Todo #7
-  Description: The reading approach of the application is very complicated, it should be better to use a second index
-               database to read the information from there.
-  State: Done
-  Action: Read information from the index database instead of cassandra events.
-  Reported by: Sebastian Oliveri.
-*/
+
 object ReaderGetAll {
   // commands
   object Command {

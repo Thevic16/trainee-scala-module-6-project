@@ -1,13 +1,6 @@
 package com.vgomez.app.exception
 
 object CustomException {
-  /*
-  Todo #14
-    Description: Change the generalized names of the exceptions for more specific ones.
-    Status: Done
-    Reported by: Nafer Sanabria.
-  */
-
   case class RestaurantNotFoundException(message: String =
                                          "The provided restaurant id was not found in the system.") extends
     RuntimeException(message)

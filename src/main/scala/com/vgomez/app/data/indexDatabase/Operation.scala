@@ -9,13 +9,6 @@ import akka.Done
 
 import scala.concurrent.Future
 
-/*
-Todo
-  Description: The reading approach of the application is very complicated, it should be better to use a second index
-               database to read the information from there.
-  State: Done
-  Reported by: Sebastian Oliveri.
-*/
 object Operation {
   import Table.api._
   val db = Connection.db

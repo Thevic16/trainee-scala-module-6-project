@@ -4,14 +4,7 @@ import com.vgomez.app.domain.DomainModel.{Role, Schedule, Timetable}
 import com.vgomez.app.domain.Transformer.FromDomainToRawData._
 import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 
-/*
-Todo #3
-  Description: The reading approach of the application is very complicated, it should be better to use a second index
-               database to read the information from there.
-  State: Done
-  Action: Create Schemas for index database.
-  Reported by: Sebastian Oliveri.
-*/
+
 object Model {
   // Models
 

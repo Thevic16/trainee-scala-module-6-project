@@ -5,14 +5,6 @@ import akka.pattern.pipe
 import com.vgomez.app.data.indexDatabase.Operation
 import com.vgomez.app.data.indexDatabase.Response.GetReviewModelsStarsResponse
 
-/*
-Todo #8
-  Description: The reading approach of the application is very complicated, it should be better to use a second index
-               database to read the information from there.
-  State: Done
-  Action: Read information from the index database instead of cassandra events.
-  Reported by: Sebastian Oliveri.
-*/
 object ReaderStarsByRestaurant {
   // commands
   object Command {

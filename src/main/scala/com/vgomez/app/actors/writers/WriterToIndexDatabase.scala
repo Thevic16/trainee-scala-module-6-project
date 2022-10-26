@@ -9,13 +9,6 @@ import com.vgomez.app.actors.User.UserInfo
 import com.vgomez.app.data.indexDatabase.Model._
 import com.vgomez.app.data.indexDatabase.Operation._
 
-/*
-Todo #4
-  Description: The reading approach of the application is very complicated, it should be better to use a second index
-               database to read the information from there.
-  Action: Create Writer Actor to pull information to index-database.
-  Reported by: Sebastian Oliveri.
-*/
 object WriterToIndexDatabase {
 
   object Command {

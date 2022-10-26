@@ -18,8 +18,8 @@ object DomainModel {
   case class ScheduleDay(dayWeek: DayWeek, startHour: Hour, endHour: Hour)
 
   /*
-  Todo #13
-    Description: Use Null pattern on Schedule class domain model.
+  Todo #2
+    Description: Change Null pattern abstract class for trait.
     Status: Done
     Reported by: Nafer Sanabria.
   */

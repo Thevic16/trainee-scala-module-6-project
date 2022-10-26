@@ -46,12 +46,7 @@ class RecommendationCategoriesRouter(administration: ActorRef)(implicit system: 
     (administration ? GetRecommendationFilterByUserFavoriteCategories(idUser, pageNumber,
       numberOfElementPerPage)).mapTo[GetRecommendationResponse]
 
-  /*
-  Todo #15
-    Description: Generalize recommendation endpoints (use a parameter to access each available service).
-    Status: Done
-    Reported by: Nafer Sanabria.
-  */
+
   val routes: Route =
     pathPrefix("api" / "recommendations" / "categories"){
         pathEndOrSingleSlash {
