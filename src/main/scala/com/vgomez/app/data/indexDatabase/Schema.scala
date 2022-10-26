@@ -32,9 +32,7 @@ object Response {
   case class GetRestaurantModelsResponse(restaurantModels: Seq[RestaurantModel])
   case class GetReviewModelsResponse(reviewModels: Seq[ReviewModel])
   case class GetUserModelsResponse(userModels: Seq[UserModel])
-
   case class GetReviewModelsStarsResponse(reviewModelsStars: Seq[Int])
-
   case class GetSequenceReviewModelsStarsResponse(seqReviewModelsStars: Seq[Seq[Int]])
 
 }

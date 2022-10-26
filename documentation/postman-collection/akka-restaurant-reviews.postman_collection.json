@@ -9,7 +9,7 @@
 			"name": "restaurants",
 			"item": [
 				{
-					"name": "create restaurant",
+					"name": "register restaurant",
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -120,7 +120,7 @@
 					"response": []
 				},
 				{
-					"name": "delete restaurant by id",
+					"name": "unregister restaurant by id",
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -146,7 +146,7 @@
 			"name": "reviews",
 			"item": [
 				{
-					"name": "create review",
+					"name": "register review",
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -257,7 +257,7 @@
 					"response": []
 				},
 				{
-					"name": "delete review by id",
+					"name": "unregister review by id",
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -283,7 +283,7 @@
 			"name": "users",
 			"item": [
 				{
-					"name": "create user",
+					"name": "register user",
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -394,7 +394,7 @@
 					"response": []
 				},
 				{
-					"name": "delete user by id",
+					"name": "unregister user by id",
 					"request": {
 						"method": "DELETE",
 						"header": [],

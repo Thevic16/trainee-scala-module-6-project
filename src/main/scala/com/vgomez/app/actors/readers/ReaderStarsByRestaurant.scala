@@ -15,8 +15,6 @@ Todo
 object ReaderStarsByRestaurant {
   // commands
   object Command {
-    case class CreateReview(id: String, restaurantId: String)
-    case class UpdateReview(id: String, restaurantId: String)
     case class GetStarsByRestaurant(restaurantId: String)
   }
 
