@@ -41,7 +41,7 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
       Operation.getPosiblesRestaurantsModelByLocation(location.latitude, location.longitude, rangeInKm, pageNumber,
         numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllRestaurantState(sender(), location, rangeInKm))
+      context.become(getRestaurantsState(sender(), location, rangeInKm))
 
     case GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByLocation has receive a GetRecommendationCloseToMe command.")
@@ -53,27 +53,23 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
       stash()
   }
 
-  def getAllRestaurantState(originalSender: ActorRef, queryLocation: Location, rangeInKm: Double,
-                            restaurantModels: Seq[RestaurantModel] = Seq()): Receive = {
-
+  def getRestaurantsState(originalSender: ActorRef, queryLocation: Location, rangeInKm: Double): Receive = {
+    /*
+    Todo #3
+      Description: Decouple restaurant.
+      Action: Remove stars request on the database and only left restaurant models.
+      Status: Done
+      Reported by: Sebastian Oliveri.
+    */
     case GetRestaurantModelsResponse(restaurantModels) =>
-      val seqRestaurantId = restaurantModels.filter(model => calculateDistanceInKm(Location(model.latitude,
-        model.longitude), Some(queryLocation)) <= rangeInKm).map(model => model.id)
+      val restaurantModelsFilterByDistance = restaurantModels.filter(model =>
+        calculateDistanceInKm(Location(model.latitude, model.longitude), Some(queryLocation)) <= rangeInKm)
 
-      if (seqRestaurantId.nonEmpty) {
-        Operation.getReviewsStarsByListRestaurantId(
-                                               seqRestaurantId).mapTo[GetSequenceReviewModelsStarsResponse].pipeTo(self)
-        context.become(getAllRestaurantState(originalSender, queryLocation, rangeInKm, restaurantModels))
-      }
-      else {
-        originalSender ! GetRecommendationResponse(None)
-        unstashAll()
-        context.become(state())
-      }
+      if (restaurantModelsFilterByDistance.nonEmpty)
+        originalSender ! GetRecommendationResponse(Some(
+          getListRestaurantResponsesBySeqRestaurantModels(restaurantModelsFilterByDistance)))
+      else originalSender ! GetRecommendationResponse(None)
 
-    case GetSequenceReviewModelsStarsResponse(seqReviewModelsStars) =>
-      originalSender ! GetRecommendationResponse(Some(getListRestaurantResponsesBySeqRestaurantModels(restaurantModels,
-                                                      seqReviewModelsStars)))
       unstashAll()
       context.become(state())
 
@@ -90,7 +86,7 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
             rangeInKm, pageNumber, numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
 
           unstashAll()
-          context.become(getAllRestaurantState(originalSender,
+          context.become(getRestaurantsState(originalSender,
             Location(location.latitude, location.longitude), rangeInKm))
 
         case UnregisterUserState =>

@@ -29,7 +29,14 @@ object AdministrationUtility {
 
   def getGetResponseByGetCommand(getCommand: GetCommand): GetResponse = {
     getCommand match {
-      case GetRestaurant(_) => GetRestaurantResponse(None, None)
+      /*
+      Todo #3
+        Description: Decouple restaurant.
+        Action: Remove start from this pattern matching.
+        Status: Done
+        Reported by: Sebastian Oliveri.
+      */
+      case GetRestaurant(_) => GetRestaurantResponse(None)
       case GetReview(_) => GetReviewResponse(None)
       case GetUser(_) => GetUserResponse(None)
     }

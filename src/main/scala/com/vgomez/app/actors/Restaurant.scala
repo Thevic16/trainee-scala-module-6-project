@@ -1,14 +1,12 @@
 package com.vgomez.app.actors
 import akka.Done
-import akka.actor.{ActorRef, Props, Stash}
+import akka.actor.Props
 import akka.persistence.PersistentActor
-import com.vgomez.app.actors.Administration.Command.GetStarsByRestaurant
 
 import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
-import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsByRestaurantResponse
 import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 
 object Restaurant {
@@ -46,7 +44,7 @@ object Restaurant {
 
   // responses
   object Response {
-    case class GetRestaurantResponse(maybeRestaurantState: Option[RestaurantState], maybeStars: Option[Int])
+    case class GetRestaurantResponse(maybeRestaurantState: Option[RestaurantState])
       extends GetResponse
   }
 
@@ -54,7 +52,7 @@ object Restaurant {
 
 }
 
-class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
+class Restaurant(id: String, index: Long) extends PersistentActor {
   import Restaurant._
   import Command._
   import Response._
@@ -63,13 +61,18 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
 
   def state(restaurantState: RestaurantState): Receive = {
     case GetRestaurant(_) =>
+      /*
+      Todo #3 part 1
+        Description: Decouple restaurant.
+        Action: Omit starts and only return restaurant state.
+        Status: Done
+        Reported by: Sebastian Oliveri.
+      */
       restaurantState match {
         case restaurantState@RegisterRestaurantState(_, _, _, _, _, _, _, _, _, _) =>
-          context.parent ! GetStarsByRestaurant(id)
-          unstashAll()
-          context.become(getStarsState(restaurantState, sender()))
+          sender() ! GetRestaurantResponse(Some(restaurantState))
         case UnregisterRestaurantState =>
-          sender() ! GetRestaurantResponse(None, None)
+          sender() ! GetRestaurantResponse(None)
       }
 
     case RegisterRestaurant(_, restaurantInfo) =>
@@ -107,20 +110,6 @@ class Restaurant(id: String, index: Long) extends PersistentActor with Stash{
         case UnregisterRestaurantState =>
           sender() ! UnregisterResponse(Failure(RestaurantUnRegisteredException))
       }
-
-    case _ =>
-      stash()
-  }
-
-  def getStarsState(restaurantState: RestaurantState, originalSender: ActorRef): Receive = {
-    case GetStarsByRestaurantResponse(starts) =>
-      originalSender ! GetRestaurantResponse(Some(restaurantState), Some(starts))
-
-      unstashAll()
-      context.become(state(restaurantState))
-
-    case _ =>
-      stash()
   }
 
   override def receiveCommand: Receive = state(getState())

@@ -14,10 +14,11 @@ import com.vgomez.app.actors.Restaurant.Response._
 import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.vgomez.app.actors.Administration.Command.GetAllRestaurant
+import com.vgomez.app.actors.Administration.Command.{GetAllRestaurant, GetStarsByRestaurant}
 import com.vgomez.app.exception.CustomException.ValidationFailException
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllRestaurantResponse
+import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsByRestaurantResponse
 import com.vgomez.app.http.validators._
 import com.vgomez.app.http.RouterUtility._
 
@@ -26,12 +27,23 @@ import scala.util.{Failure, Success}
 // Restaurant Router.
 class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, implicit val timeout: Timeout)
   extends RestaurantCreationRequestJsonProtocol with RestaurantUpdateRequestJsonProtocol
-    with RestaurantResponseJsonProtocol with FailureResponseJsonProtocol with SprayJsonSupport{
+    with RestaurantResponseJsonProtocol with StarsResponseJsonProtocol with FailureResponseJsonProtocol
+    with SprayJsonSupport{
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
 
   def getRestaurant(id: String): Future[GetRestaurantResponse] =
     (administration ? GetRestaurant(id)).mapTo[GetRestaurantResponse]
+
+  /*
+  Todo #3
+    Description: Decouple restaurant.
+    Action: Create new method to return stars by restaurant Id.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
+  def getStarsByRestaurant(id: String): Future[GetStarsByRestaurantResponse] =
+    (administration ? GetStarsByRestaurant(id)).mapTo[GetStarsByRestaurantResponse]
 
   def registerRestaurant(restaurantCreationRequest: RestaurantCreationRequest): Future[RegisterResponse] =
     (administration ? restaurantCreationRequest.toCommand).mapTo[RegisterResponse]
@@ -51,15 +63,41 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
     pathPrefix("api" / "restaurants"){
       path(Segment) { id =>
         get {
-          onSuccess(getRestaurant(id)) {
-            case GetRestaurantResponse(Some(restaurantState), Some(stars)) =>
-              complete {
-                getRestaurantResponseByRestaurantState(restaurantState, stars)
+          parameter('service.as[String]) {
+            case "get-state" =>
+              onSuccess(getRestaurant(id)) {
+                /*
+                Todo #4
+                  Description: Decouple restaurant endpoint.
+                  Action: Remove start from this class.
+                  Status: Done
+                  Reported by: Sebastian Oliveri.
+                */
+                case GetRestaurantResponse(Some(restaurantState)) =>
+                  complete {
+                    getRestaurantResponseByRestaurantState(restaurantState)
+                  }
+
+                case GetRestaurantResponse(None) =>
+                  complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
               }
 
-            case GetRestaurantResponse(None, None) =>
-              complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
+            case "get-stars" =>
+              onSuccess(getStarsByRestaurant(id)) {
+                case GetStarsByRestaurantResponse(Some(stars)) =>
+                  complete {
+                    StarsResponse(stars)
+                  }
+
+                case GetStarsByRestaurantResponse(None) =>
+                  complete(StatusCodes.NotFound, FailureResponse(s"There are not reviews for the restaurant " +
+                    s"with id $id"))
+              }
+
+            case _ =>
+              complete(StatusCodes.BadRequest, FailureResponse(s"The specify service parameter hasn't been found!"))
           }
+
         } ~
           put {
             entity(as[RestaurantUpdateRequest]) { request =>

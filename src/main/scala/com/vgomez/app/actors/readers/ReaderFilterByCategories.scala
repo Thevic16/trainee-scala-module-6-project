@@ -37,7 +37,7 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
       Operation.getRestaurantsModelByCategories(favoriteCategories.toList, pageNumber,
         numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
       unstashAll()
-      context.become(getAllRestaurantState(sender()))
+      context.become(getRestaurantsState(sender()))
 
     case GetRecommendationFilterByUserFavoriteCategories(username, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByUserFavoriteCategories command.")
@@ -50,25 +50,20 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
       stash()
   }
   
-  def getAllRestaurantState(originalSender: ActorRef,
-                            restaurantModels: Seq[Model.RestaurantModel] = Seq()): Receive = {
-
+  def getRestaurantsState(originalSender: ActorRef): Receive = {
+    /*
+    Todo #3
+      Description: Decouple restaurant.
+      Action: Remove stars request on the database and only left restaurant models.
+      Status: Done
+      Reported by: Sebastian Oliveri.
+    */
     case GetRestaurantModelsResponse(restaurantModels) =>
-      if(restaurantModels.nonEmpty){
-        val seqRestaurantId = restaurantModels.map(model => model.id)
-        Operation.getReviewsStarsByListRestaurantId(
-                                               seqRestaurantId).mapTo[GetSequenceReviewModelsStarsResponse].pipeTo(self)
-        context.become(getAllRestaurantState(originalSender, restaurantModels))
-      }
-      else{
-        originalSender ! GetRecommendationResponse(None)
-        unstashAll()
-        context.become(state())
-      }
+      if (restaurantModels.nonEmpty)
+        originalSender ! GetRecommendationResponse(Some(
+                                                     getListRestaurantResponsesBySeqRestaurantModels(restaurantModels)))
+      else originalSender ! GetRecommendationResponse(None)
 
-    case GetSequenceReviewModelsStarsResponse(seqReviewModelsStars) =>
-      originalSender ! GetRecommendationResponse(Some(getListRestaurantResponsesBySeqRestaurantModels(restaurantModels,
-                                                      seqReviewModelsStars)))
       unstashAll()
       context.become(state())
 
@@ -76,7 +71,13 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
       stash()
   }
 
-
+  /*
+  Todo #5
+    Description: Decouple Actor eliminate halfway methods.
+    Action: Replace halfway for others actors.
+    Status: No started
+    Reported by: Sebastian Oliveri.
+  */
   def halfwayGetRecommendationFilterByUserFavoriteCategories(originalSender: ActorRef, pageNumber: Long,
                                                              numberOfElementPerPage: Long): Receive = {
     case GetUserResponse(Some(userState)) =>
@@ -85,7 +86,7 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
           Operation.getRestaurantsModelByCategories(favoriteCategories.toList, pageNumber,
             numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
           unstashAll()
-          context.become(getAllRestaurantState(originalSender))
+          context.become(getRestaurantsState(originalSender))
 
         case UnregisterUserState =>
           originalSender ! GetRecommendationResponse(None)

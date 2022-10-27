@@ -101,11 +101,31 @@ object HttpRequest{
 }
 object HttpResponse{
   // Resquest clases
+  /*
+  Todo #3
+    Description: Decouple restaurant.
+    Action: Remove start from this class.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
   case class RestaurantResponse(id: String, username: String, name: String, state: String, city: String,
                                 postalCode: String, latitude: Double, longitude: Double, categories: Set[String],
-                                timetable: Either[String, SimpleScheduler], stars: Int)
+                                timetable: Either[String, SimpleScheduler])
   trait RestaurantResponseJsonProtocol extends DefaultJsonProtocol {
-    implicit val restaurantResponseJson = jsonFormat11(RestaurantResponse)
+    implicit val restaurantResponseJson = jsonFormat10(RestaurantResponse)
+  }
+
+  /*
+  Todo #4
+    Description: Decouple restaurant endpoint.
+    Action: Create a new http response for start.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
+  case class StarsResponse(stars: Int)
+
+  trait StarsResponseJsonProtocol extends DefaultJsonProtocol {
+    implicit val starsResponseJson = jsonFormat1(StarsResponse)
   }
 
   case class ReviewResponse(id: String, username: String, restaurantId: String, stars: Int, text: String, date: String)

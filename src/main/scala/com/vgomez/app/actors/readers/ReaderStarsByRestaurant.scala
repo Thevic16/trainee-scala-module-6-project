@@ -12,7 +12,7 @@ object ReaderStarsByRestaurant {
   }
 
   object Response {
-    case class GetStarsByRestaurantResponse(stars: Int)
+    case class GetStarsByRestaurantResponse(optionStars: Option[Int])
   }
 
   def props(system: ActorSystem): Props =  Props(new ReaderStarsByRestaurant(system))
@@ -40,9 +40,9 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLoggi
 
     case GetReviewModelsStarsResponse(reviewModelsStars) =>
       if(reviewModelsStars.nonEmpty)
-        originalSender ! GetStarsByRestaurantResponse(reviewModelsStars.sum / reviewModelsStars.length)
+        originalSender ! GetStarsByRestaurantResponse(Some(reviewModelsStars.sum / reviewModelsStars.length))
       else
-        originalSender ! GetStarsByRestaurantResponse(0)
+        originalSender ! GetStarsByRestaurantResponse(None)
 
       unstashAll()
       context.become(state())
