@@ -3,14 +3,11 @@ package com.vgomez.app.actors.readers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
-import com.vgomez.app.actors.User.Command.GetUser
-import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
-import com.vgomez.app.actors.User.Response.GetUserResponse
+import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command.GetUserFavoriteCategories
 import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
 import com.vgomez.app.data.indexDatabase.Operation
-import com.vgomez.app.data.indexDatabase.Model
-import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, GetSequenceReviewModelsStarsResponse}
+import com.vgomez.app.data.indexDatabase.Response.GetRestaurantModelsResponse
 
 object ReaderFilterByCategories {
   // commands
@@ -22,10 +19,19 @@ object ReaderFilterByCategories {
                                                                numberOfElementPerPage: Long)
   }
 
-  def props(system: ActorSystem): Props =  Props(new ReaderFilterByCategories(system))
+  def props(system: ActorSystem, intermediateReadUserAttributes: ActorRef): Props =
+    Props(new ReaderFilterByCategories(system, intermediateReadUserAttributes))
 }
 
-class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogging with Stash {
+/*
+Todo #5
+  Description: Decouple Actor eliminate halfway methods.
+  Action: Add intermediateReadUserAttributes Actor.
+  Status: Done
+  Reported by: Sebastian Oliveri.
+*/
+class ReaderFilterByCategories(system: ActorSystem,
+                               intermediateReadUserAttributes: ActorRef) extends Actor with ActorLogging with Stash {
   import ReaderFilterByCategories._
   import Command._
   import system.dispatcher
@@ -41,10 +47,9 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
 
     case GetRecommendationFilterByUserFavoriteCategories(username, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByCategories has receive a GetRecommendationFilterByUserFavoriteCategories command.")
-      context.parent ! GetUser(username)
+      intermediateReadUserAttributes ! GetUserFavoriteCategories(username)
       unstashAll()
-      context.become(halfwayGetRecommendationFilterByUserFavoriteCategories(sender(), pageNumber,
-                                                                                            numberOfElementPerPage))
+      context.become(intermediateGetUserFavoriteCategoriesState(sender(), pageNumber, numberOfElementPerPage))
 
     case _ =>
       stash()
@@ -74,27 +79,19 @@ class ReaderFilterByCategories(system: ActorSystem) extends Actor with ActorLogg
   /*
   Todo #5
     Description: Decouple Actor eliminate halfway methods.
-    Action: Replace halfway for others actors.
-    Status: No started
+    Action: Let the responsibility to get user favoriteCategories to other actor.
+    Status: Done
     Reported by: Sebastian Oliveri.
   */
-  def halfwayGetRecommendationFilterByUserFavoriteCategories(originalSender: ActorRef, pageNumber: Long,
+  def intermediateGetUserFavoriteCategoriesState(originalSender: ActorRef, pageNumber: Long,
                                                              numberOfElementPerPage: Long): Receive = {
-    case GetUserResponse(Some(userState)) =>
-      userState match {
-        case RegisterUserState(_, _, _, _, _, favoriteCategories) =>
-          Operation.getRestaurantsModelByCategories(favoriteCategories.toList, pageNumber,
-            numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
-          unstashAll()
-          context.become(getRestaurantsState(originalSender))
+    case Some(favoriteCategories: Set[String]) =>
+      Operation.getRestaurantsModelByCategories(favoriteCategories.toList, pageNumber,
+        numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
+      unstashAll()
+      context.become(getRestaurantsState(originalSender))
 
-        case UnregisterUserState =>
-          originalSender ! GetRecommendationResponse(None)
-          unstashAll()
-          context.become(state())
-      }
-
-    case GetUserResponse(None) =>
+    case None =>
       originalSender ! GetRecommendationResponse(None)
       unstashAll()
       context.become(state())

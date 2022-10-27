@@ -8,8 +8,8 @@ import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.messages.AbstractMessage.Event._
 import com.vgomez.app.actors.AdministrationUtility._
-import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll,
-                                      ReaderStarsByRestaurant}
+import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes
+import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll, ReaderStarsByRestaurant}
 import com.vgomez.app.actors.writers.WriterToIndexDatabase
 import com.vgomez.app.domain.DomainModel.Location
 
@@ -60,16 +60,27 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   import User.Command._
   import Command._
 
+  /*
+  Todo #5
+    Description: Decouple Actor eliminate halfway methods.
+    Action: Create intermediateReadUserAttributes on administration.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
+  // intermediates
+  val intermediateReadUserAttributes = context.actorOf(Props[IntermediateReadUserAttributes],
+    "intermediate-read-user-attributes")
+
   // Readers
   val readerGetAll = context.actorOf(ReaderGetAll.props(system), "reader-get-all")
-  val readerFilterByCategories = context.actorOf(ReaderFilterByCategories.props(system),
+  val readerFilterByCategories = context.actorOf(ReaderFilterByCategories.props(system, intermediateReadUserAttributes),
                                             "reader-filter-by-categories")
-  val readerFilterByLocation = context.actorOf(ReaderFilterByLocation.props(system),
+  val readerFilterByLocation = context.actorOf(ReaderFilterByLocation.props(system, intermediateReadUserAttributes),
                                           "reader-filter-by-location")
   val readerStarsByRestaurant = context.actorOf(ReaderStarsByRestaurant.props(system),
                                         "reader-stars-by-restaurant")
-
   val writerToIndexDatabase = context.actorOf(WriterToIndexDatabase.props(system), "writer-to-index-database")
+
 
   // for state recovery
   var administrationRecoveryState = AdministrationState(Map(), Map(), Map(), 0, 0, 0)

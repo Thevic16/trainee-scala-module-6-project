@@ -5,12 +5,12 @@ import akka.pattern.pipe
 import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
 import com.vgomez.app.actors.User.Response.GetUserResponse
+import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command.GetUserLocation
 import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
 import com.vgomez.app.domain.DomainModel.Location
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
-import com.vgomez.app.data.indexDatabase.Model.RestaurantModel
 import com.vgomez.app.data.indexDatabase.Operation
-import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, GetSequenceReviewModelsStarsResponse}
+import com.vgomez.app.data.indexDatabase.Response.GetRestaurantModelsResponse
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
 object ReaderFilterByLocation {
@@ -25,11 +25,14 @@ object ReaderFilterByLocation {
                                           numberOfElementPerPage: Long)
   }
 
-  def props(system: ActorSystem): Props =  Props(new ReaderFilterByLocation(system))
+  def props(system: ActorSystem,
+            intermediateReadUserAttributes: ActorRef): Props =  Props(new ReaderFilterByLocation(system,
+                                                                                        intermediateReadUserAttributes))
 
 }
 
-class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLogging with Stash {
+class ReaderFilterByLocation(system: ActorSystem,
+                             intermediateReadUserAttributes: ActorRef) extends Actor with ActorLogging with Stash {
 
   import ReaderFilterByLocation._
   import Command._
@@ -45,9 +48,9 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
 
     case GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("ReaderFilterByLocation has receive a GetRecommendationCloseToMe command.")
-      context.parent ! GetUser(username)
+      intermediateReadUserAttributes ! GetUserLocation(username)
       unstashAll()
-      context.become(halfwayGetRecommendationCloseToMe(sender(), rangeInKm, pageNumber, numberOfElementPerPage))
+      context.become(intermediateGetUserLocationState(sender(), rangeInKm, pageNumber, numberOfElementPerPage))
 
     case _ =>
       stash()
@@ -77,25 +80,24 @@ class ReaderFilterByLocation(system: ActorSystem) extends Actor with ActorLoggin
       stash()
   }
 
-  def halfwayGetRecommendationCloseToMe(originalSender: ActorRef, rangeInKm: Double, pageNumber: Long,
+  /*
+  Todo #5
+    Description: Decouple Actor eliminate halfway methods.
+    Action: Let the responsibility to get user location to other actor.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
+  def intermediateGetUserLocationState(originalSender: ActorRef, rangeInKm: Double, pageNumber: Long,
                                         numberOfElementPerPage: Long): Receive = {
-    case GetUserResponse(Some(userState)) =>
-      userState match {
-        case RegisterUserState(_, _, _, _, location, _) =>
-          Operation.getPosiblesRestaurantsModelByLocation(location.latitude, location.longitude,
-            rangeInKm, pageNumber, numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
+    case Some(userLocation: Location) =>
+      Operation.getPosiblesRestaurantsModelByLocation(userLocation.latitude, userLocation.longitude,
+        rangeInKm, pageNumber, numberOfElementPerPage).mapTo[GetRestaurantModelsResponse].pipeTo(self)
 
-          unstashAll()
-          context.become(getRestaurantsState(originalSender,
-            Location(location.latitude, location.longitude), rangeInKm))
+      unstashAll()
+      context.become(getRestaurantsState(originalSender,
+        Location(userLocation.latitude, userLocation.longitude), rangeInKm))
 
-        case UnregisterUserState =>
-          originalSender ! GetRecommendationResponse(None)
-          unstashAll()
-          context.become(state())
-      }
-
-    case GetUserResponse(None) =>
+    case None =>
       originalSender ! GetRecommendationResponse(None)
       unstashAll()
       context.become(state())

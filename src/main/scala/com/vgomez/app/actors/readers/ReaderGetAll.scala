@@ -7,9 +7,8 @@ import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.readers.ReaderUtility._
-import com.vgomez.app.data.indexDatabase.Model.RestaurantModel
 import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, GetReviewModelsResponse,
-  GetSequenceReviewModelsStarsResponse, GetUserModelsResponse}
+                                                    GetUserModelsResponse}
 import com.vgomez.app.data.indexDatabase.Operation
 
 

@@ -93,7 +93,7 @@ class RecommendationCategoriesRouter(administration: ActorRef)(implicit system: 
                                 }
                                 case GetRecommendationResponse(None) =>
                                   complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this" +
-                                    s" pageNumber."))
+                                    s" pageNumber (in case you expect a result check username)."))
                               }
                             case Failure(e: ValidationFailException) =>
                               complete(StatusCodes.BadRequest, FailureResponse(e.message))
