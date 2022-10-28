@@ -1,6 +1,7 @@
 package com.vgomez.app.actors.messages
 
 import akka.Done
+import akka.persistence.journal.{Tagged, WriteEventAdapter}
 import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 
 import scala.util.Try
@@ -18,7 +19,36 @@ object AbstractMessage {
   }
 
   object Event {
+    /*
+    Todo #6
+      Description: Use projections to persist events on projection-db (Postgres).
+      Action: Reparate Event into two type.
+      Status: Done
+      Reported by: Sebastian Oliveri.
+    */
     abstract class Event
+
+    trait EventAdministration
+
+    val TagProjection = "event-for-projection"
+
+    /*
+    Todo #6
+      Description: Use projections to persist events on projection-db (Postgres).
+      Action: Tag only normal events.
+      Status: Done
+      Reported by: Sebastian Oliveri.
+    */
+    class EventProjectionAdapter extends WriteEventAdapter {
+      override def manifest(event: Any): String = "eventProjectionAdapter"
+
+      override def toJournal(event: Any): Any = event match {
+        case event: Event =>
+          Tagged(event, Set(TagProjection))
+        case event => event
+      }
+    }
+
   }
 
   object Response {

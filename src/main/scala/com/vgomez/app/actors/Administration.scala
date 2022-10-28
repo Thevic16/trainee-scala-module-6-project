@@ -45,9 +45,9 @@ object Administration {
   }
 
   // events
-  case class RestaurantRegistered(id: String) extends Event
-  case class ReviewRegistered(id: String) extends Event
-  case class UserRegistered(username: String) extends Event
+  case class RestaurantRegistered(id: String) extends EventAdministration
+  case class ReviewRegistered(id: String) extends EventAdministration
+  case class UserRegistered(username: String) extends EventAdministration
   def props(system: ActorSystem): Props =  Props(new Administration(system))
 }
 
@@ -291,7 +291,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   def helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
                                  newStateAdministrationState: AdministrationState , actorName: String,
-                                 event: Event):Unit = {
+                                 event: EventAdministration):Unit = {
     persist(event) { _ =>
       log.info(s"Administration has Registered a $actorName with id: ${identifier}")
       newActorRef.forward(registerCommand)

@@ -6,6 +6,7 @@ import akka.persistence.PersistentActor
 import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
+import com.vgomez.app.actors.messages.AbstractMessage.Event.Event
 import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 
@@ -37,9 +38,9 @@ object Restaurant {
   }
 
   // events
-  case class RestaurantRegistered(restaurantState: RestaurantState)
-  case class RestaurantUpdated(restaurantState: RestaurantState)
-  case class RestaurantUnregistered(restaurantState: RestaurantState)
+  case class RestaurantRegistered(restaurantState: RestaurantState) extends Event
+  case class RestaurantUpdated(restaurantState: RestaurantState) extends Event
+  case class RestaurantUnregistered(restaurantState: RestaurantState) extends Event
 
 
   // responses
