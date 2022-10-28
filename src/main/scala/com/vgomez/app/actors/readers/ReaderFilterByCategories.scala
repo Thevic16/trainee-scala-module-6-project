@@ -6,8 +6,8 @@ import akka.pattern.pipe
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command.GetUserFavoriteCategories
 import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
-import com.vgomez.app.data.indexDatabase.Operation
-import com.vgomez.app.data.indexDatabase.Response.GetRestaurantModelsResponse
+import com.vgomez.app.data.projectionDatabase.Operation
+import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsResponse
 
 object ReaderFilterByCategories {
   // commands

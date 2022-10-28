@@ -6,10 +6,10 @@ import akka.pattern.pipe
 import com.vgomez.app.actors.Restaurant.RestaurantInfo
 import com.vgomez.app.actors.Review.ReviewInfo
 import com.vgomez.app.actors.User.UserInfo
-import com.vgomez.app.data.indexDatabase.Model._
-import com.vgomez.app.data.indexDatabase.Operation._
+import com.vgomez.app.data.projectionDatabase.Model._
+import com.vgomez.app.data.projectionDatabase.Operation._
 
-object WriterToIndexDatabase {
+object WriterProjection {
 
   object Command {
     case class RegisterRestaurant(id: String, index: Long, restaurantInfo: RestaurantInfo)
@@ -25,12 +25,12 @@ object WriterToIndexDatabase {
     case class UnregisterUser(username: String)
   }
 
-  def props(system: ActorSystem): Props = Props(new WriterToIndexDatabase(system))
+  def props(system: ActorSystem): Props = Props(new WriterProjection(system))
 
 }
 
-class WriterToIndexDatabase(system: ActorSystem) extends Actor with ActorLogging{
-  import WriterToIndexDatabase.Command._
+class WriterProjection(system: ActorSystem) extends Actor with ActorLogging{
+  import WriterProjection.Command._
   import system.dispatcher
 
   override def receive: Receive = {

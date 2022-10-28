@@ -10,7 +10,7 @@ import com.vgomez.app.actors.messages.AbstractMessage.Event._
 import com.vgomez.app.actors.AdministrationUtility._
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes
 import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll, ReaderStarsByRestaurant}
-import com.vgomez.app.actors.writers.WriterToIndexDatabase
+import com.vgomez.app.actors.writers.WriterProjection
 import com.vgomez.app.domain.DomainModel.Location
 
 /*
@@ -79,7 +79,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                           "reader-filter-by-location")
   val readerStarsByRestaurant = context.actorOf(ReaderStarsByRestaurant.props(system),
                                         "reader-stars-by-restaurant")
-  val writerToIndexDatabase = context.actorOf(WriterToIndexDatabase.props(system), "writer-to-index-database")
+  val writerProjection = context.actorOf(WriterProjection.props(system), "writer-to-index-database")
 
 
   // for state recovery
@@ -265,7 +265,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     registerCommand match {
       case RegisterRestaurant(_, restaurantInfo) =>
         // sending message to writer.
-        writerToIndexDatabase ! WriterToIndexDatabase.Command.RegisterRestaurant(identifier,
+        writerProjection ! WriterProjection.Command.RegisterRestaurant(identifier,
                                                  newStateAdministrationState.currentRestaurantIndex - 1, restaurantInfo)
 
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
@@ -273,7 +273,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
       case RegisterReview(_, reviewInfo) =>
         // sending message to writer.
-        writerToIndexDatabase ! WriterToIndexDatabase.Command.RegisterReview(identifier,
+        writerProjection ! WriterProjection.Command.RegisterReview(identifier,
                                                          newStateAdministrationState.currentReviewIndex - 1, reviewInfo)
 
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
@@ -281,7 +281,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
       case RegisterUser(userInfo) =>
         // sending message to writer.
-        writerToIndexDatabase ! WriterToIndexDatabase.Command.RegisterUser(
+        writerProjection ! WriterProjection.Command.RegisterUser(
                                                              newStateAdministrationState.currentUserIndex - 1, userInfo)
 
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
@@ -310,17 +310,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
           updateCommand match {
             case UpdateRestaurant(id, restaurantInfo) =>
               // sending message to writer.
-              writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateRestaurant(id, index, restaurantInfo)
+              writerProjection ! WriterProjection.Command.UpdateRestaurant(id, index, restaurantInfo)
               log.info(s"UpdateRestaurant Command for id: $id has been handle by Administration.")
 
             case UpdateReview(id, reviewInfo) =>
               // sending message to writer.
-              writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateReview(id, index, reviewInfo)
+              writerProjection ! WriterProjection.Command.UpdateReview(id, index, reviewInfo)
               log.info(s"UpdateReview Command for id: $id has been handle by Administration.")
 
             case UpdateUser(userInfo) =>
               // sending message to writer.
-              writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateUser(index, userInfo)
+              writerProjection ! WriterProjection.Command.UpdateUser(index, userInfo)
               log.info(s"UpdateUser Command for username: ${userInfo.username} has been handle by Administration.")
           }
 
@@ -353,17 +353,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
         unregisterCommand match {
           case UnregisterRestaurant(id) =>
             // sending message to writer.
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.UnregisterRestaurant(id)
+            writerProjection ! WriterProjection.Command.UnregisterRestaurant(id)
             log.info(s"UnregisterRestaurant Command for id: $id has been handle by Administration.")
 
           case UnregisterReview(id) =>
             // sending message to writer.
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.UnregisterReview(id)
+            writerProjection ! WriterProjection.Command.UnregisterReview(id)
             log.info(s"UnregisterReview Command for id: $id has been handle by Administration.")
 
           case UnregisterUser(username) =>
             // sending message to writer.
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.UnregisterUser(username)
+            writerProjection ! WriterProjection.Command.UnregisterUser(username)
             log.info(s"UnregisterUser Command for username: $username has been handle by Administration.")
         }
 

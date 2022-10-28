@@ -2,8 +2,8 @@ package com.vgomez.app.actors.readers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
-import com.vgomez.app.data.indexDatabase.Operation
-import com.vgomez.app.data.indexDatabase.Response.GetReviewModelsStarsResponse
+import com.vgomez.app.data.projectionDatabase.Operation
+import com.vgomez.app.data.projectionDatabase.Response.GetReviewModelsStarsResponse
 
 object ReaderStarsByRestaurant {
   // commands

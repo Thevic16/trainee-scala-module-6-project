@@ -1,8 +1,8 @@
-package com.vgomez.app.data.indexDatabase
+package com.vgomez.app.data.projectionDatabase
 
-import com.vgomez.app.data.indexDatabase.Model._
-import com.vgomez.app.data.indexDatabase.Response._
-import com.vgomez.app.data.indexDatabase.Table.RestaurantTable
+import com.vgomez.app.data.projectionDatabase.Model._
+import com.vgomez.app.data.projectionDatabase.Response._
+import com.vgomez.app.data.projectionDatabase.Table.RestaurantTable
 import com.vgomez.app.domain.DomainModelOperation.rangeInKmToDegrees
 import ExecContext._
 import akka.Done

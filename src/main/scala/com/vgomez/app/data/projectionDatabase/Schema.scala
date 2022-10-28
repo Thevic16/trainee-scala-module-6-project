@@ -1,4 +1,4 @@
-package com.vgomez.app.data.indexDatabase
+package com.vgomez.app.data.projectionDatabase
 
 import com.vgomez.app.domain.DomainModel.{Role, Schedule, Timetable}
 import com.vgomez.app.domain.Transformer.FromDomainToRawData._
