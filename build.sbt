@@ -2,8 +2,8 @@ ThisBuild / version := "0.1.0-SNAPSHOT"
 
 ThisBuild / scalaVersion := "2.12.8"
 
-val akkaVersion = "2.5.20"
-val akkaHttpVersion = "10.1.7"
+val akkaVersion = "2.7.0"
+val akkaHttpVersion = "10.4.0"
 val scalaTestVersion = "3.0.5"
 val cassandraVersion = "0.91"
 val leveldbVersion = "0.7"
@@ -34,6 +34,11 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.iq80.leveldb" % "leveldb" % leveldbVersion,
   "org.fusesource.leveldbjni" % "leveldbjni-all" % leveldbjniVersion,
 
+  // Overwrite old akka dependencies
+  "com.typesafe.akka" %% "akka-remote" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
+
   "org.scalatest" %% "scalatest" % "3.2.12" % Test,
 
   // Scala CSV
@@ -47,7 +52,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.3.4",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
   "com.github.tminglei" %% "slick-pg" % "0.20.3",
-  "com.github.tminglei" %% "slick-pg_play-json" % "0.20.3"
+  "com.github.tminglei" %% "slick-pg_play-json" % "0.20.3",
 
 )
 
