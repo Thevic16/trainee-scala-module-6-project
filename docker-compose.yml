@@ -13,7 +13,7 @@ services:
       - ./projection-db-scripts/init-scripts.sql:/docker-entrypoint-initdb.d/scripts.sql
 
   cassandra:
-    image: cassandra:3
+    image: cassandra:latest
     container_name: cassandra-akka-restaurant-reviews
     ports:
       - "7000:7000"

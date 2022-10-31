@@ -1,28 +1,35 @@
 package com.vgomez.app.actors.writers
 
 import akka.Done
+import akka.actor.typed.ActorRef
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
-import akka.pattern.pipe
-import com.vgomez.app.actors.Restaurant.RestaurantInfo
-import com.vgomez.app.actors.Review.ReviewInfo
-import com.vgomez.app.actors.User.UserInfo
-import com.vgomez.app.data.projectionDatabase.Model._
-import com.vgomez.app.data.projectionDatabase.Operation._
+import akka.projection.ProjectionBehavior
+import akka.projection.eventsourced.EventEnvelope
 
+import com.vgomez.app.actors.messages.AbstractMessage.Event.{Event, TagProjection}
+
+
+// Imports for akka projection
+import akka.persistence.cassandra.query.scaladsl.CassandraReadJournal
+import akka.persistence.query.Offset
+import akka.projection.eventsourced.scaladsl.EventSourcedProvider
+import akka.projection.scaladsl.SourceProvider
+import akka.actor.typed.scaladsl.adapter._
+
+import akka.projection.ProjectionId
+import akka.projection.cassandra.scaladsl.CassandraProjection
+
+/*
+Todo #2P
+  Description: Use projections to persist events on projection-db (Postgres).
+  Action: Modify WriterProjection to work using akka-projection library.
+  Status: Done
+  Reported by: Sebastian Oliveri.
+*/
 object WriterProjection {
 
   object Command {
-    case class RegisterRestaurant(id: String, index: Long, restaurantInfo: RestaurantInfo)
-    case class UpdateRestaurant(id: String, index: Long, restaurantInfo: RestaurantInfo)
-    case class UnregisterRestaurant(id: String)
-
-    case class RegisterReview(id: String, index: Long, reviewInfo: ReviewInfo)
-    case class UpdateReview(id: String, index: Long, reviewInfo: ReviewInfo)
-    case class UnregisterReview(id: String)
-
-    case class RegisterUser(index: Long, userInfo: UserInfo)
-    case class UpdateUser(index: Long, userInfo: UserInfo)
-    case class UnregisterUser(username: String)
+    case object StartProjection
   }
 
   def props(system: ActorSystem): Props = Props(new WriterProjection(system))
@@ -32,54 +39,31 @@ object WriterProjection {
 class WriterProjection(system: ActorSystem) extends Actor with ActorLogging{
   import WriterProjection.Command._
   import system.dispatcher
+  val typedSystem: akka.actor.typed.ActorSystem[_] = system.toTyped
 
   override def receive: Receive = {
-    case RegisterRestaurant(id, index, restaurantInfo) =>
-      registerRestaurantModel(getRestaurantModelByRestaurantInfo(id, index, restaurantInfo)).mapTo[Either[Int, Done]].pipeTo(self)
-
-    case UpdateRestaurant(id, index, restaurantInfo) =>
-      updateRestaurantModel(id, getRestaurantModelByRestaurantInfo(id, index, restaurantInfo)).mapTo[Either[Int, Done]].pipeTo(self)
-
-    case UnregisterRestaurant(id) =>
-      unregisterRestaurantModel(id).mapTo[Either[Int, Done]].pipeTo(self)
-
-    case RegisterReview(id, index, reviewInfo) =>
-      registerReviewModel(getReviewModelByReviewInfo(id, index, reviewInfo)).mapTo[Either[Int, Done]].pipeTo(self)
-
-    case UpdateReview(id, index, reviewInfo) =>
-      updateReviewModel(id, getReviewModelByReviewInfo(id, index, reviewInfo)).mapTo[Either[Int, Done]].pipeTo(self)
-
-    case UnregisterReview(id) =>
-      unregisterReviewModel(id).mapTo[Either[Int, Done]].pipeTo(self)
-
-    case RegisterUser(index, userInfo) =>
-      registerUserModel(getUserModelByUserInfo(index, userInfo)).mapTo[Either[Int, Done]].pipeTo(self)
-
-    case UpdateUser(index, userInfo) =>
-      updateUserModel(userInfo.username, getUserModelByUserInfo(index, userInfo)).mapTo[Either[Int, Done]].pipeTo(self)
-
-    case UnregisterUser(username) =>
-      unregisterUserModel(username).mapTo[Either[Int, Done]].pipeTo(self)
-
-    case Right(Done) => log.info(s"Index database has response with Done.")
-    case Left(response) => log.info(s"Index database has response with $response.")
+    case StartProjection =>
+      runProjection
+      sender() ! Done
   }
 
-
-  def getRestaurantModelByRestaurantInfo(id: String, index: Long, restaurantInfo: RestaurantInfo): RestaurantModel = {
-    RestaurantModel(Some(index), id, restaurantInfo.username, restaurantInfo.name,
-      restaurantInfo.state, restaurantInfo.city, restaurantInfo.postalCode, restaurantInfo.location.latitude,
-      restaurantInfo.location.longitude, restaurantInfo.categories.toList, restaurantInfo.timetable)
+  // Methods related with akka projection
+  def getSourceProvider: SourceProvider[Offset, EventEnvelope[Event]] = {
+    EventSourcedProvider
+        .eventsByTag[Event](
+          typedSystem,
+          readJournalPluginId = CassandraReadJournal.Identifier,
+          tag = TagProjection)
   }
 
-  def getReviewModelByReviewInfo(id: String, index: Long, reviewInfo: ReviewInfo): ReviewModel = {
-    ReviewModel(Some(index), id, reviewInfo.username, reviewInfo.restaurantId, reviewInfo.stars, reviewInfo.text,
-      reviewInfo.date)
-  }
+  def runProjection: ActorRef[ProjectionBehavior.Command] = {
+    val projection = CassandraProjection.atLeastOnce(
+      projectionId = ProjectionId("restaurant-reviews-projection", TagProjection),
+      getSourceProvider,
+      handler = () => new ProjectionHandler()
+    )
 
-  def getUserModelByUserInfo(index: Long, userInfo: UserInfo): UserModel = {
-    UserModel(Some(index), userInfo.username, userInfo.password, userInfo.role, userInfo.location.latitude,
-      userInfo.location.longitude, userInfo.favoriteCategories.toList)
+    context.spawn(ProjectionBehavior(projection), projection.projectionId.id)
   }
 
 }

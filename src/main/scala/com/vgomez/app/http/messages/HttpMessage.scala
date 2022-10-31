@@ -102,7 +102,7 @@ object HttpRequest{
 object HttpResponse{
   // Resquest clases
   /*
-  Todo #3
+  Todo #1
     Description: Decouple restaurant.
     Action: Remove start from this class.
     Status: Done
@@ -116,7 +116,7 @@ object HttpResponse{
   }
 
   /*
-  Todo #4
+  Todo #2
     Description: Decouple restaurant endpoint.
     Action: Create a new http response for start.
     Status: Done

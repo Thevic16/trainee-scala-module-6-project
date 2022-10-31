@@ -36,7 +36,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
     (administration ? GetRestaurant(id)).mapTo[GetRestaurantResponse]
 
   /*
-  Todo #3
+  Todo #1
     Description: Decouple restaurant.
     Action: Create new method to return stars by restaurant Id.
     Status: Done
@@ -67,7 +67,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
             case "get-state" =>
               onSuccess(getRestaurant(id)) {
                 /*
-                Todo #4
+                Todo #2
                   Description: Decouple restaurant endpoint.
                   Action: Remove start from this class.
                   Status: Done

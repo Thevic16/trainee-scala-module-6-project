@@ -58,7 +58,7 @@ class ReaderFilterByLocation(system: ActorSystem,
 
   def getRestaurantsState(originalSender: ActorRef, queryLocation: Location, rangeInKm: Double): Receive = {
     /*
-    Todo #3
+    Todo #1
       Description: Decouple restaurant.
       Action: Remove stars request on the database and only left restaurant models.
       Status: Done

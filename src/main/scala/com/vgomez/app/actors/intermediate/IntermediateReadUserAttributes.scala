@@ -6,7 +6,7 @@ import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
 import com.vgomez.app.actors.User.Response.GetUserResponse
 
 /*
-Todo #5
+Todo #3
   Description: Decouple Actor eliminate halfway methods.
   Action: Create another Actor to manage Halfway steps.
   Status: Done

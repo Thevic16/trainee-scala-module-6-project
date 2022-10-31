@@ -7,7 +7,6 @@ import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import scala.util.Try
 
 object AbstractMessage {
-
   object Command {
     abstract class GetCommand
 
@@ -20,21 +19,21 @@ object AbstractMessage {
 
   object Event {
     /*
-    Todo #6
-      Description: Use projections to persist events on projection-db (Postgres).
+    Todo #1P
+      Description: Use projections to persist events on projection-db (Postgres) (Tag Events).
       Action: Reparate Event into two type.
       Status: Done
       Reported by: Sebastian Oliveri.
     */
-    abstract class Event
+    trait Event
 
     trait EventAdministration
 
     val TagProjection = "event-for-projection"
 
     /*
-    Todo #6
-      Description: Use projections to persist events on projection-db (Postgres).
+    Todo #1P
+      Description: Use projections to persist events on projection-db (Postgres) (Tag Events).
       Action: Tag only normal events.
       Status: Done
       Reported by: Sebastian Oliveri.

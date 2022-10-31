@@ -15,7 +15,7 @@ import com.vgomez.app.http.messages.HttpResponse._
 object RouterUtility {
 
   /*
-  Todo #3
+  Todo #1
     Description: Decouple restaurant.
     Action: Remove start from this method.
     Status: Done
@@ -50,7 +50,7 @@ object RouterUtility {
   }
 
   /*
-  Todo #3
+  Todo #1
     Description: Decouple restaurant.
     Action: Remove start from this method.
     Status: Done

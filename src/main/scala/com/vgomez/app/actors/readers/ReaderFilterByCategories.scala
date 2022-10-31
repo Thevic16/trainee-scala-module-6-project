@@ -24,7 +24,7 @@ object ReaderFilterByCategories {
 }
 
 /*
-Todo #5
+Todo #3
   Description: Decouple Actor eliminate halfway methods.
   Action: Add intermediateReadUserAttributes Actor.
   Status: Done
@@ -57,7 +57,7 @@ class ReaderFilterByCategories(system: ActorSystem,
   
   def getRestaurantsState(originalSender: ActorRef): Receive = {
     /*
-    Todo #3
+    Todo #1
       Description: Decouple restaurant.
       Action: Remove stars request on the database and only left restaurant models.
       Status: Done
@@ -77,7 +77,7 @@ class ReaderFilterByCategories(system: ActorSystem,
   }
 
   /*
-  Todo #5
+  Todo #3
     Description: Decouple Actor eliminate halfway methods.
     Action: Let the responsibility to get user favoriteCategories to other actor.
     Status: Done

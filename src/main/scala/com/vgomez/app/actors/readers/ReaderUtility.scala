@@ -29,7 +29,7 @@ object ReaderUtility {
   }
 
   /*
-  Todo #3
+  Todo #1
     Description: Decouple restaurant.
     Action: Remove stars parameter from getRestaurantResponseByRestaurantModel method.
     Status: Done
@@ -40,7 +40,7 @@ object ReaderUtility {
   }
 
   /*
-  Todo #3
+  Todo #1
     Description: Decouple restaurant.
     Action: Remove stars parameter from getListRestaurantResponsesBySeqRestaurantModels method.
     Status: Done

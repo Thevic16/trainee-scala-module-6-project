@@ -30,7 +30,7 @@ object AdministrationUtility {
   def getGetResponseByGetCommand(getCommand: GetCommand): GetResponse = {
     getCommand match {
       /*
-      Todo #3
+      Todo #1
         Description: Decouple restaurant.
         Action: Remove start from this pattern matching.
         Status: Done
