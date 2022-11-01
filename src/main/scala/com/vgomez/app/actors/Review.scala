@@ -66,7 +66,7 @@ class Review(id: String, index: Long) extends PersistentActor with ActorLogging{
     case RegisterReview(_, reviewInfo) =>
       val newState: ReviewState = getNewState(reviewInfo)
 
-      persist(ReviewUnregistered(newState)) { _ =>
+      persist(ReviewRegistered(newState)) { _ =>
         sender() ! Success(id)
         context.become(state(newState))
       }
