@@ -6,20 +6,13 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.util.Timeout
-import com.vgomez.app.actors.Administration.Command.{GetRecommendationFilterByFavoriteCategories,
-                                                     GetRecommendationFilterByUserFavoriteCategories}
-import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
-import com.vgomez.app.http.messages.HttpRequest.{GetRecommendationFilterByFavoriteCategoriesRequest,
-                                                GetRecommendationFilterByFavoriteCategoriesRequestJsonProtocol,
-                                                GetRecommendationFilterByUserFavoriteCategoriesRequest,
-                                                GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol}
-import com.vgomez.app.http.messages.HttpResponse.{FailureResponse, FailureResponseJsonProtocol,
-                                                    RestaurantResponseJsonProtocol}
+import com.vgomez.app.actors.Administration.Command.{GetRecommendationFilterByFavoriteCategories, GetRecommendationFilterByUserFavoriteCategories}
+import com.vgomez.app.http.messages.HttpRequest.{GetRecommendationFilterByFavoriteCategoriesRequest, GetRecommendationFilterByFavoriteCategoriesRequestJsonProtocol, GetRecommendationFilterByUserFavoriteCategoriesRequest, GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol}
+import com.vgomez.app.http.messages.HttpResponse.{FailureResponse, FailureResponseJsonProtocol, RestaurantResponseJsonProtocol}
 import akka.http.scaladsl.server.Directives._
+import com.vgomez.app.actors.Restaurant.RestaurantState
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.http.validators.{ValidatorGetRecommendationFilterByFavoriteCategoriesRequest,
-                                        ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest,
-                                          ValidatorRequestWithPagination}
+import com.vgomez.app.http.validators.{ValidatorGetRecommendationFilterByFavoriteCategoriesRequest, ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest, ValidatorRequestWithPagination}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -36,15 +29,15 @@ class RecommendationCategoriesRouter(administration: ActorRef)(implicit system: 
 
   def getRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String],
                                                   pageNumber: Long,
-                                                  numberOfElementPerPage: Long): Future[GetRecommendationResponse] =
+                                                  numberOfElementPerPage: Long): Future[Option[List[RestaurantState]]] =
     (administration ? GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber,
-      numberOfElementPerPage)).mapTo[GetRecommendationResponse]
+      numberOfElementPerPage)).mapTo[Option[List[RestaurantState]]]
 
   def getRecommendationFilterByUserFavoriteCategories(idUser: String,
                                                       pageNumber: Long,
-                                                      numberOfElementPerPage: Long): Future[GetRecommendationResponse] =
+                                                      numberOfElementPerPage: Long): Future[Option[List[RestaurantState]]] =
     (administration ? GetRecommendationFilterByUserFavoriteCategories(idUser, pageNumber,
-      numberOfElementPerPage)).mapTo[GetRecommendationResponse]
+      numberOfElementPerPage)).mapTo[Option[List[RestaurantState]]]
 
 
   val routes: Route =
@@ -64,10 +57,10 @@ class RecommendationCategoriesRouter(administration: ActorRef)(implicit system: 
                               onSuccess(getRecommendationFilterByFavoriteCategories(request.favoriteCategories,
                                 pageNumber, numberOfElementPerPage)) {
 
-                                case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
-                                  getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                                case Some(listRestaurantState) => complete {
+                                  listRestaurantState.map(getRestaurantResponseByRestaurantState)
                                 }
-                                case GetRecommendationResponse(None) =>
+                                case None =>
                                   complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this" +
                                     s" pageNumber."))
 
@@ -88,10 +81,10 @@ class RecommendationCategoriesRouter(administration: ActorRef)(implicit system: 
                             case Success(_) =>
                               onSuccess(getRecommendationFilterByUserFavoriteCategories(request.username, pageNumber,
                                 numberOfElementPerPage)) {
-                                case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
-                                  getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+                                case Some(listRestaurantState) => complete {
+                                  listRestaurantState.map(getRestaurantResponseByRestaurantState)
                                 }
-                                case GetRecommendationResponse(None) =>
+                                case None =>
                                   complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this" +
                                     s" pageNumber (in case you expect a result check username)."))
                               }

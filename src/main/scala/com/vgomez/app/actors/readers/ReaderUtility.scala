@@ -1,10 +1,7 @@
 package com.vgomez.app.actors.readers
 
-import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
 import com.vgomez.app.actors.Restaurant.{RegisterRestaurantState, RestaurantState}
-import com.vgomez.app.actors.Review.Response.GetReviewResponse
 import com.vgomez.app.actors.Review.{RegisterReviewState, ReviewState}
-import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.User.{RegisterUserState, UserState}
 import com.vgomez.app.data.projectionDatabase.Model.{RestaurantModel, ReviewModel, UserModel}
 import com.vgomez.app.domain.DomainModel.Location
@@ -29,44 +26,25 @@ object ReaderUtility {
   }
 
   /*
-  Todo #1
-    Description: Decouple restaurant.
-    Action: Remove stars parameter from getRestaurantResponseByRestaurantModel method.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
-  def getRestaurantResponseByRestaurantModel(restaurantModel: RestaurantModel): GetRestaurantResponse = {
-    GetRestaurantResponse(Some(getRestaurantStateByRestaurantModel(restaurantModel)))
-  }
-
-  /*
-  Todo #1
+  Todo #3
     Description: Decouple restaurant.
     Action: Remove stars parameter from getListRestaurantResponsesBySeqRestaurantModels method.
     Status: Done
     Reported by: Sebastian Oliveri.
   */
-  def getListRestaurantResponsesBySeqRestaurantModels(restaurantModels: Seq[RestaurantModel]):
-  List[GetRestaurantResponse] = {
-    restaurantModels.map(getRestaurantResponseByRestaurantModel).toList
+  def getListRestaurantStateBySeqRestaurantModels(restaurantModels: Seq[RestaurantModel]):
+  List[RestaurantState] = {
+    restaurantModels.map(getRestaurantStateByRestaurantModel).toList
   }
 
-  def getReviewResponseByReviewModel(reviewModel: ReviewModel): GetReviewResponse = {
-    GetReviewResponse(Some(getReviewStateByReviewModel(reviewModel)))
+  def getListReviewStateBySeqReviewModels(reviewModels: Seq[ReviewModel]):
+  List[ReviewState] = {
+    reviewModels.map(getReviewStateByReviewModel).toList
   }
 
-  def getListReviewResponsesBySeqReviewModels(reviewModels: Seq[ReviewModel]):
-  List[GetReviewResponse] = {
-    reviewModels.map(getReviewResponseByReviewModel).toList
-  }
-
-  def getUserResponseByUserModel(userModel: UserModel): GetUserResponse = {
-    GetUserResponse(Some(getUserStateByUserModel(userModel)))
-  }
-
-  def getListUserResponsesBySeqReviewModels(userModels: Seq[UserModel]):
-  List[GetUserResponse] = {
-    userModels.map(getUserResponseByUserModel).toList
+  def getListUserStateBySeqReviewModels(userModels: Seq[UserModel]):
+  List[UserState] = {
+    userModels.map(getUserStateByUserModel).toList
   }
 
 }
