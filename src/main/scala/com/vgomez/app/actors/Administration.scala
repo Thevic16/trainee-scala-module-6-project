@@ -78,7 +78,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                           "reader-filter-by-location")
   val readerStarsByRestaurant = context.actorOf(ReaderStarsByRestaurant.props(system),
                                         "reader-stars-by-restaurant")
-  val writerProjection = context.actorOf(WriterProjection.props(system), "writer-to-index-database")
+  val writerProjection = context.actorOf(WriterProjection.props(system), "writer-projection")
   /*
   Todo #2P
     Description: Use projections to persist events on projection-db (Postgres).

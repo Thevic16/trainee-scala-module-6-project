@@ -44,6 +44,7 @@ class WriterProjection(system: ActorSystem) extends Actor with ActorLogging{
   override def receive: Receive = {
     case StartProjection =>
       runProjection
+      log.info("Start Projection Process")
       sender() ! Done
   }
 
@@ -60,7 +61,7 @@ class WriterProjection(system: ActorSystem) extends Actor with ActorLogging{
     val projection = CassandraProjection.atLeastOnce(
       projectionId = ProjectionId("restaurant-reviews-projection", TagProjection),
       getSourceProvider,
-      handler = () => new ProjectionHandler()
+      handler = () => new ProjectionHandler(typedSystem)
     )
 
     context.spawn(ProjectionBehavior(projection), projection.projectionId.id)

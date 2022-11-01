@@ -41,10 +41,11 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.iq80.leveldb" % "leveldb" % leveldbVersion,
   "org.fusesource.leveldbjni" % "leveldbjni-all" % leveldbjniVersion,
 
-  // Overwrite old akka dependencies
+  // Cluster related dependencies
   "com.typesafe.akka" %% "akka-remote" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-sharding-typed" % akkaVersion,
 
   // Akka projection related dependencies
   "com.lightbend.akka" %% "akka-projection-core" % akkaProjectionVersion,
