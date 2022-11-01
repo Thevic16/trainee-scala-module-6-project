@@ -4,11 +4,17 @@ package com.vgomez.app.actors.readers
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command.GetUserFavoriteCategories
-import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
-import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
+import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRestaurantModels
 import com.vgomez.app.data.indexDatabase.Operation
 import com.vgomez.app.data.indexDatabase.Response.GetRestaurantModelsResponse
 
+/*
+Todo #R
+  Description: Remove responses classes from actors.
+  Action: Remove response class from ReaderFilterByCategories Actor.
+  Status: Done
+  Reported by: Sebastian Oliveri.
+*/
 object ReaderFilterByCategories {
   // commands
   object Command {
@@ -65,9 +71,8 @@ class ReaderFilterByCategories(system: ActorSystem,
     */
     case GetRestaurantModelsResponse(restaurantModels) =>
       if (restaurantModels.nonEmpty)
-        originalSender ! GetRecommendationResponse(Some(
-                                                     getListRestaurantResponsesBySeqRestaurantModels(restaurantModels)))
-      else originalSender ! GetRecommendationResponse(None)
+        originalSender ! Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))
+      else originalSender ! None
 
       unstashAll()
       context.become(state())
@@ -92,7 +97,7 @@ class ReaderFilterByCategories(system: ActorSystem,
       context.become(getRestaurantsState(originalSender))
 
     case None =>
-      originalSender ! GetRecommendationResponse(None)
+      originalSender ! None
       unstashAll()
       context.become(state())
 

@@ -3,15 +3,18 @@ package com.vgomez.app.actors.readers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
-import com.vgomez.app.actors.Restaurant.Response.GetRestaurantResponse
-import com.vgomez.app.actors.Review.Response.GetReviewResponse
-import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.readers.ReaderUtility._
 import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, GetReviewModelsResponse,
                                                     GetUserModelsResponse}
 import com.vgomez.app.data.indexDatabase.Operation
 
-
+/*
+Todo #R
+  Description: Remove responses classes from actors.
+  Action: Remove response class from ReaderGetAll Actor.
+  Status: Done
+  Reported by: Sebastian Oliveri.
+*/
 object ReaderGetAll {
   // commands
   object Command {
@@ -20,21 +23,13 @@ object ReaderGetAll {
     case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)
   }
 
-  object Response {
-    case class GetAllRestaurantResponse(optionGetRestaurantResponses: Option[List[GetRestaurantResponse]])
-    case class GetAllReviewResponse(optionGetReviewResponses: Option[List[GetReviewResponse]])
-    case class GetAllUserResponse(optionGetUserResponses: Option[List[GetUserResponse]])
-  }
-
   def props(system: ActorSystem): Props =  Props(new ReaderGetAll(system))
 
 }
 
 class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Stash {
-
   import ReaderGetAll._
   import Command._
-  import Response._
   import system.dispatcher
 
 
@@ -71,8 +66,8 @@ class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Sta
     */
     case GetRestaurantModelsResponse(restaurantModels) =>
       if(restaurantModels.nonEmpty)
-        originalSender ! GetAllRestaurantResponse(Some(getListRestaurantResponsesBySeqRestaurantModels(restaurantModels)))
-      else originalSender ! GetAllRestaurantResponse(None)
+        originalSender ! Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))
+      else originalSender ! None
 
       unstashAll()
       context.become(state())
@@ -86,8 +81,8 @@ class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Sta
 
     case GetReviewModelsResponse(reviewModels) =>
       if (reviewModels.nonEmpty)
-        originalSender ! GetAllReviewResponse(Some(getListReviewResponsesBySeqReviewModels(reviewModels)))
-      else originalSender ! GetAllReviewResponse(None)
+        originalSender ! Some(getListReviewStateBySeqReviewModels(reviewModels))
+      else originalSender ! None
 
       unstashAll()
       context.become(state())
@@ -101,8 +96,8 @@ class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Sta
 
     case GetUserModelsResponse(userModels) =>
       if (userModels.nonEmpty)
-        originalSender ! GetAllUserResponse(Some(getListUserResponsesBySeqReviewModels(userModels)))
-      else originalSender ! GetAllUserResponse(None)
+        originalSender ! Some(getListUserStateBySeqReviewModels(userModels))
+      else originalSender ! None
 
       unstashAll()
       context.become(state())

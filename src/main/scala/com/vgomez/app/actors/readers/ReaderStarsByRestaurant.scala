@@ -5,14 +5,17 @@ import akka.pattern.pipe
 import com.vgomez.app.data.indexDatabase.Operation
 import com.vgomez.app.data.indexDatabase.Response.GetReviewModelsStarsResponse
 
+/*
+Todo #R
+  Description: Remove responses classes from actors.
+  Action: Remove response class from ReaderStarsByRestaurant Actor.
+  Status: Done
+  Reported by: Sebastian Oliveri.
+*/
 object ReaderStarsByRestaurant {
   // commands
   object Command {
     case class GetStarsByRestaurant(restaurantId: String)
-  }
-
-  object Response {
-    case class GetStarsByRestaurantResponse(optionStars: Option[Int])
   }
 
   def props(system: ActorSystem): Props =  Props(new ReaderStarsByRestaurant(system))
@@ -22,7 +25,6 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLoggi
 
   import ReaderStarsByRestaurant._
   import Command._
-  import Response._
   import system.dispatcher
 
   def state(): Receive = {
@@ -40,9 +42,9 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLoggi
 
     case GetReviewModelsStarsResponse(reviewModelsStars) =>
       if(reviewModelsStars.nonEmpty)
-        originalSender ! GetStarsByRestaurantResponse(Some(reviewModelsStars.sum / reviewModelsStars.length))
+        originalSender ! Some(reviewModelsStars.sum / reviewModelsStars.length)
       else
-        originalSender ! GetStarsByRestaurantResponse(None)
+        originalSender ! None
 
       unstashAll()
       context.become(state())

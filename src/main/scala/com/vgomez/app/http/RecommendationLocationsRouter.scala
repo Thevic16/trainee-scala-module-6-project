@@ -7,19 +7,13 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.util.Timeout
 import com.vgomez.app.actors.Administration.Command.{GetRecommendationCloseToLocation, GetRecommendationCloseToMe}
-import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
-import com.vgomez.app.http.messages.HttpRequest.{GetRecommendationCloseToLocationRequest,
-                                                GetRecommendationCloseToLocationRequestJsonProtocol,
-                                                GetRecommendationCloseToMeRequest,
-                                                GetRecommendationCloseToMeRequestJsonProtocol}
-import com.vgomez.app.http.messages.HttpResponse.{FailureResponse, FailureResponseJsonProtocol,
-                                                  RestaurantResponseJsonProtocol}
+import com.vgomez.app.http.messages.HttpRequest.{GetRecommendationCloseToLocationRequest, GetRecommendationCloseToLocationRequestJsonProtocol, GetRecommendationCloseToMeRequest, GetRecommendationCloseToMeRequestJsonProtocol}
+import com.vgomez.app.http.messages.HttpResponse.{FailureResponse, FailureResponseJsonProtocol, RestaurantResponseJsonProtocol}
 import akka.http.scaladsl.server.Directives._
+import com.vgomez.app.actors.Restaurant.RestaurantState
 import com.vgomez.app.domain.DomainModel
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.http.validators.{ValidatorGetRecommendationCloseToLocationRequest,
-                                       ValidatorGetRecommendationCloseToMeRequest,
-                                        ValidatorRequestWithPagination}
+import com.vgomez.app.http.validators.{ValidatorGetRecommendationCloseToLocationRequest, ValidatorGetRecommendationCloseToMeRequest, ValidatorRequestWithPagination}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -35,15 +29,15 @@ class RecommendationLocationsRouter(administration: ActorRef)(implicit system: A
 
   def getRecommendationCloseToLocation(latitude: Double, longitude: Double,
                                        rangeInKm: Double, pageNumber: Long,
-                                       numberOfElementPerPage: Long): Future[GetRecommendationResponse] =
+                                       numberOfElementPerPage: Long): Future[Option[List[RestaurantState]]] =
     (administration ? GetRecommendationCloseToLocation(DomainModel.Location(latitude, longitude),
                                                         rangeInKm, pageNumber,
-                                                        numberOfElementPerPage)).mapTo[GetRecommendationResponse]
+                                                        numberOfElementPerPage)).mapTo[Option[List[RestaurantState]]]
 
   def getRecommendationCloseToMe(username: String, rangeInKm: Double, pageNumber: Long,
-                                 numberOfElementPerPage: Long): Future[GetRecommendationResponse] =
+                                 numberOfElementPerPage: Long): Future[Option[List[RestaurantState]]] =
     (administration ? GetRecommendationCloseToMe(username, rangeInKm, pageNumber,
-                                                   numberOfElementPerPage)).mapTo[GetRecommendationResponse]
+                                                   numberOfElementPerPage)).mapTo[Option[List[RestaurantState]]]
 
   val routes: Route =
     pathPrefix("api" / "recommendations" / "locations"){
@@ -61,10 +55,11 @@ class RecommendationLocationsRouter(administration: ActorRef)(implicit system: A
                           case Success(_) =>
                             onSuccess(getRecommendationCloseToLocation(request.latitude, request.longitude,
                               request.rangeInKm, pageNumber, numberOfElementPerPage)) {
-                              case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
-                                getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+
+                              case Some(listRestaurantState) => complete {
+                                listRestaurantState.map(getRestaurantResponseByRestaurantState)
                               }
-                              case GetRecommendationResponse(None) =>
+                              case None =>
                                 complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this" +
                                   s" pageNumber."))
                             }
@@ -84,10 +79,11 @@ class RecommendationLocationsRouter(administration: ActorRef)(implicit system: A
                           case Success(_) =>
                             onSuccess(getRecommendationCloseToMe(request.username, request.rangeInKm, pageNumber,
                               numberOfElementPerPage)) {
-                              case GetRecommendationResponse(Some(getRestaurantResponses)) => complete {
-                                getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
+
+                              case Some(listRestaurantState) => complete {
+                                listRestaurantState.map(getRestaurantResponseByRestaurantState)
                               }
-                              case GetRecommendationResponse(None) =>
+                              case None =>
                                 complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this" +
                                   s" pageNumber (in case you expect a result check username)."))
                             }

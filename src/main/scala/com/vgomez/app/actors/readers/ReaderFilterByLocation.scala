@@ -2,17 +2,20 @@ package com.vgomez.app.actors.readers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
-import com.vgomez.app.actors.User.Command.GetUser
-import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
-import com.vgomez.app.actors.User.Response.GetUserResponse
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command.GetUserLocation
-import com.vgomez.app.actors.messages.AbstractMessage.Response.GetRecommendationResponse
 import com.vgomez.app.domain.DomainModel.Location
-import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantResponsesBySeqRestaurantModels
+import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRestaurantModels
 import com.vgomez.app.data.indexDatabase.Operation
 import com.vgomez.app.data.indexDatabase.Response.GetRestaurantModelsResponse
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
+/*
+Todo #R
+  Description: Remove responses classes from actors.
+  Action: Remove response class from ReaderFilterByLocation Actor.
+  Status: Done
+  Reported by: Sebastian Oliveri.
+*/
 object ReaderFilterByLocation {
 
   // commands
@@ -69,9 +72,8 @@ class ReaderFilterByLocation(system: ActorSystem,
         calculateDistanceInKm(Location(model.latitude, model.longitude), Some(queryLocation)) <= rangeInKm)
 
       if (restaurantModelsFilterByDistance.nonEmpty)
-        originalSender ! GetRecommendationResponse(Some(
-          getListRestaurantResponsesBySeqRestaurantModels(restaurantModelsFilterByDistance)))
-      else originalSender ! GetRecommendationResponse(None)
+        originalSender ! Some(getListRestaurantStateBySeqRestaurantModels(restaurantModelsFilterByDistance))
+      else originalSender ! None
 
       unstashAll()
       context.become(state())
@@ -98,7 +100,7 @@ class ReaderFilterByLocation(system: ActorSystem,
         Location(userLocation.latitude, userLocation.longitude), rangeInKm))
 
     case None =>
-      originalSender ! GetRecommendationResponse(None)
+      originalSender ! None
       unstashAll()
       context.become(state())
 

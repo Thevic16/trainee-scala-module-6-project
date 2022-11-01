@@ -3,7 +3,14 @@ package com.vgomez.app.actors.intermediate
 import akka.actor.{Actor, ActorRef, Stash}
 import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
-import com.vgomez.app.actors.User.Response.GetUserResponse
+
+/*
+Todo #R
+  Description: Remove responses classes from actors.
+  Action: Remove response class from IntermediateReadUserAttributes Actor.
+  Status: Done
+  Reported by: Sebastian Oliveri.
+*/
 
 /*
 Todo #5
@@ -19,7 +26,6 @@ object IntermediateReadUserAttributes {
     case class GetUserFavoriteCategories(username: String)
     case class GetUserLocation(username: String)
   }
-
 
   object ChooseAttribute {
     trait UserAttribute
@@ -49,7 +55,7 @@ class IntermediateReadUserAttributes extends Actor with Stash{
   }
 
   def receiveUserState(originalSender: ActorRef, userAttribute: UserAttribute): Receive = {
-    case GetUserResponse(Some(userState)) =>
+    case Some(userState) =>
       userState match {
         case RegisterUserState(_, _, _, _, location, favoriteCategories) =>
           userAttribute match {
@@ -66,7 +72,7 @@ class IntermediateReadUserAttributes extends Actor with Stash{
       unstashAll()
       context.become(receive)
 
-    case GetUserResponse(None) =>
+    case None =>
       originalSender ! None
 
       unstashAll()

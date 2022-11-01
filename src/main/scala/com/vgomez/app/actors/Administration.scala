@@ -5,7 +5,6 @@ import com.vgomez.app.exception.CustomException._
 
 import scala.util.{Failure, Success}
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
-import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.actors.messages.AbstractMessage.Event._
 import com.vgomez.app.actors.AdministrationUtility._
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes
@@ -220,8 +219,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       case Some((_, actorRef)) =>
         actorRef.forward(getCommand)
       case None =>
-        val getResponse: GetResponse = getGetResponseByGetCommand(getCommand)
-        sender() ! getResponse
+        sender() ! None
     }
   }
 
@@ -233,11 +231,11 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       case Some(_) =>
         registerCommand match {
           case RegisterRestaurant(_, _) =>
-            sender() ! RegisterResponse(Failure(RestaurantExistsException()))
+            sender() ! Failure(RestaurantExistsException())
           case RegisterReview(_, _) =>
-            sender() ! RegisterResponse(Failure(ReviewExistsException()))
+            sender() ! Failure(ReviewExistsException())
           case RegisterUser(_) =>
-            sender() ! RegisterResponse(Failure(UserExistsException()))
+            sender() ! Failure(UserExistsException())
         }
 
       case None =>
@@ -256,7 +254,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       case Success(_) =>
         processRegisterCommand(registerCommand, administrationState)
       case Failure(exception) =>
-        sender() ! RegisterResponse(Failure(exception))
+        sender() ! Failure(exception)
     }
   }
 
@@ -325,7 +323,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
           }
 
       case None =>
-        val updateResponse: UpdateResponse = getUpdateResponseFailureByUpdateCommand(updateCommand)
+        val updateResponse: Failure[Nothing] = getUpdateResponseFailureByUpdateCommand(updateCommand)
         sender() ! updateResponse
     }
   }
@@ -370,11 +368,11 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       case None =>
         unregisterCommand match {
           case UnregisterRestaurant(_) =>
-            sender() ! UnregisterResponse(Failure(RestaurantNotFoundException()))
+            sender() ! Failure(RestaurantNotFoundException())
           case UnregisterReview(_) =>
-            sender() ! UnregisterResponse(Failure(ReviewNotFoundException()))
+            sender() ! Failure(ReviewNotFoundException())
           case UnregisterUser(_) =>
-            sender() ! UnregisterResponse(Failure(UserNotFoundException()))
+            sender() ! Failure(UserNotFoundException())
         }
 
     }

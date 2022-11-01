@@ -10,19 +10,16 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.vgomez.app.actors.Review.Command._
-import com.vgomez.app.actors.Review.Response._
 import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.actors.Administration.Command.GetAllReview
-import com.vgomez.app.actors.Review.{RegisterReviewState, UnregisterReviewState}
+import com.vgomez.app.actors.Review.{RegisterReviewState, ReviewState, UnregisterReviewState}
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.actors.messages.AbstractMessage.Response._
-import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllReviewResponse
+import com.vgomez.app.http.RouterUtility.getReviewResponseByReviewState
 import com.vgomez.app.http.validators._
-import com.vgomez.app.http.RouterUtility._
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 // Review Router.
 class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, implicit val timeout: Timeout)
@@ -31,28 +28,28 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
 
-  def getReview(id: String): Future[GetReviewResponse] =
-    (administration ? GetReview(id)).mapTo[GetReviewResponse]
+  def getReview(id: String): Future[Option[ReviewState]] =
+    (administration ? GetReview(id)).mapTo[Option[ReviewState]]
 
-  def createReview(reviewCreationRequest: ReviewCreationRequest): Future[RegisterResponse] =
-    (administration ? reviewCreationRequest.toCommand).mapTo[RegisterResponse]
+  def registerReview(reviewCreationRequest: ReviewCreationRequest): Future[Try[String]] =
+    (administration ? reviewCreationRequest.toCommand).mapTo[Try[String]]
 
   def updateReview(id: String,
-                   reviewUpdateRequest: ReviewUpdateRequest): Future[UpdateResponse] =
-    (administration ? reviewUpdateRequest.toCommand(id)).mapTo[UpdateResponse]
+                   reviewUpdateRequest: ReviewUpdateRequest): Future[Try[Done]] =
+    (administration ? reviewUpdateRequest.toCommand(id)).mapTo[Try[Done]]
 
-  def unregisterReview(id: String): Future[UnregisterResponse] =
-    (administration ? UnregisterReview(id)).mapTo[UnregisterResponse]
+  def unregisterReview(id: String): Future[Try[Done]] =
+    (administration ? UnregisterReview(id)).mapTo[Try[Done]]
 
-  def getAllReview(pageNumber: Long, numberOfElementPerPage: Long): Future[GetAllReviewResponse] =
-    (administration ? GetAllReview(pageNumber, numberOfElementPerPage)).mapTo[GetAllReviewResponse]
+  def getAllReview(pageNumber: Long, numberOfElementPerPage: Long): Future[Option[List[ReviewState]]] =
+    (administration ? GetAllReview(pageNumber, numberOfElementPerPage)).mapTo[Option[List[ReviewState]]]
 
   val routes: Route =
     pathPrefix("api" / "reviews"){
       path(Segment) { id =>
         get {
           onSuccess(getReview(id)) {
-            case GetReviewResponse(Some(reviewState)) =>
+            case Some(reviewState) =>
               reviewState match {
                 case RegisterReviewState(id, _, username, restaurantId, stars, text, date) =>
                   complete {
@@ -62,7 +59,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
                   complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
               }
 
-            case GetReviewResponse(None) =>
+            case None =>
               complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
           }
         } ~
@@ -72,11 +69,11 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
                 request.text, request.date).run() match {
                 case Success(_) =>
                   onSuccess(updateReview(id, request)) {
-                    case UpdateResponse(Success(Done)) =>
+                    case Success(Done) =>
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateResponse(Failure(e: RuntimeException)) =>
+                    case Failure(e: RuntimeException) =>
                       complete(StatusCodes.BadRequest, e.getMessage)
                   }
                 case Failure(e: ValidationFailException) =>
@@ -86,9 +83,9 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
           } ~
           delete {
             onSuccess(unregisterReview(id)) {
-              case UnregisterResponse(Success(_)) =>
+              case Success(_) =>
                 complete(StatusCodes.NoContent)
-              case UnregisterResponse(Failure(_)) =>
+              case Failure(_) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
             }
           }
@@ -99,12 +96,12 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
               ValidatorReviewRequest(request.username, request.restaurantId, request.stars,
                 request.text, request.date).run() match {
                 case Success(_) =>
-                  onSuccess(createReview(request)) {
-                    case RegisterResponse(Success(id)) =>
+                  onSuccess(registerReview(request)) {
+                    case Success(id) =>
                       respondWithHeader(Location(s"/reviews/$id")) {
                         complete(StatusCodes.Created)
                       }
-                    case RegisterResponse(Failure(e: RuntimeException)) =>
+                    case Failure(e: RuntimeException) =>
                       complete(StatusCodes.BadRequest, e.getMessage)
                   }
                 case Failure(e: ValidationFailException) =>
@@ -118,11 +115,11 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
                 ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
                   case Success(_) =>
                     onSuccess(getAllReview(pageNumber, numberOfElementPerPage)) {
-                      case GetAllReviewResponse(Some(getRestaurantResponses)) => complete {
-                        getRestaurantResponses.map(getReviewResponseByGetReviewResponse)
-                      }
 
-                      case GetAllReviewResponse(None) =>
+                      case Some(listReviewState) => complete {
+                        listReviewState.map(getReviewResponseByReviewState)
+                      }
+                      case None =>
                         complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
                     }
                   case Failure(e: ValidationFailException) =>

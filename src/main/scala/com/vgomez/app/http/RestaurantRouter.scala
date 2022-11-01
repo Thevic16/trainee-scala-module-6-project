@@ -10,19 +10,16 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.vgomez.app.actors.Restaurant.Command._
-import com.vgomez.app.actors.Restaurant.Response._
 import com.vgomez.app.http.messages.HttpRequest._
 import com.vgomez.app.http.messages.HttpResponse._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vgomez.app.actors.Administration.Command.{GetAllRestaurant, GetStarsByRestaurant}
+import com.vgomez.app.actors.Restaurant.RestaurantState
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.actors.messages.AbstractMessage.Response._
-import com.vgomez.app.actors.readers.ReaderGetAll.Response.GetAllRestaurantResponse
-import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Response.GetStarsByRestaurantResponse
 import com.vgomez.app.http.validators._
 import com.vgomez.app.http.RouterUtility._
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 // Restaurant Router.
 class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, implicit val timeout: Timeout)
@@ -32,8 +29,8 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
 
-  def getRestaurant(id: String): Future[GetRestaurantResponse] =
-    (administration ? GetRestaurant(id)).mapTo[GetRestaurantResponse]
+  def getRestaurant(id: String): Future[Option[RestaurantState]] =
+    (administration ? GetRestaurant(id)).mapTo[Option[RestaurantState]]
 
   /*
   Todo #3
@@ -42,21 +39,21 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
     Status: Done
     Reported by: Sebastian Oliveri.
   */
-  def getStarsByRestaurant(id: String): Future[GetStarsByRestaurantResponse] =
-    (administration ? GetStarsByRestaurant(id)).mapTo[GetStarsByRestaurantResponse]
+  def getStarsByRestaurant(id: String): Future[Option[Int]] =
+    (administration ? GetStarsByRestaurant(id)).mapTo[Option[Int]]
 
-  def registerRestaurant(restaurantCreationRequest: RestaurantCreationRequest): Future[RegisterResponse] =
-    (administration ? restaurantCreationRequest.toCommand).mapTo[RegisterResponse]
+  def registerRestaurant(restaurantCreationRequest: RestaurantCreationRequest): Future[Try[String]] =
+    (administration ? restaurantCreationRequest.toCommand).mapTo[Try[String]]
 
   def updateRestaurant(id: String,
-                       restaurantUpdateRequest: RestaurantUpdateRequest): Future[UpdateResponse] =
-    (administration ? restaurantUpdateRequest.toCommand(id)).mapTo[UpdateResponse]
+                       restaurantUpdateRequest: RestaurantUpdateRequest): Future[Try[Done]] =
+    (administration ? restaurantUpdateRequest.toCommand(id)).mapTo[Try[Done]]
 
-  def unregisterRestaurant(id: String): Future[UnregisterResponse] =
-    (administration ? UnregisterRestaurant(id)).mapTo[UnregisterResponse]
+  def unregisterRestaurant(id: String): Future[Try[Done]] =
+    (administration ? UnregisterRestaurant(id)).mapTo[Try[Done]]
 
-  def getAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long): Future[GetAllRestaurantResponse] =
-    (administration ? GetAllRestaurant(pageNumber, numberOfElementPerPage)).mapTo[GetAllRestaurantResponse]
+  def getAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long): Future[Option[List[RestaurantState]]] =
+    (administration ? GetAllRestaurant(pageNumber, numberOfElementPerPage)).mapTo[Option[List[RestaurantState]]]
 
 
   val routes: Route =
@@ -73,23 +70,23 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
                   Status: Done
                   Reported by: Sebastian Oliveri.
                 */
-                case GetRestaurantResponse(Some(restaurantState)) =>
+                case Some(restaurantState) =>
                   complete {
                     getRestaurantResponseByRestaurantState(restaurantState)
                   }
 
-                case GetRestaurantResponse(None) =>
+                case None =>
                   complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
               }
 
             case "get-stars" =>
               onSuccess(getStarsByRestaurant(id)) {
-                case GetStarsByRestaurantResponse(Some(stars)) =>
+                case Some(stars) =>
                   complete {
                     StarsResponse(stars)
                   }
 
-                case GetStarsByRestaurantResponse(None) =>
+                case None =>
                   complete(StatusCodes.NotFound, FailureResponse(s"There are not reviews for the restaurant " +
                     s"with id $id"))
               }
@@ -106,11 +103,11 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
                                             request.schedule).run() match {
                 case Success(_) =>
                   onSuccess(updateRestaurant(id, request)) {
-                    case UpdateResponse(Success(Done)) =>
+                    case Success(Done) =>
                       respondWithHeader(Location(s"/restaurants/$id")) {
                         complete(StatusCodes.OK)
                       }
-                    case UpdateResponse(Failure(e: RuntimeException)) =>
+                    case Failure(e: RuntimeException) =>
                       complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                   }
                 case Failure(e: ValidationFailException) =>
@@ -120,9 +117,9 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
           } ~
           delete {
             onSuccess(unregisterRestaurant(id)) {
-              case UnregisterResponse(Success(_)) =>
+              case Success(_) =>
                 complete(StatusCodes.NoContent)
-              case UnregisterResponse(Failure(_)) =>
+              case Failure(_) =>
                 complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
             }
           }
@@ -135,11 +132,11 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
               request.schedule).run() match {
               case Success(_) =>
                 onSuccess(registerRestaurant(request)) {
-                  case RegisterResponse(Success(id)) =>
+                  case Success(id) =>
                     respondWithHeader(Location(s"/restaurants/$id")) {
                       complete(StatusCodes.Created)
                     }
-                  case RegisterResponse(Failure(e: RuntimeException)) =>
+                  case Failure(e: RuntimeException) =>
                     complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                 }
               case Failure(e: ValidationFailException) =>
@@ -153,11 +150,11 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
               ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
                 case Success(_) =>
                   onSuccess(getAllRestaurant(pageNumber, numberOfElementPerPage)) {
-                    case GetAllRestaurantResponse(Some(getRestaurantResponses)) => complete {
-                      getRestaurantResponses.map(getRestaurantResponseByGetRestaurantResponse)
-                    }
 
-                    case GetAllRestaurantResponse(None) =>
+                    case Some(listRestaurantState) => complete {
+                      listRestaurantState.map(getRestaurantResponseByRestaurantState)
+                    }
+                    case None =>
                       complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
                   }
                 case Failure(e: ValidationFailException) =>

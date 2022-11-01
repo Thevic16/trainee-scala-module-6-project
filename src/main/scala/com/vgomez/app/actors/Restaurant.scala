@@ -6,7 +6,6 @@ import akka.persistence.PersistentActor
 import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
-import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 
 object Restaurant {
@@ -41,13 +40,6 @@ object Restaurant {
   case class RestaurantUpdated(restaurantState: RestaurantState)
   case class RestaurantUnregistered(restaurantState: RestaurantState)
 
-
-  // responses
-  object Response {
-    case class GetRestaurantResponse(maybeRestaurantState: Option[RestaurantState])
-      extends GetResponse
-  }
-
   def props(id: String, index: Long): Props =  Props(new Restaurant(id, index))
 
 }
@@ -55,10 +47,16 @@ object Restaurant {
 class Restaurant(id: String, index: Long) extends PersistentActor {
   import Restaurant._
   import Command._
-  import Response._
 
   override def persistenceId: String = id
 
+  /*
+  Todo #R
+    Description: Remove responses classes from actors.
+    Action: Remove response class from Restaurant Actor.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
   def state(restaurantState: RestaurantState): Receive = {
     case GetRestaurant(_) =>
       /*
@@ -70,16 +68,16 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
       */
       restaurantState match {
         case restaurantState@RegisterRestaurantState(_, _, _, _, _, _, _, _, _, _) =>
-          sender() ! GetRestaurantResponse(Some(restaurantState))
+          sender() ! Some(restaurantState)
         case UnregisterRestaurantState =>
-          sender() ! GetRestaurantResponse(None)
+          sender() ! None
       }
 
     case RegisterRestaurant(_, restaurantInfo) =>
       val newState: RestaurantState = getNewState(restaurantInfo)
 
       persist(RestaurantRegistered(newState)){_ =>
-        sender() ! RegisterResponse(Success(id))
+        sender() ! Success(id)
         context.become(state(newState))
       }
 
@@ -89,12 +87,12 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
           val newState: RestaurantState = getNewState(restaurantInfo)
 
           persist(RestaurantUpdated(newState)) { _ =>
-            sender() ! UpdateResponse(Success(Done))
+            sender() ! Success(Done)
             context.become(state(newState))
           }
 
         case UnregisterRestaurantState =>
-          sender() ! UpdateResponse(Failure(RestaurantUnRegisteredException))
+          sender() ! Failure(RestaurantUnRegisteredException)
       }
 
     case UnregisterRestaurant(_) =>
@@ -103,12 +101,12 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
           val newState: RestaurantState = UnregisterRestaurantState
 
           persist(RestaurantUnregistered(newState)) { _ =>
-            sender() ! UnregisterResponse(Success(Done))
+            sender() ! Success(Done)
             context.become(state(newState))
           }
 
         case UnregisterRestaurantState =>
-          sender() ! UnregisterResponse(Failure(RestaurantUnRegisteredException))
+          sender() ! Failure(RestaurantUnRegisteredException)
       }
   }
 

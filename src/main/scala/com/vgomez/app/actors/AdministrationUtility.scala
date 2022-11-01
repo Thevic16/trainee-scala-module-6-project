@@ -4,13 +4,9 @@ import scala.util.{Failure, Success, Try}
 import akka.actor.{ActorContext, ActorRef}
 import com.vgomez.app.actors.Administration.AdministrationState
 import com.vgomez.app.actors.Restaurant.Command._
-import com.vgomez.app.actors.Restaurant.Response._
 import com.vgomez.app.actors.Review.Command._
-import com.vgomez.app.actors.Review.Response._
 import com.vgomez.app.actors.User.Command._
-import com.vgomez.app.actors.User.Response._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
-import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.exception.CustomException._
 
 import java.util.UUID
@@ -24,21 +20,6 @@ object AdministrationUtility {
       case GetRestaurant(id) => administrationState.restaurants.get(id)
       case GetReview(id) => administrationState.reviews.get(id)
       case GetUser(username) => administrationState.users.get(username)
-    }
-  }
-
-  def getGetResponseByGetCommand(getCommand: GetCommand): GetResponse = {
-    getCommand match {
-      /*
-      Todo #3
-        Description: Decouple restaurant.
-        Action: Remove start from this pattern matching.
-        Status: Done
-        Reported by: Sebastian Oliveri.
-      */
-      case GetRestaurant(_) => GetRestaurantResponse(None)
-      case GetReview(_) => GetReviewResponse(None)
-      case GetUser(_) => GetUserResponse(None)
     }
   }
 
@@ -111,20 +92,20 @@ object AdministrationUtility {
     }
   }
 
-  def getUpdateResponseFailureByUpdateCommand(updateCommand: UpdateCommand): UpdateResponse = {
+  def getUpdateResponseFailureByUpdateCommand(updateCommand: UpdateCommand): Failure[Nothing] = {
     updateCommand match {
-      case UpdateRestaurant(_, _) => UpdateResponse(Failure(RestaurantNotFoundException()))
-      case UpdateReview(_, _) => UpdateResponse(Failure(ReviewNotFoundException()))
-      case UpdateUser(_) => UpdateResponse(Failure(UserNotFoundException()))
+      case UpdateRestaurant(_, _) => Failure(RestaurantNotFoundException())
+      case UpdateReview(_, _) => Failure(ReviewNotFoundException())
+      case UpdateUser(_) => Failure(UserNotFoundException())
     }
   }
 
   def getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand: UpdateCommand,
-                                                         message: String): UpdateResponse = {
+                                                         message: String): Failure[Nothing] = {
     updateCommand match {
-      case UpdateRestaurant(_, _) => UpdateResponse(Failure(RestaurantNotFoundException(message)))
-      case UpdateReview(_, _) => UpdateResponse(Failure(ReviewNotFoundException(message)))
-      case UpdateUser(_) => UpdateResponse(Failure(UserNotFoundException(message)))
+      case UpdateRestaurant(_, _) => Failure(RestaurantNotFoundException(message))
+      case UpdateReview(_, _) => Failure(ReviewNotFoundException(message))
+      case UpdateUser(_) => Failure(UserNotFoundException(message))
     }
   }
 

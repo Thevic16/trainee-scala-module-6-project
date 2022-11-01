@@ -6,10 +6,15 @@ import akka.persistence.PersistentActor
 import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
-import com.vgomez.app.actors.messages.AbstractMessage.Response._
 import com.vgomez.app.exception.CustomException.UserUnRegisteredException
 
-
+/*
+Todo #R
+  Description: Remove responses classes from actors.
+  Action: Remove response class from User Actor.
+  Status: Done
+  Reported by: Sebastian Oliveri.
+*/
 object User {
   case class UserInfo(username: String, password: String, role: Role, location: Location,
                       favoriteCategories: Set[String])
@@ -39,12 +44,6 @@ object User {
   case class UserUpdated(UserState: UserState)
   case class UserUnregistered(UserState: UserState)
 
-
-  // responses
-  object Response {
-    case class GetUserResponse(maybeUserState: Option[UserState]) extends GetResponse
-  }
-
   def props(username: String, index: Long): Props =  Props(new User(username, index))
 
 }
@@ -52,7 +51,6 @@ object User {
 class User(username: String, index: Long) extends PersistentActor with ActorLogging{
   import User._
   import Command._
-  import Response._
 
   override def persistenceId: String = username
 
@@ -60,16 +58,16 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
     case GetUser(_) =>
       userState match {
         case RegisterUserState(_, _, _, _, _, _) =>
-          sender() ! GetUserResponse(Some(userState))
+          sender() ! Some(userState)
         case UnregisterUserState =>
-          sender() ! GetUserResponse(None)
+          sender() ! None
       }
 
     case RegisterUser(userInfo) =>
       val newState: UserState = getNewState(userInfo)
 
       persist(UserRegistered(newState)) { _ =>
-        sender() ! RegisterResponse(Success(username))
+        sender() ! Success(username)
         context.become(state(newState))
       }
 
@@ -79,11 +77,11 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
           val newState: UserState = getNewState(userInfo)
 
           persist(UserUpdated(newState)) { _ =>
-            sender() ! UpdateResponse(Success(Done))
+            sender() ! Success(Done)
             context.become(state(newState))
           }
         case UnregisterUserState =>
-          sender() ! UpdateResponse(Failure(UserUnRegisteredException))
+          sender() ! Failure(UserUnRegisteredException)
       }
 
     case UnregisterUser(_) =>
@@ -92,11 +90,11 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
           val newState: UserState = UnregisterUserState
 
           persist(UserUnregistered(newState)) { _ =>
-            sender() ! UnregisterResponse(Success(Done))
+            sender() ! Success(Done)
             context.become(state(newState))
           }
         case UnregisterUserState =>
-          sender() ! UnregisterResponse(Failure(UserUnRegisteredException))
+          sender() ! Failure(UserUnRegisteredException)
       }
   }
 
