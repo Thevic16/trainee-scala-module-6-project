@@ -1,5 +1,5 @@
 services:
-  index-db:
+  projection-db:
     image: postgres:14.1-alpine
     container_name: postgres-akka-restaurant-reviews
     restart: always
@@ -9,8 +9,8 @@ services:
     ports:
       - '8016:5432'
     volumes:
-      - index-db:/var/lib/postgresql11/data
-      - ./index-db-scripts/init-scripts.sql:/docker-entrypoint-initdb.d/scripts.sql
+      - projection-db:/var/lib/postgresql11/data
+      - ./db-scripts/init-scripts-projection-db.sql:/docker-entrypoint-initdb.d/scripts.sql
 
   cassandra:
     image: cassandra:3
@@ -23,5 +23,5 @@ services:
 
 
 volumes:
-  index-db:
+  projection-db:
     driver: local

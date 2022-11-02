@@ -1,8 +1,8 @@
-package com.vgomez.app.data.indexDatabase
+package com.vgomez.app.data.projectionDatabase
 
-import com.vgomez.app.data.indexDatabase.Model._
-import com.vgomez.app.data.indexDatabase.Response._
-import com.vgomez.app.data.indexDatabase.Table.RestaurantTable
+import com.vgomez.app.data.projectionDatabase.Model._
+import com.vgomez.app.data.projectionDatabase.Response._
+import com.vgomez.app.data.projectionDatabase.Table.RestaurantTable
 import com.vgomez.app.domain.DomainModelOperation.rangeInKmToDegrees
 import ExecContext._
 import akka.Done
@@ -32,49 +32,49 @@ object Operation {
     db.run(query).map(GetUserModelsResponse)
   }
 
-  def registerRestaurantModel(restaurantModel: RestaurantModel): Future[Either[Int, Done]] = {
+  def registerRestaurantModel(restaurantModel: RestaurantModel): Future[Done] = {
     val insertQuery = Table.restaurantTable forceInsert restaurantModel
-    db.run(insertQuery).map(response => if(response == 1) Right(Done) else Left(response))
+    db.run(insertQuery).map(_ => Done)
   }
 
-  def registerReviewModel(reviewModel: ReviewModel): Future[Either[Int, Done]] = {
+  def registerReviewModel(reviewModel: ReviewModel): Future[Done] = {
     val insertQuery = Table.reviewTable forceInsert reviewModel
-    db.run(insertQuery).map(response => if(response == 1) Right(Done) else Left(response))
+    db.run(insertQuery).map(_ => Done)
   }
 
-  def registerUserModel(userModel: UserModel): Future[Either[Int, Done]] = {
+  def registerUserModel(userModel: UserModel): Future[Done] = {
     val insertQuery = Table.userTable forceInsert userModel
-    db.run(insertQuery).map(response => if(response == 1) Right(Done) else Left(response))
+    db.run(insertQuery).map(_ => Done)
   }
 
-  def updateRestaurantModel(id: String, restaurantModel: RestaurantModel): Future[Either[Int, Done]] = {
+  def updateRestaurantModel(id: String, restaurantModel: RestaurantModel): Future[Done] = {
     val updateQuery = Table.restaurantTable.filter(_.id === id).update(restaurantModel)
-    db.run(updateQuery).map(response => if(response == 1) Right(Done) else Left(response))
+    db.run(updateQuery).map(_ => Done)
   }
 
-  def updateReviewModel(id: String, reviewModel: ReviewModel): Future[Either[Int, Done]] = {
+  def updateReviewModel(id: String, reviewModel: ReviewModel): Future[Done] = {
     val updateQuery = Table.reviewTable.filter(_.id === id).update(reviewModel)
-    db.run(updateQuery).map(response => if(response == 1) Right(Done) else Left(response))
+    db.run(updateQuery).map(_ => Done)
   }
 
-  def updateUserModel(username: String, userModel: UserModel): Future[Either[Int, Done]] = {
+  def updateUserModel(username: String, userModel: UserModel): Future[Done] = {
     val updateQuery = Table.userTable.filter(_.username === username).update(userModel)
-    db.run(updateQuery).map(response => if(response == 1) Right(Done) else Left(response))
+    db.run(updateQuery).map(_ => Done)
   }
 
-  def unregisterRestaurantModel(id: String): Future[Either[Int, Done]] = {
+  def unregisterRestaurantModel(id: String): Future[Done] = {
     val deleteQuery = Table.restaurantTable.filter(_.id === id).delete
-    db.run(deleteQuery).map(response => if(response == 1) Right(Done) else Left(response))
+    db.run(deleteQuery).map(_ => Done)
   }
 
-  def unregisterReviewModel(id: String): Future[Either[Int, Done]] = {
+  def unregisterReviewModel(id: String): Future[Done] = {
     val deleteQuery = Table.reviewTable.filter(_.id === id).delete
-    db.run(deleteQuery).map(response => if(response == 1) Right(Done) else Left(response))
+    db.run(deleteQuery).map(_ => Done)
   }
 
-  def unregisterUserModel(username: String): Future[Either[Int, Done]] = {
+  def unregisterUserModel(username: String): Future[Done] = {
     val deleteQuery = Table.userTable.filter(_.username === username).delete
-    db.run(deleteQuery).map(response => if(response == 1) Right(Done) else Left(response))
+    db.run(deleteQuery).map(_ => Done)
   }
 
   def getReviewsStarsByRestaurantId(restaurantId: String): Future[GetReviewModelsStarsResponse] = {

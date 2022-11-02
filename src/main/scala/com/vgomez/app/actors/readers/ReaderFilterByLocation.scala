@@ -4,13 +4,13 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command.GetUserLocation
 import com.vgomez.app.domain.DomainModel.Location
+import com.vgomez.app.data.projectionDatabase.Operation
+import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsResponse
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRestaurantModels
-import com.vgomez.app.data.indexDatabase.Operation
-import com.vgomez.app.data.indexDatabase.Response.GetRestaurantModelsResponse
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
 /*
-Todo #R
+Todo #4
   Description: Remove responses classes from actors.
   Action: Remove response class from ReaderFilterByLocation Actor.
   Status: Done
@@ -60,13 +60,6 @@ class ReaderFilterByLocation(system: ActorSystem,
   }
 
   def getRestaurantsState(originalSender: ActorRef, queryLocation: Location, rangeInKm: Double): Receive = {
-    /*
-    Todo #3
-      Description: Decouple restaurant.
-      Action: Remove stars request on the database and only left restaurant models.
-      Status: Done
-      Reported by: Sebastian Oliveri.
-    */
     case GetRestaurantModelsResponse(restaurantModels) =>
       val restaurantModelsFilterByDistance = restaurantModels.filter(model =>
         calculateDistanceInKm(Location(model.latitude, model.longitude), Some(queryLocation)) <= rangeInKm)
@@ -83,7 +76,7 @@ class ReaderFilterByLocation(system: ActorSystem,
   }
 
   /*
-  Todo #5
+  Todo #3
     Description: Decouple Actor eliminate halfway methods.
     Action: Let the responsibility to get user location to other actor.
     Status: Done

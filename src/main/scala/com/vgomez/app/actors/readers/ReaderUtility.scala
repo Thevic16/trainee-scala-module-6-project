@@ -3,7 +3,7 @@ package com.vgomez.app.actors.readers
 import com.vgomez.app.actors.Restaurant.{RegisterRestaurantState, RestaurantState}
 import com.vgomez.app.actors.Review.{RegisterReviewState, ReviewState}
 import com.vgomez.app.actors.User.{RegisterUserState, UserState}
-import com.vgomez.app.data.indexDatabase.Model.{RestaurantModel, ReviewModel, UserModel}
+import com.vgomez.app.data.projectionDatabase.Model.{RestaurantModel, ReviewModel, UserModel}
 import com.vgomez.app.domain.DomainModel.Location
 
 object ReaderUtility {
@@ -25,13 +25,6 @@ object ReaderUtility {
       Location(userModel.latitude, userModel.longitude), userModel.favoriteCategories.toSet)
   }
 
-  /*
-  Todo #3
-    Description: Decouple restaurant.
-    Action: Remove stars parameter from getListRestaurantResponsesBySeqRestaurantModels method.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   def getListRestaurantStateBySeqRestaurantModels(restaurantModels: Seq[RestaurantModel]):
   List[RestaurantState] = {
     restaurantModels.map(getRestaurantStateByRestaurantModel).toList

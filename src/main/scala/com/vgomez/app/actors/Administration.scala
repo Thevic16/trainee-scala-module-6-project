@@ -1,5 +1,6 @@
 package com.vgomez.app.actors
-import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props}
+import akka.Done
+import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Timers}
 import akka.persistence.PersistentActor
 import com.vgomez.app.exception.CustomException._
 
@@ -9,11 +10,13 @@ import com.vgomez.app.actors.messages.AbstractMessage.Event._
 import com.vgomez.app.actors.AdministrationUtility._
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes
 import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll, ReaderStarsByRestaurant}
-import com.vgomez.app.actors.writers.WriterToIndexDatabase
+import com.vgomez.app.actors.writers.WriterProjection
 import com.vgomez.app.domain.DomainModel.Location
 
+import scala.concurrent.duration._
+
 /*
-Todo #1
+Todo #8
   Description: Every message passes throughout Administration Actor, finds a way to enhance this. (Bottleneck)
   Status: No started
   Reported by: Nafer Sanabria.
@@ -44,13 +47,13 @@ object Administration {
   }
 
   // events
-  case class RestaurantRegistered(id: String) extends Event
-  case class ReviewRegistered(id: String) extends Event
-  case class UserRegistered(username: String) extends Event
+  case class RestaurantRegistered(id: String) extends EventAdministration
+  case class ReviewRegistered(id: String) extends EventAdministration
+  case class UserRegistered(username: String) extends EventAdministration
   def props(system: ActorSystem): Props =  Props(new Administration(system))
 }
 
-class Administration(system: ActorSystem) extends PersistentActor with ActorLogging{
+class Administration(system: ActorSystem) extends PersistentActor with ActorLogging {
   import Administration._
 
   // Commands
@@ -58,9 +61,10 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   import Review.Command._
   import User.Command._
   import Command._
+  import context.dispatcher
 
   /*
-  Todo #5
+  Todo #3
     Description: Decouple Actor eliminate halfway methods.
     Action: Create intermediateReadUserAttributes on administration.
     Status: Done
@@ -78,8 +82,20 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                           "reader-filter-by-location")
   val readerStarsByRestaurant = context.actorOf(ReaderStarsByRestaurant.props(system),
                                         "reader-stars-by-restaurant")
-  val writerToIndexDatabase = context.actorOf(WriterToIndexDatabase.props(system), "writer-to-index-database")
 
+  // Writers
+  val writerProjection = context.actorOf(WriterProjection.props(system), "writer-projection")
+  /*
+  Todo #7
+    Description: Use projections to persist events on projection-db (Scheduler).
+    Action: Send multiples StartProjection message to writerProjection until is answers with Done.
+    Status: Done
+    Reported by: Sebastian Oliveri.
+  */
+  val writerProjectionScheduler= context.system.scheduler.scheduleWithFixedDelay(Duration.Zero, delay = 5 seconds,
+                                                             writerProjection, WriterProjection.Command.StartProjection)
+
+   //writerProjection ! WriterProjection.Command.StartProjection
 
   // for state recovery
   var administrationRecoveryState = AdministrationState(Map(), Map(), Map(), 0, 0, 0)
@@ -168,7 +184,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetRecommendationCloseToMe command.")
       readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm,
                                                                                               pageNumber,
-                                                                                              numberOfElementPerPage))
+        /*
+        Todo #7
+          Description: Use projections to persist events on projection-db (Scheduler).
+          Action: Cancel the writerProjectionTimer when Administration Actor receive the confirmation from WriterProjection Actor.
+          Status: Done
+          Reported by: Sebastian Oliveri.
+        */            numberOfElementPerPage))
+    // Confirmation projection process has stated successfully
+    case Done =>
+      writerProjectionScheduler.cancel() // Cancelling the scheduler
+      log.info("Projection process has stated successfully")
   }
 
   override def receiveCommand: Receive = state(administrationRecoveryState)
@@ -262,26 +288,14 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                            newStateAdministrationState: AdministrationState): Unit = {
     registerCommand match {
       case RegisterRestaurant(_, restaurantInfo) =>
-        // sending message to writer.
-        writerToIndexDatabase ! WriterToIndexDatabase.Command.RegisterRestaurant(identifier,
-                                                 newStateAdministrationState.currentRestaurantIndex - 1, restaurantInfo)
-
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "restaurant", RestaurantRegistered(identifier))
 
       case RegisterReview(_, reviewInfo) =>
-        // sending message to writer.
-        writerToIndexDatabase ! WriterToIndexDatabase.Command.RegisterReview(identifier,
-                                                         newStateAdministrationState.currentReviewIndex - 1, reviewInfo)
-
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "review", ReviewRegistered(identifier))
 
       case RegisterUser(userInfo) =>
-        // sending message to writer.
-        writerToIndexDatabase ! WriterToIndexDatabase.Command.RegisterUser(
-                                                             newStateAdministrationState.currentUserIndex - 1, userInfo)
-
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
           newStateAdministrationState: AdministrationState, "user", UserRegistered(identifier))
     }
@@ -289,7 +303,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   def helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
                                  newStateAdministrationState: AdministrationState , actorName: String,
-                                 event: Event):Unit = {
+                                 event: EventAdministration):Unit = {
     persist(event) { _ =>
       log.info(s"Administration has Registered a $actorName with id: ${identifier}")
       newActorRef.forward(registerCommand)
@@ -304,23 +318,6 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     actorRefOption match {
       case Some((index, actorRef)) =>
           actorRef.forward(updateCommand)
-
-          updateCommand match {
-            case UpdateRestaurant(id, restaurantInfo) =>
-              // sending message to writer.
-              writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateRestaurant(id, index, restaurantInfo)
-              log.info(s"UpdateRestaurant Command for id: $id has been handle by Administration.")
-
-            case UpdateReview(id, reviewInfo) =>
-              // sending message to writer.
-              writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateReview(id, index, reviewInfo)
-              log.info(s"UpdateReview Command for id: $id has been handle by Administration.")
-
-            case UpdateUser(userInfo) =>
-              // sending message to writer.
-              writerToIndexDatabase ! WriterToIndexDatabase.Command.UpdateUser(index, userInfo)
-              log.info(s"UpdateUser Command for username: ${userInfo.username} has been handle by Administration.")
-          }
 
       case None =>
         val updateResponse: Failure[Nothing] = getUpdateResponseFailureByUpdateCommand(updateCommand)
@@ -343,27 +340,11 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   }
 
   def processUnregisterCommand(unregisterCommand: UnregisterCommand, administrationState: AdministrationState): Unit = {
-    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByUnregisterCommand(unregisterCommand, administrationState)
+    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByUnregisterCommand(unregisterCommand,
+                                                                                        administrationState)
     actorRefOption match {
       case Some((_, actorRef)) =>
         actorRef.forward(unregisterCommand)
-
-        unregisterCommand match {
-          case UnregisterRestaurant(id) =>
-            // sending message to writer.
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.UnregisterRestaurant(id)
-            log.info(s"UnregisterRestaurant Command for id: $id has been handle by Administration.")
-
-          case UnregisterReview(id) =>
-            // sending message to writer.
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.UnregisterReview(id)
-            log.info(s"UnregisterReview Command for id: $id has been handle by Administration.")
-
-          case UnregisterUser(username) =>
-            // sending message to writer.
-            writerToIndexDatabase ! WriterToIndexDatabase.Command.UnregisterUser(username)
-            log.info(s"UnregisterUser Command for username: $username has been handle by Administration.")
-        }
 
       case None =>
         unregisterCommand match {

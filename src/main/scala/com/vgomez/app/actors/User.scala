@@ -6,26 +6,15 @@ import akka.persistence.PersistentActor
 import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
+import com.vgomez.app.actors.messages.AbstractMessage.Event.Event
 import com.vgomez.app.exception.CustomException.UserUnRegisteredException
 
-/*
-Todo #R
-  Description: Remove responses classes from actors.
-  Action: Remove response class from User Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 object User {
   case class UserInfo(username: String, password: String, role: Role, location: Location,
                       favoriteCategories: Set[String])
 
   // state
-  /*
-  Todo #2 part 4
-    Description: Change Null pattern abstract class for trait.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   sealed abstract class UserState
   case class RegisterUserState(username: String, index: Long, password: String, role: Role, location: Location,
                        favoriteCategories: Set[String]) extends UserState
@@ -40,9 +29,9 @@ object User {
   }
 
   // events
-  case class UserRegistered(UserState: UserState)
-  case class UserUpdated(UserState: UserState)
-  case class UserUnregistered(UserState: UserState)
+  case class UserRegistered(UserState: UserState) extends Event
+  case class UserUpdated(UserState: UserState) extends Event
+  case class UserUnregistered(username: String, UserState: UserState) extends Event
 
   def props(username: String, index: Long): Props =  Props(new User(username, index))
 
@@ -89,7 +78,7 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
         case RegisterUserState(_, _, _, _, _, _) =>
           val newState: UserState = UnregisterUserState
 
-          persist(UserUnregistered(newState)) { _ =>
+          persist(UserUnregistered(username, newState)) { _ =>
             sender() ! Success(Done)
             context.become(state(newState))
           }
@@ -107,7 +96,7 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
     case UserUpdated(userState) =>
       context.become(state(userState))
 
-    case UserUnregistered(userState) =>
+    case UserUnregistered(_, userState) =>
       context.become(state(userState))
   }
 

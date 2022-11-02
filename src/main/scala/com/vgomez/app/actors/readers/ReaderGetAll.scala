@@ -4,17 +4,11 @@ package com.vgomez.app.actors.readers
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import com.vgomez.app.actors.readers.ReaderUtility._
-import com.vgomez.app.data.indexDatabase.Response.{GetRestaurantModelsResponse, GetReviewModelsResponse,
+import com.vgomez.app.data.projectionDatabase.Response.{GetRestaurantModelsResponse, GetReviewModelsResponse,
                                                     GetUserModelsResponse}
-import com.vgomez.app.data.indexDatabase.Operation
+import com.vgomez.app.data.projectionDatabase.Operation
 
-/*
-Todo #R
-  Description: Remove responses classes from actors.
-  Action: Remove response class from ReaderGetAll Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 object ReaderGetAll {
   // commands
   object Command {
@@ -58,7 +52,7 @@ class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Sta
   
   def getAllRestaurantState(originalSender: ActorRef): Receive = {
     /*
-    Todo #3
+    Todo #1
       Description: Decouple restaurant.
       Action: Remove stars request on the database and only left restaurant models.
       Status: Done

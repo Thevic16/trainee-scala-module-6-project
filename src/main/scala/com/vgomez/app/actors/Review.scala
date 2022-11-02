@@ -5,25 +5,13 @@ import akka.persistence.PersistentActor
 
 import scala.util.{Failure, Success}
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
+import com.vgomez.app.actors.messages.AbstractMessage.Event.Event
 import com.vgomez.app.exception.CustomException.ReviewUnRegisteredException
 
-/*
-Todo #R
-  Description: Remove responses classes from actors.
-  Action: Remove response class from Review Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
 object Review {
   case class ReviewInfo(username: String, restaurantId: String, stars: Int, text: String, date: String)
 
   // state
-  /*
-  Todo #2 part 3
-    Description: Change Null pattern abstract class for trait.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   sealed trait ReviewState
   case class RegisterReviewState(id: String, index: Long, username: String, restaurantId: String, stars: Int,
                                  text: String, date: String) extends ReviewState
@@ -39,9 +27,9 @@ object Review {
   }
 
   // events
-  case class ReviewRegistered(ReviewState: ReviewState)
-  case class ReviewUpdated(ReviewState: ReviewState)
-  case class ReviewUnregistered(ReviewState: ReviewState)
+  case class ReviewRegistered(ReviewState: ReviewState) extends Event
+  case class ReviewUpdated(ReviewState: ReviewState) extends Event
+  case class ReviewUnregistered(id: String, ReviewState: ReviewState) extends Event
 
   def props(id: String, index: Long): Props =  Props(new Review(id, index))
 
@@ -65,7 +53,7 @@ class Review(id: String, index: Long) extends PersistentActor with ActorLogging{
     case RegisterReview(_, reviewInfo) =>
       val newState: ReviewState = getNewState(reviewInfo)
 
-      persist(ReviewUnregistered(newState)) { _ =>
+      persist(ReviewRegistered(newState)) { _ =>
         sender() ! Success(id)
         context.become(state(newState))
       }
@@ -89,7 +77,7 @@ class Review(id: String, index: Long) extends PersistentActor with ActorLogging{
         case RegisterReviewState(_, _, _, _, _, _, _) =>
           val newState: ReviewState = UnregisterReviewState
 
-          persist(ReviewUnregistered(newState)) { _ =>
+          persist(ReviewUnregistered(id, newState)) { _ =>
             sender() ! Success(Done)
             context.become(state(newState))
           }
@@ -107,7 +95,7 @@ class Review(id: String, index: Long) extends PersistentActor with ActorLogging{
     case ReviewUpdated(reviewState) =>
       context.become(state(reviewState))
 
-    case ReviewUnregistered(reviewState) =>
+    case ReviewUnregistered(_, reviewState) =>
       context.become(state(reviewState))
   }
 

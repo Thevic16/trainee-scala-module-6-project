@@ -1,4 +1,4 @@
-package com.vgomez.app.data.indexDatabase
+package com.vgomez.app.data.projectionDatabase
 
 import com.typesafe.config.ConfigFactory
 import slick.jdbc.PostgresProfile.api._
