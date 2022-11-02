@@ -8,23 +8,10 @@ import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Event.Event
 import com.vgomez.app.exception.CustomException.ReviewUnRegisteredException
 
-/*
-Todo #R
-  Description: Remove responses classes from actors.
-  Action: Remove response class from Review Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
 object Review {
   case class ReviewInfo(username: String, restaurantId: String, stars: Int, text: String, date: String)
 
   // state
-  /*
-  Todo #2 part 3
-    Description: Change Null pattern abstract class for trait.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   sealed trait ReviewState
   case class RegisterReviewState(id: String, index: Long, username: String, restaurantId: String, stars: Int,
                                  text: String, date: String) extends ReviewState

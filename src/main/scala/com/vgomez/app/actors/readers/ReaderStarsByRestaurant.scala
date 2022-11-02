@@ -5,13 +5,6 @@ import akka.pattern.pipe
 import com.vgomez.app.data.projectionDatabase.Operation
 import com.vgomez.app.data.projectionDatabase.Response.GetReviewModelsStarsResponse
 
-/*
-Todo #R
-  Description: Remove responses classes from actors.
-  Action: Remove response class from ReaderStarsByRestaurant Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
 object ReaderStarsByRestaurant {
   // commands
   object Command {

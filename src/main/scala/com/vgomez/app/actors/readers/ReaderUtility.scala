@@ -25,13 +25,6 @@ object ReaderUtility {
       Location(userModel.latitude, userModel.longitude), userModel.favoriteCategories.toSet)
   }
 
-  /*
-  Todo #3
-    Description: Decouple restaurant.
-    Action: Remove stars parameter from getListRestaurantResponsesBySeqRestaurantModels method.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   def getListRestaurantStateBySeqRestaurantModels(restaurantModels: Seq[RestaurantModel]):
   List[RestaurantState] = {
     restaurantModels.map(getRestaurantStateByRestaurantModel).toList

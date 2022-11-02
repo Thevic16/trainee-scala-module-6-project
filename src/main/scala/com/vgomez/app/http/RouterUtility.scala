@@ -10,14 +10,6 @@ import com.vgomez.app.http.messages.HttpResponse._
 
 
 object RouterUtility {
-
-  /*
-  Todo #1
-    Description: Decouple restaurant.
-    Action: Remove start from this method.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   def getRestaurantResponseByRestaurantState(restaurantState: RestaurantState): RestaurantResponse = {
 
     restaurantState match {

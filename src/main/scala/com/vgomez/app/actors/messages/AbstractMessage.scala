@@ -15,7 +15,7 @@ object AbstractMessage {
 
   object Event {
     /*
-    Todo #1P
+    Todo #5
       Description: Use projections to persist events on projection-db (Postgres) (Tag Events).
       Action: Reparate Event into two type.
       Status: Done
@@ -28,7 +28,7 @@ object AbstractMessage {
     val TagProjection = "event-for-projection"
 
     /*
-    Todo #1P
+    Todo #5
       Description: Use projections to persist events on projection-db (Postgres) (Tag Events).
       Action: Tag only normal events.
       Status: Done

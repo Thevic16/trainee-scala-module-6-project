@@ -10,7 +10,7 @@ import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRe
 
 
 /*
-Todo #R
+Todo #4
   Description: Remove responses classes from actors.
   Action: Remove response class from ReaderFilterByCategories Actor.
   Status: Done
@@ -63,13 +63,6 @@ class ReaderFilterByCategories(system: ActorSystem,
   }
   
   def getRestaurantsState(originalSender: ActorRef): Receive = {
-    /*
-    Todo #1
-      Description: Decouple restaurant.
-      Action: Remove stars request on the database and only left restaurant models.
-      Status: Done
-      Reported by: Sebastian Oliveri.
-    */
     case GetRestaurantModelsResponse(restaurantModels) =>
       if (restaurantModels.nonEmpty)
         originalSender ! Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))

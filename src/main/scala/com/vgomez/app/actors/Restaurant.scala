@@ -46,7 +46,7 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
   override def persistenceId: String = id
 
   /*
-  Todo #R
+  Todo #4
     Description: Remove responses classes from actors.
     Action: Remove response class from Restaurant Actor.
     Status: Done
@@ -55,7 +55,7 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
   def state(restaurantState: RestaurantState): Receive = {
     case GetRestaurant(_) =>
       /*
-      Todo #3 part 1
+      Todo #1
         Description: Decouple restaurant.
         Action: Omit starts and only return restaurant state.
         Status: Done

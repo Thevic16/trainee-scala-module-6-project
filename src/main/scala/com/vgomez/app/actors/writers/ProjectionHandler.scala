@@ -17,7 +17,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 /*
-Todo #2P
+Todo #6
   Description: Use projections to persist events on projection-db (Postgres).
   Action: Create a ProjectionHandler class.
   Status: Done

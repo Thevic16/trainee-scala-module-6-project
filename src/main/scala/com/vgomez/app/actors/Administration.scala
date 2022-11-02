@@ -16,7 +16,7 @@ import com.vgomez.app.domain.DomainModel.Location
 import scala.concurrent.duration._
 
 /*
-Todo #X
+Todo #8
   Description: Every message passes throughout Administration Actor, finds a way to enhance this. (Bottleneck)
   Status: No started
   Reported by: Nafer Sanabria.
@@ -86,8 +86,8 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   // Writers
   val writerProjection = context.actorOf(WriterProjection.props(system), "writer-projection")
   /*
-  Todo #2P
-    Description: Use projections to persist events on projection-db (Postgres).
+  Todo #7
+    Description: Use projections to persist events on projection-db (Scheduler).
     Action: Send multiples StartProjection message to writerProjection until is answers with Done.
     Status: Done
     Reported by: Sebastian Oliveri.
@@ -185,8 +185,8 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm,
                                                                                               pageNumber,
         /*
-        Todo #2P
-          Description: Use projections to persist events on projection-db (Postgres).
+        Todo #7
+          Description: Use projections to persist events on projection-db (Scheduler).
           Action: Cancel the writerProjectionTimer when Administration Actor receive the confirmation from WriterProjection Actor.
           Status: Done
           Reported by: Sebastian Oliveri.

@@ -4,13 +4,6 @@ import akka.actor.{Actor, ActorRef, Stash}
 import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
 
-/*
-Todo #R
-  Description: Remove responses classes from actors.
-  Action: Remove response class from IntermediateReadUserAttributes Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
 
 /*
 Todo #3

@@ -8,13 +8,7 @@ import com.vgomez.app.data.projectionDatabase.Response.{GetRestaurantModelsRespo
                                                     GetUserModelsResponse}
 import com.vgomez.app.data.projectionDatabase.Operation
 
-/*
-Todo #R
-  Description: Remove responses classes from actors.
-  Action: Remove response class from ReaderGetAll Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 object ReaderGetAll {
   // commands
   object Command {

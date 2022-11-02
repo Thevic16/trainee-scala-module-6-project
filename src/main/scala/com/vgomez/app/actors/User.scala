@@ -9,13 +9,7 @@ import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Event.Event
 import com.vgomez.app.exception.CustomException.UserUnRegisteredException
 
-/*
-Todo #R
-  Description: Remove responses classes from actors.
-  Action: Remove response class from User Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 object User {
   case class UserInfo(username: String, password: String, role: Role, location: Location,
                       favoriteCategories: Set[String])
