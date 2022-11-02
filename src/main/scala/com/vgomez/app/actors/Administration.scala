@@ -1,5 +1,6 @@
 package com.vgomez.app.actors
-import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props}
+import akka.Done
+import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Timers}
 import akka.persistence.PersistentActor
 import com.vgomez.app.exception.CustomException._
 
@@ -11,6 +12,8 @@ import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes
 import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll, ReaderStarsByRestaurant}
 import com.vgomez.app.actors.writers.WriterProjection
 import com.vgomez.app.domain.DomainModel.Location
+
+import scala.concurrent.duration._
 
 /*
 Todo #X
@@ -50,7 +53,7 @@ object Administration {
   def props(system: ActorSystem): Props =  Props(new Administration(system))
 }
 
-class Administration(system: ActorSystem) extends PersistentActor with ActorLogging{
+class Administration(system: ActorSystem) extends PersistentActor with ActorLogging {
   import Administration._
 
   // Commands
@@ -58,6 +61,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   import Review.Command._
   import User.Command._
   import Command._
+  import context.dispatcher
 
   /*
   Todo #3
@@ -78,16 +82,20 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                           "reader-filter-by-location")
   val readerStarsByRestaurant = context.actorOf(ReaderStarsByRestaurant.props(system),
                                         "reader-stars-by-restaurant")
+
+  // Writers
   val writerProjection = context.actorOf(WriterProjection.props(system), "writer-projection")
   /*
   Todo #2P
     Description: Use projections to persist events on projection-db (Postgres).
-    Action: Send a message to writerProjection.
-    Status: Imcompleted
-    What's needed: Continue sending message until received the confirmation (Done) from writerProjection
+    Action: Send multiples StartProjection message to writerProjection until is answers with Done.
+    Status: Done
     Reported by: Sebastian Oliveri.
   */
-  writerProjection ! WriterProjection.Command.StartProjection
+  val writerProjectionTimer = context.system.scheduler.scheduleWithFixedDelay(Duration.Zero, delay = 5 seconds,
+                                                             writerProjection, WriterProjection.Command.StartProjection)
+
+   //writerProjection ! WriterProjection.Command.StartProjection
 
   // for state recovery
   var administrationRecoveryState = AdministrationState(Map(), Map(), Map(), 0, 0, 0)
@@ -176,7 +184,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetRecommendationCloseToMe command.")
       readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm,
                                                                                               pageNumber,
-                                                                                              numberOfElementPerPage))
+        /*
+        Todo #2P
+          Description: Use projections to persist events on projection-db (Postgres).
+          Action: Cancel the writerProjectionTimer when Administration Actor receive the confirmation from WriterProjection Actor.
+          Status: Done
+          Reported by: Sebastian Oliveri.
+        */            numberOfElementPerPage))
+    // Confirmation projection process has stated successfully
+    case Done =>
+      writerProjectionTimer.cancel() // Cancelling the timer
+      log.info("Projection process has stated successfully")
   }
 
   override def receiveCommand: Receive = state(administrationRecoveryState)

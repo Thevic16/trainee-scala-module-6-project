@@ -41,12 +41,21 @@ class WriterProjection(system: ActorSystem) extends Actor with ActorLogging{
   import system.dispatcher
   val typedSystem: akka.actor.typed.ActorSystem[_] = system.toTyped
 
-  override def receive: Receive = {
+  def state(isStated: Boolean = false): Receive ={
     case StartProjection =>
-      runProjection
-      log.info("Start Projection Process")
-      sender() ! Done
+      if(isStated){
+        log.info("The projection process has been started already")
+        sender() ! Done
+      }
+      else {
+        runProjection
+        log.info("Starting projection process")
+        sender() ! Done
+        context.become(state(true))
+      }
   }
+
+  override def receive: Receive = state()
 
   // Methods related with akka projection
   def getSourceProvider: SourceProvider[Offset, EventEnvelope[Event]] = {
