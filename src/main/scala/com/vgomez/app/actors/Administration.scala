@@ -92,7 +92,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     Status: Done
     Reported by: Sebastian Oliveri.
   */
-  val writerProjectionTimer = context.system.scheduler.scheduleWithFixedDelay(Duration.Zero, delay = 5 seconds,
+  val writerProjectionScheduler= context.system.scheduler.scheduleWithFixedDelay(Duration.Zero, delay = 5 seconds,
                                                              writerProjection, WriterProjection.Command.StartProjection)
 
    //writerProjection ! WriterProjection.Command.StartProjection
@@ -193,7 +193,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
         */            numberOfElementPerPage))
     // Confirmation projection process has stated successfully
     case Done =>
-      writerProjectionTimer.cancel() // Cancelling the timer
+      writerProjectionScheduler.cancel() // Cancelling the scheduler
       log.info("Projection process has stated successfully")
   }
 
