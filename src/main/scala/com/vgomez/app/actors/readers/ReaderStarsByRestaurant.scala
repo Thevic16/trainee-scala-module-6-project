@@ -5,6 +5,13 @@ import akka.pattern.pipe
 import com.vgomez.app.data.projectionDatabase.Operation
 import com.vgomez.app.data.projectionDatabase.Response.GetReviewModelsStarsResponse
 
+/*
+Todo #1
+  Description: Decouple restaurant.
+  Action: Actor that has the responsibility to get stars by Restaurant Id.
+  Status: Done
+  Reported by: Sebastian Oliveri.
+*/
 object ReaderStarsByRestaurant {
   // commands
   object Command {
