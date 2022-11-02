@@ -42,7 +42,7 @@ object Review {
   // events
   case class ReviewRegistered(ReviewState: ReviewState) extends Event
   case class ReviewUpdated(ReviewState: ReviewState) extends Event
-  case class ReviewUnregistered(ReviewState: ReviewState) extends Event
+  case class ReviewUnregistered(id: String, ReviewState: ReviewState) extends Event
 
   def props(id: String, index: Long): Props =  Props(new Review(id, index))
 
@@ -90,7 +90,7 @@ class Review(id: String, index: Long) extends PersistentActor with ActorLogging{
         case RegisterReviewState(_, _, _, _, _, _, _) =>
           val newState: ReviewState = UnregisterReviewState
 
-          persist(ReviewUnregistered(newState)) { _ =>
+          persist(ReviewUnregistered(id, newState)) { _ =>
             sender() ! Success(Done)
             context.become(state(newState))
           }
@@ -108,7 +108,7 @@ class Review(id: String, index: Long) extends PersistentActor with ActorLogging{
     case ReviewUpdated(reviewState) =>
       context.become(state(reviewState))
 
-    case ReviewUnregistered(reviewState) =>
+    case ReviewUnregistered(_, reviewState) =>
       context.become(state(reviewState))
   }
 

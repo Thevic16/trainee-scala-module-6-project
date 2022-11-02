@@ -49,12 +49,12 @@ class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[Ev
             skipEvent
         }
 
-      case RestaurantUnregistered(restaurantState) =>
+      case RestaurantUnregistered(id, restaurantState) =>
         restaurantState match {
-          case RegisterRestaurantState(id, _, _, _, _, _, _, _, _, _) =>
+          case RegisterRestaurantState(_, _, _, _, _, _, _, _, _, _) =>
             unregisterRestaurantModel(id)
           case UnregisterRestaurantState =>
-            skipEvent
+            unregisterRestaurantModel(id)
         }
 
       // Review Events
@@ -74,12 +74,12 @@ class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[Ev
             skipEvent
         }
 
-      case ReviewUnregistered(reviewState) =>
+      case ReviewUnregistered(id, reviewState) =>
         reviewState match {
           case RegisterReviewState(id, _, _, _, _, _, _) =>
             unregisterReviewModel(id)
           case UnregisterReviewState =>
-            skipEvent
+            unregisterReviewModel(id)
         }
 
       // User Events
@@ -99,12 +99,12 @@ class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[Ev
             skipEvent
         }
 
-      case UserUnregistered(userState) =>
+      case UserUnregistered(username, userState) =>
         userState match {
-          case RegisterUserState(username, _, _, _, _, _) =>
+          case RegisterUserState(_, _, _, _, _, _) =>
             unregisterUserModel(username)
           case UnregisterUserState =>
-            skipEvent
+            unregisterUserModel(username)
         }
     }
 

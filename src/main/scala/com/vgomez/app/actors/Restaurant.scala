@@ -33,7 +33,7 @@ object Restaurant {
   // events
   case class RestaurantRegistered(restaurantState: RestaurantState) extends Event
   case class RestaurantUpdated(restaurantState: RestaurantState) extends Event
-  case class RestaurantUnregistered(restaurantState: RestaurantState) extends Event
+  case class RestaurantUnregistered(id:String, restaurantState: RestaurantState) extends Event
 
   def props(id: String, index: Long): Props =  Props(new Restaurant(id, index))
 
@@ -95,7 +95,7 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
         case RegisterRestaurantState(_, _, _, _, _, _, _, _, _, _) =>
           val newState: RestaurantState = UnregisterRestaurantState
 
-          persist(RestaurantUnregistered(newState)) { _ =>
+          persist(RestaurantUnregistered(id, newState)) { _ =>
             sender() ! Success(Done)
             context.become(state(newState))
           }
@@ -114,7 +114,7 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
     case RestaurantUpdated(restaurantState) =>
       context.become(state(restaurantState))
 
-    case RestaurantUnregistered(restaurantState) =>
+    case RestaurantUnregistered(_, restaurantState) =>
       context.become(state(restaurantState))
   }
 
