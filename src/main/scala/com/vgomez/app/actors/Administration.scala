@@ -16,7 +16,7 @@ import com.vgomez.app.domain.DomainModel.Location
 import scala.concurrent.duration._
 
 /*
-Todo #8
+Todo #1
   Description: Every message passes throughout Administration Actor, finds a way to enhance this. (Bottleneck)
   Status: No started
   Reported by: Nafer Sanabria.
@@ -63,13 +63,6 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   import Command._
   import context.dispatcher
 
-  /*
-  Todo #3
-    Description: Decouple Actor eliminate halfway methods.
-    Action: Create intermediateReadUserAttributes on administration.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   // intermediates
   val intermediateReadUserAttributes = context.actorOf(Props[IntermediateReadUserAttributes],
     "intermediate-read-user-attributes")
@@ -85,17 +78,9 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   // Writers
   val writerProjection = context.actorOf(WriterProjection.props(system), "writer-projection")
-  /*
-  Todo #7
-    Description: Use projections to persist events on projection-db (Scheduler).
-    Action: Send multiples StartProjection message to writerProjection until is answers with Done.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
+
   val writerProjectionScheduler= context.system.scheduler.scheduleWithFixedDelay(Duration.Zero, delay = 5 seconds,
                                                              writerProjection, WriterProjection.Command.StartProjection)
-
-   //writerProjection ! WriterProjection.Command.StartProjection
 
   // for state recovery
   var administrationRecoveryState = AdministrationState(Map(), Map(), Map(), 0, 0, 0)
@@ -184,13 +169,8 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetRecommendationCloseToMe command.")
       readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm,
                                                                                               pageNumber,
-        /*
-        Todo #7
-          Description: Use projections to persist events on projection-db (Scheduler).
-          Action: Cancel the writerProjectionTimer when Administration Actor receive the confirmation from WriterProjection Actor.
-          Status: Done
-          Reported by: Sebastian Oliveri.
-        */            numberOfElementPerPage))
+          numberOfElementPerPage))
+
     // Confirmation projection process has stated successfully
     case Done =>
       writerProjectionScheduler.cancel() // Cancelling the scheduler

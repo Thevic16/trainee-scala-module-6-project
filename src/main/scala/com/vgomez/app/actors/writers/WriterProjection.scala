@@ -19,13 +19,7 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.projection.ProjectionId
 import akka.projection.cassandra.scaladsl.CassandraProjection
 
-/*
-Todo #6
-  Description: Use projections to persist events on projection-db (Postgres).
-  Action: Modify WriterProjection to work using akka-projection library.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 object WriterProjection {
 
   object Command {

@@ -32,13 +32,6 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
   def getRestaurant(id: String): Future[Option[RestaurantState]] =
     (administration ? GetRestaurant(id)).mapTo[Option[RestaurantState]]
 
-  /*
-  Todo #2
-    Description: Decouple restaurant endpoint.
-    Action: Create new method to return stars by restaurant Id.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   def getStarsByRestaurant(id: String): Future[Option[Int]] =
     (administration ? GetStarsByRestaurant(id)).mapTo[Option[Int]]
 
@@ -63,13 +56,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
           parameter('service.as[String]) {
             case "get-state" =>
               onSuccess(getRestaurant(id)) {
-                /*
-                Todo #2
-                  Description: Decouple restaurant endpoint.
-                  Action: Remove start from this class.
-                  Status: Done
-                  Reported by: Sebastian Oliveri.
-                */
+
                 case Some(restaurantState) =>
                   complete {
                     getRestaurantResponseByRestaurantState(restaurantState)

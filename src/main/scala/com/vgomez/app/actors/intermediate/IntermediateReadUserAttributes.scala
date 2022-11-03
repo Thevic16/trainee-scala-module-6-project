@@ -5,13 +5,7 @@ import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
 
 
-/*
-Todo #3
-  Description: Decouple Actor eliminate halfway methods.
-  Action: Create another Actor to manage Halfway steps.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 
 object IntermediateReadUserAttributes {
   // commands

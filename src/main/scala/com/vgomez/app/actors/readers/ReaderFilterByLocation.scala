@@ -9,13 +9,7 @@ import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsRespon
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRestaurantModels
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
-/*
-Todo #4
-  Description: Remove responses classes from actors.
-  Action: Remove response class from ReaderFilterByLocation Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 object ReaderFilterByLocation {
 
   // commands
@@ -75,13 +69,7 @@ class ReaderFilterByLocation(system: ActorSystem,
       stash()
   }
 
-  /*
-  Todo #3
-    Description: Decouple Actor eliminate halfway methods.
-    Action: Let the responsibility to get user location to other actor.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
+
   def intermediateGetUserLocationState(originalSender: ActorRef, rangeInKm: Double, pageNumber: Long,
                                         numberOfElementPerPage: Long): Receive = {
     case Some(userLocation: Location) =>

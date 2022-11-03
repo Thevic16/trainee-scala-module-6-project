@@ -9,13 +9,6 @@ import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsRespon
 import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRestaurantModels
 
 
-/*
-Todo #4
-  Description: Remove responses classes from actors.
-  Action: Remove response class from ReaderFilterByCategories Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
 object ReaderFilterByCategories {
   // commands
   object Command {
@@ -30,13 +23,7 @@ object ReaderFilterByCategories {
     Props(new ReaderFilterByCategories(system, intermediateReadUserAttributes))
 }
 
-/*
-Todo #3
-  Description: Decouple Actor eliminate halfway methods.
-  Action: Add intermediateReadUserAttributes Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 class ReaderFilterByCategories(system: ActorSystem,
                                intermediateReadUserAttributes: ActorRef) extends Actor with ActorLogging with Stash {
   import ReaderFilterByCategories._
@@ -75,13 +62,6 @@ class ReaderFilterByCategories(system: ActorSystem,
       stash()
   }
 
-  /*
-  Todo #3
-    Description: Decouple Actor eliminate halfway methods.
-    Action: Let the responsibility to get user favoriteCategories to other actor.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   def intermediateGetUserFavoriteCategoriesState(originalSender: ActorRef, pageNumber: Long,
                                                              numberOfElementPerPage: Long): Receive = {
     case Some(favoriteCategories: Set[String]) =>
