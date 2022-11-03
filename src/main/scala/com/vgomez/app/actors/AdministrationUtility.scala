@@ -73,6 +73,14 @@ object AdministrationUtility {
     }
   }
 
+  def getRegisterResponseExistsExceptionByRegisterCommand(registerCommand: RegisterCommand): Failure[Nothing] = {
+    registerCommand match {
+      case RegisterRestaurant(_, _) => Failure(RestaurantExistsException())
+      case RegisterReview(_, _) => Failure(ReviewExistsException())
+      case RegisterUser(_) => Failure(UserExistsException())
+    }
+  }
+
   // Update Commands Related
 
   def getIdentifierByUpdateCommand(updateCommand: UpdateCommand): String = {
@@ -92,7 +100,7 @@ object AdministrationUtility {
     }
   }
 
-  def getUpdateResponseFailureByUpdateCommand(updateCommand: UpdateCommand): Failure[Nothing] = {
+  def getUpdateResponseNotFoundExceptionByUpdateCommand(updateCommand: UpdateCommand): Failure[Nothing] = {
     updateCommand match {
       case UpdateRestaurant(_, _) => Failure(RestaurantNotFoundException())
       case UpdateReview(_, _) => Failure(ReviewNotFoundException())
@@ -100,7 +108,7 @@ object AdministrationUtility {
     }
   }
 
-  def getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand: UpdateCommand,
+  def getUpdateResponseNotFoundExceptionByUpdateCommandWithMessage(updateCommand: UpdateCommand,
                                                          message: String): Failure[Nothing] = {
     updateCommand match {
       case UpdateRestaurant(_, _) => Failure(RestaurantNotFoundException(message))
@@ -117,6 +125,14 @@ object AdministrationUtility {
       case UnregisterRestaurant(id) => administrationState.restaurants.get(id)
       case UnregisterReview(id) => administrationState.reviews.get(id)
       case UnregisterUser(username) => administrationState.users.get(username)
+    }
+  }
+
+  def getUnregisterResponseNotFoundExceptionByUnregisterCommand(unregisterCommand: UnregisterCommand): Failure[Nothing] = {
+    unregisterCommand match {
+      case UnregisterRestaurant(_) => Failure(RestaurantNotFoundException())
+      case UnregisterReview(_) => Failure(ReviewNotFoundException())
+      case UnregisterUser(_) => Failure(UserNotFoundException())
     }
   }
 

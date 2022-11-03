@@ -1,6 +1,6 @@
 package com.vgomez.app.actors
 import akka.Done
-import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Timers}
+import akka.actor.{ActorLogging, ActorRef, ActorSystem, Cancellable, Props}
 import akka.persistence.PersistentActor
 import com.vgomez.app.exception.CustomException._
 
@@ -64,26 +64,29 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   import context.dispatcher
 
   // intermediates
-  val intermediateReadUserAttributes = context.actorOf(Props[IntermediateReadUserAttributes],
+  val intermediateReadUserAttributes: ActorRef = context.actorOf(Props[IntermediateReadUserAttributes],
     "intermediate-read-user-attributes")
 
   // Readers
-  val readerGetAll = context.actorOf(ReaderGetAll.props(system), "reader-get-all")
-  val readerFilterByCategories = context.actorOf(ReaderFilterByCategories.props(system, intermediateReadUserAttributes),
-                                            "reader-filter-by-categories")
-  val readerFilterByLocation = context.actorOf(ReaderFilterByLocation.props(system, intermediateReadUserAttributes),
-                                          "reader-filter-by-location")
-  val readerStarsByRestaurant = context.actorOf(ReaderStarsByRestaurant.props(system),
-                                        "reader-stars-by-restaurant")
+  val readerGetAll: ActorRef = context.actorOf(ReaderGetAll.props(system), "reader-get-all")
+  val readerFilterByCategories: ActorRef = context.actorOf(ReaderFilterByCategories.props(system,
+                                                                                        intermediateReadUserAttributes),
+                                                                                   "reader-filter-by-categories")
+  val readerFilterByLocation: ActorRef = context.actorOf(ReaderFilterByLocation.props(system,
+                                                                                        intermediateReadUserAttributes),
+                                                                                     "reader-filter-by-location")
+  val readerStarsByRestaurant: ActorRef = context.actorOf(ReaderStarsByRestaurant.props(system),
+                                                                                    "reader-stars-by-restaurant")
 
   // Writers
-  val writerProjection = context.actorOf(WriterProjection.props(system), "writer-projection")
+  val writerProjection: ActorRef = context.actorOf(WriterProjection.props(system), "writer-projection")
 
-  val writerProjectionScheduler= context.system.scheduler.scheduleWithFixedDelay(Duration.Zero, delay = 5 seconds,
-                                                             writerProjection, WriterProjection.Command.StartProjection)
+  val writerProjectionScheduler: Cancellable = context.system.scheduler.scheduleWithFixedDelay(Duration.Zero,
+                                                                                    delay = 5 seconds, writerProjection,
+                                                                               WriterProjection.Command.StartProjection)
 
   // for state recovery
-  var administrationRecoveryState = AdministrationState(Map(), Map(), Map(), 0, 0, 0)
+  var administrationRecoveryState: AdministrationState = AdministrationState(Map(), Map(), Map(), 0, 0, 0)
 
   override def persistenceId: String = "administration"
 
@@ -143,7 +146,6 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
     case unregisterCommand@UnregisterUser(_) =>
       processUnregisterCommand(unregisterCommand, administrationState)
-
 
     // Recommendations By Categories Commands
     case GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber, numberOfElementPerPage) =>
@@ -235,21 +237,13 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                                                             administrationState)
     actorRefOption match {
       case Some(_) =>
-        registerCommand match {
-          case RegisterRestaurant(_, _) =>
-            sender() ! Failure(RestaurantExistsException())
-          case RegisterReview(_, _) =>
-            sender() ! Failure(ReviewExistsException())
-          case RegisterUser(_) =>
-            sender() ! Failure(UserExistsException())
-        }
+        sender() ! getRegisterResponseExistsExceptionByRegisterCommand(registerCommand)
 
       case None =>
         val newActorRef: ActorRef = getNewActorRefByRegisterCommand(context, administrationState, registerCommand,
                                                                  identifier)
         val newStateAdministrationState: AdministrationState = getNewStateByRegisterCommand(registerCommand, newActorRef,
                                                                                         identifier, administrationState)
-
         persistRegisterCommand(registerCommand, newActorRef, identifier, newStateAdministrationState)
     }
   }
@@ -267,17 +261,17 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   def persistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
                            newStateAdministrationState: AdministrationState): Unit = {
     registerCommand match {
-      case RegisterRestaurant(_, restaurantInfo) =>
+      case RegisterRestaurant(_, _) =>
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
-          newStateAdministrationState: AdministrationState, "restaurant", RestaurantRegistered(identifier))
+          newStateAdministrationState: AdministrationState, actorName = "restaurant", RestaurantRegistered(identifier))
 
-      case RegisterReview(_, reviewInfo) =>
+      case RegisterReview(_, _) =>
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
-          newStateAdministrationState: AdministrationState, "review", ReviewRegistered(identifier))
+          newStateAdministrationState: AdministrationState, actorName ="review", ReviewRegistered(identifier))
 
-      case RegisterUser(userInfo) =>
+      case RegisterUser(_) =>
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
-          newStateAdministrationState: AdministrationState, "user", UserRegistered(identifier))
+          newStateAdministrationState: AdministrationState, actorName = "user", UserRegistered(identifier))
     }
   }
 
@@ -285,7 +279,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
                                  newStateAdministrationState: AdministrationState , actorName: String,
                                  event: EventAdministration):Unit = {
     persist(event) { _ =>
-      log.info(s"Administration has Registered a $actorName with id: ${identifier}")
+      log.info(s"Administration has Registered a $actorName with id: $identifier")
       newActorRef.forward(registerCommand)
       context.become(state(newStateAdministrationState))
     }
@@ -296,11 +290,11 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByUpdateCommand(updateCommand, identifier,
                                                                             administrationState)
     actorRefOption match {
-      case Some((index, actorRef)) =>
+      case Some((_, actorRef)) =>
           actorRef.forward(updateCommand)
 
       case None =>
-        val updateResponse: Failure[Nothing] = getUpdateResponseFailureByUpdateCommand(updateCommand)
+        val updateResponse: Failure[Nothing] = getUpdateResponseNotFoundExceptionByUpdateCommand(updateCommand)
         sender() ! updateResponse
     }
   }
@@ -311,11 +305,11 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       case Success(_) =>
         processUpdateCommand(updateCommand, administrationState)
       case Failure(RestaurantNotFoundException(message)) =>
-        sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
+        sender() ! getUpdateResponseNotFoundExceptionByUpdateCommandWithMessage(updateCommand, message)
       case Failure(ReviewNotFoundException(message)) =>
-        sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
+        sender() ! getUpdateResponseNotFoundExceptionByUpdateCommandWithMessage(updateCommand, message)
       case Failure(UserNotFoundException(message)) =>
-        sender() ! getUpdateResponseFailureByUpdateCommandWithMessage(updateCommand, message)
+        sender() ! getUpdateResponseNotFoundExceptionByUpdateCommandWithMessage(updateCommand, message)
     }
   }
 
@@ -327,15 +321,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
         actorRef.forward(unregisterCommand)
 
       case None =>
-        unregisterCommand match {
-          case UnregisterRestaurant(_) =>
-            sender() ! Failure(RestaurantNotFoundException())
-          case UnregisterReview(_) =>
-            sender() ! Failure(ReviewNotFoundException())
-          case UnregisterUser(_) =>
-            sender() ! Failure(UserNotFoundException())
-        }
-
+        sender() ! getUnregisterResponseNotFoundExceptionByUnregisterCommand(unregisterCommand)
     }
   }
 }
