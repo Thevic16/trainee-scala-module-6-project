@@ -1,11 +1,6 @@
 package com.vgomez.app.data.projectionDatabase
 
-import java.util.concurrent.Executors
-import scala.concurrent.{ExecutionContext, Future}
-
-object ExecContext {
-  implicit val ec = ExecutionContext.fromExecutor(Executors.newWorkStealingPool(4))
-}
+import scala.concurrent.Future
 
 object DataSetup {
   import Table.api._

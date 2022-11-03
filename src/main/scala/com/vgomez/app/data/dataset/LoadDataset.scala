@@ -76,12 +76,12 @@ class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administratio
                   implicit val system: ActorSystem, implicit val timeout: Timeout) {
     import LoadDataset._
     // Use Akka Stream to process the data
-    implicit val materializer = ActorMaterializer()
+    implicit val materializer: ActorMaterializer = ActorMaterializer()
     implicit val scheduler: ExecutionContext = system.dispatcher
 
 
   def runLoadDataSetGraph(): Unit = {
-    val readerStream = getReaderStream()
+    val readerStream = getReaderStream
 
     @tailrec
     def go(readerStream: Stream[Map[String, String]], counterRow: Int = 0): Unit = {
@@ -101,7 +101,7 @@ class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administratio
     go(readerStream)
   }
 
-  def getReaderStream(): Stream[Map[String, String]] = {
+  def getReaderStream: Stream[Map[String, String]] = {
     val reader = CSVReader.open(new File(filePath))
     reader.toStreamWithHeaders
   }

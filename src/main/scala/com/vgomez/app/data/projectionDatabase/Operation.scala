@@ -82,14 +82,6 @@ object Operation {
     db.run(query).map(GetReviewModelsStarsResponse)
   }
 
-  def getReviewsStarsByListRestaurantId(seqRestaurantId: Seq[String]): Future[GetSequenceReviewModelsStarsResponse] = {
-    val seqQueries = seqRestaurantId.map(restaurantId =>
-      Table.reviewTable.filter(_.restaurantId === restaurantId).map(_.stars).result)
-
-    val combineQueries = DBIO.sequence(seqQueries)
-    db.run(combineQueries).map(GetSequenceReviewModelsStarsResponse)
-  }
-
   def getRestaurantsModelByCategories(categories: List[String], pageNumber: Long,
                                       numberOfElementPerPage: Long): Future[GetRestaurantModelsResponse] = {
     val query = Table.restaurantTable.filter(_.categories @& categories.bind).drop(pageNumber*numberOfElementPerPage)
