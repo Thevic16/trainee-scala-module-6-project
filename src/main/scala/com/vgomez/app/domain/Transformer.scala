@@ -1,7 +1,7 @@
 package com.vgomez.app.domain
-import com.vgomez.app.domain.DomainModelFactory.generateNewEmptySchedule
 import spray.json._
 
+import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 
 
@@ -9,7 +9,7 @@ case class SimpleScheduler(monday: String, tuesday: String, wednesday: String, t
                              friday: String, saturday: String, sunday: String)
 
 trait SimpleSchedulerJsonProtocol extends DefaultJsonProtocol {
-  implicit val SimpleSchedulerFormat = jsonFormat7(SimpleScheduler)
+  implicit val SimpleSchedulerFormat: RootJsonFormat[SimpleScheduler] = jsonFormat7(SimpleScheduler)
 }
 
 object Transformer extends SimpleSchedulerJsonProtocol{
@@ -39,6 +39,7 @@ object Transformer extends SimpleSchedulerJsonProtocol{
 
       val dayWeekList = List("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
+      @tailrec
       def go(dayWeekList: List[String], scheduleStringJsonFormat: String): String = {
         if (dayWeekList.isEmpty) scheduleStringJsonFormat
         else {
