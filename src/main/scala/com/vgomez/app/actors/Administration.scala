@@ -1,4 +1,5 @@
 package com.vgomez.app.actors
+
 import akka.Done
 import akka.actor.{ActorLogging, ActorRef, ActorSystem, Cancellable, Props}
 import akka.persistence.PersistentActor
@@ -9,51 +10,59 @@ import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Event._
 import com.vgomez.app.actors.AdministrationUtility._
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes
-import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll, ReaderStarsByRestaurant}
+import com.vgomez.app.actors.readers.{
+  ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll,
+  ReaderStarsByRestaurant
+}
 import com.vgomez.app.actors.writers.WriterProjection
 import com.vgomez.app.domain.DomainModel.Location
 
 import scala.concurrent.duration._
 
-/*
-Todo #1
-  Description: Every message passes throughout Administration Actor, finds a way to enhance this. (Bottleneck)
-  Status: No started
-  Reported by: Nafer Sanabria.
-*/
+
 object Administration {
   // state
-  case class AdministrationState(restaurants: Map[String, (Long, ActorRef)], reviews: Map[String, (Long, ActorRef)],
-                                 users: Map[String, (Long, ActorRef)], currentRestaurantIndex: Long,
-                                 currentReviewIndex: Long, currentUserIndex: Long)
+  case class AdministrationState(restaurants: Map[String, (Long, ActorRef)], reviews: Map[String,
+    (Long, ActorRef)], users: Map[String, (Long, ActorRef)], currentRestaurantIndex: Long,
+    currentReviewIndex: Long, currentUserIndex: Long)
+
   // commands
   object Command {
     case class GetStarsByRestaurant(restaurantId: String)
+
     case class GetAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long)
+
     case class GetAllReview(pageNumber: Long, numberOfElementPerPage: Long)
+
     case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)
 
     // Recommendations Categories
     case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String], pageNumber: Long,
-                                                           numberOfElementPerPage: Long)
+      numberOfElementPerPage: Long)
+
     case class GetRecommendationFilterByUserFavoriteCategories(username: String, pageNumber: Long,
-                                                               numberOfElementPerPage: Long)
+      numberOfElementPerPage: Long)
 
     // Recommendations Location
     case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double, pageNumber: Long,
-                                                numberOfElementPerPage: Long)
+      numberOfElementPerPage: Long)
+
     case class GetRecommendationCloseToMe(username: String, rangeInKm: Double, pageNumber: Long,
-                                          numberOfElementPerPage: Long)
+      numberOfElementPerPage: Long)
   }
 
   // events
   case class RestaurantRegistered(id: String) extends EventAdministration
+
   case class ReviewRegistered(id: String) extends EventAdministration
+
   case class UserRegistered(username: String) extends EventAdministration
-  def props(system: ActorSystem): Props =  Props(new Administration(system))
+
+  def props(system: ActorSystem): Props = Props(new Administration(system))
 }
 
 class Administration(system: ActorSystem) extends PersistentActor with ActorLogging {
+
   import Administration._
 
   // Commands
@@ -70,23 +79,21 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   // Readers
   val readerGetAll: ActorRef = context.actorOf(ReaderGetAll.props(system), "reader-get-all")
   val readerFilterByCategories: ActorRef = context.actorOf(ReaderFilterByCategories.props(system,
-                                                                                        intermediateReadUserAttributes),
-                                                                                   "reader-filter-by-categories")
+    intermediateReadUserAttributes), "reader-filter-by-categories")
   val readerFilterByLocation: ActorRef = context.actorOf(ReaderFilterByLocation.props(system,
-                                                                                        intermediateReadUserAttributes),
-                                                                                     "reader-filter-by-location")
+    intermediateReadUserAttributes), "reader-filter-by-location")
   val readerStarsByRestaurant: ActorRef = context.actorOf(ReaderStarsByRestaurant.props(system),
-                                                                                    "reader-stars-by-restaurant")
+    "reader-stars-by-restaurant")
 
   // Writers
   val writerProjection: ActorRef = context.actorOf(WriterProjection.props(system), "writer-projection")
 
   val writerProjectionScheduler: Cancellable = context.system.scheduler.scheduleWithFixedDelay(Duration.Zero,
-                                                                                    delay = 5 seconds, writerProjection,
-                                                                               WriterProjection.Command.StartProjection)
+    delay = 5 seconds, writerProjection, WriterProjection.Command.StartProjection)
 
   // for state recovery
-  var administrationRecoveryState: AdministrationState = AdministrationState(Map(), Map(), Map(), 0, 0, 0)
+  var administrationRecoveryState: AdministrationState = AdministrationState(restaurants = Map(),
+    reviews = Map(), users = Map(), currentRestaurantIndex = 0, currentReviewIndex = 0, currentUserIndex = 0)
 
   override def persistenceId: String = "administration"
 
@@ -148,30 +155,30 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       processUnregisterCommand(unregisterCommand, administrationState)
 
     // Recommendations By Categories Commands
-    case GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber, numberOfElementPerPage) =>
-      log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
+    case GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber,
+    numberOfElementPerPage) => log.info("Administration has receive a " +
+      "GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(
-        ReaderFilterByCategories.Command.GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber,
-                                                                                      numberOfElementPerPage))
+        ReaderFilterByCategories.Command.GetRecommendationFilterByFavoriteCategories(favoriteCategories,
+          pageNumber, numberOfElementPerPage))
 
     case GetRecommendationFilterByUserFavoriteCategories(username, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationFilterByFavoriteCategories command.")
       readerFilterByCategories.forward(
         ReaderFilterByCategories.Command.GetRecommendationFilterByUserFavoriteCategories(username, pageNumber,
-                                                                                          numberOfElementPerPage))
+          numberOfElementPerPage))
 
     // Recommendations By Locations Commands
     case GetRecommendationCloseToLocation(location, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationCloseToLocation command.")
       readerFilterByLocation.forward(
         ReaderFilterByLocation.Command.GetRecommendationCloseToLocation(location, rangeInKm, pageNumber,
-                                                                        numberOfElementPerPage))
+          numberOfElementPerPage))
 
     case GetRecommendationCloseToMe(username, rangeInKm, pageNumber, numberOfElementPerPage) =>
       log.info("Administration has receive a GetRecommendationCloseToMe command.")
-      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username, rangeInKm,
-                                                                                              pageNumber,
-          numberOfElementPerPage))
+      readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username,
+        rangeInKm, pageNumber, numberOfElementPerPage))
 
     // Confirmation projection process has stated successfully
     case Done =>
@@ -183,24 +190,25 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   override def receiveRecover: Receive = {
     case RestaurantRegistered(id) =>
-        log.info(s"Administration has recovered a restaurant with id: $id")
-        val restaurant = context.child(id).getOrElse(context.actorOf(Restaurant.props(id,
-                                                               administrationRecoveryState.currentRestaurantIndex), id))
+      log.info(s"Administration has recovered a restaurant with id: $id")
+      val restaurant = context.child(id).getOrElse(context.actorOf(Restaurant.props(id,
+        administrationRecoveryState.currentRestaurantIndex), id))
 
-        administrationRecoveryState = administrationRecoveryState.copy(
-          restaurants = administrationRecoveryState.restaurants +
-                                               (id -> (administrationRecoveryState.currentRestaurantIndex, restaurant)),
-          currentRestaurantIndex = administrationRecoveryState.currentRestaurantIndex + 1)
+      administrationRecoveryState = administrationRecoveryState.copy(
+        restaurants = administrationRecoveryState.restaurants +
+          (id -> (administrationRecoveryState.currentRestaurantIndex, restaurant)),
+        currentRestaurantIndex = administrationRecoveryState.currentRestaurantIndex + 1)
 
-        context.become(state(administrationRecoveryState))
+      context.become(state(administrationRecoveryState))
 
     case ReviewRegistered(id) =>
       log.info(s"Administration has recovered a review with id: $id")
       val review = context.child(id).getOrElse(context.actorOf(Review.props(id,
-                                                                   administrationRecoveryState.currentReviewIndex), id))
+        administrationRecoveryState.currentReviewIndex), id))
 
       administrationRecoveryState = administrationRecoveryState.copy(
-        reviews = administrationRecoveryState.reviews + (id -> (administrationRecoveryState.currentReviewIndex, review)),
+        reviews = administrationRecoveryState.reviews + (id ->
+          (administrationRecoveryState.currentReviewIndex, review)),
         currentReviewIndex = administrationRecoveryState.currentReviewIndex + 1)
 
       context.become(state(administrationRecoveryState))
@@ -209,10 +217,11 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     case UserRegistered(username) =>
       log.info(s"Administration has recovered a user with username: $username")
       val user = context.child(username).getOrElse(context.actorOf(User.props(username,
-                                                               administrationRecoveryState.currentUserIndex), username))
+        administrationRecoveryState.currentUserIndex), username))
 
       administrationRecoveryState = administrationRecoveryState.copy(
-        users = administrationRecoveryState.users + (username -> (administrationRecoveryState.currentUserIndex , user)),
+        users = administrationRecoveryState.users +
+          (username -> (administrationRecoveryState.currentUserIndex, user)),
         currentUserIndex = administrationRecoveryState.currentUserIndex + 1)
 
       context.become(state(administrationRecoveryState))
@@ -221,7 +230,8 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   // Methods to process CRUD Commands
   def processGetCommand(getCommand: GetCommand, administrationState: AdministrationState): Unit = {
-    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByGetCommand(getCommand, administrationState)
+    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByGetCommand(getCommand,
+      administrationState)
 
     actorRefOption match {
       case Some((_, actorRef)) =>
@@ -231,25 +241,26 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     }
   }
 
-  def processRegisterCommand(registerCommand: RegisterCommand, administrationState: AdministrationState): Unit = {
+  def processRegisterCommand(registerCommand: RegisterCommand,
+    administrationState: AdministrationState): Unit = {
     val identifier: String = getIdentifierByRegisterCommand(registerCommand)
-    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByRegisterCommand(registerCommand, identifier,
-                                                                            administrationState)
+    val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByRegisterCommand(registerCommand,
+      identifier, administrationState)
     actorRefOption match {
       case Some(_) =>
         sender() ! getRegisterResponseExistsExceptionByRegisterCommand(registerCommand)
 
       case None =>
-        val newActorRef: ActorRef = getNewActorRefByRegisterCommand(context, administrationState, registerCommand,
-                                                                 identifier)
-        val newStateAdministrationState: AdministrationState = getNewStateByRegisterCommand(registerCommand, newActorRef,
-                                                                                        identifier, administrationState)
+        val newActorRef: ActorRef = getNewActorRefByRegisterCommand(context, administrationState,
+          registerCommand, identifier)
+        val newStateAdministrationState: AdministrationState = getNewStateByRegisterCommand(registerCommand,
+          newActorRef, identifier, administrationState)
         persistRegisterCommand(registerCommand, newActorRef, identifier, newStateAdministrationState)
     }
   }
 
   def processRegisterCommandWithVerifyIds(registerCommand: RegisterCommand,
-                                        administrationState: AdministrationState): Unit = {
+    administrationState: AdministrationState): Unit = {
     verifyIdsOnRegisterCommand(registerCommand, administrationState) match {
       case Success(_) =>
         processRegisterCommand(registerCommand, administrationState)
@@ -259,25 +270,28 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   }
 
   def persistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
-                           newStateAdministrationState: AdministrationState): Unit = {
+    newStateAdministrationState: AdministrationState): Unit = {
     registerCommand match {
       case RegisterRestaurant(_, _) =>
-        helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
-          newStateAdministrationState: AdministrationState, actorName = "restaurant", RestaurantRegistered(identifier))
+        helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef,
+          identifier: String, newStateAdministrationState: AdministrationState, actorName = "restaurant",
+          RestaurantRegistered(identifier))
 
       case RegisterReview(_, _) =>
-        helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
-          newStateAdministrationState: AdministrationState, actorName ="review", ReviewRegistered(identifier))
+        helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef,
+          identifier: String, newStateAdministrationState: AdministrationState, actorName = "review",
+          ReviewRegistered(identifier))
 
       case RegisterUser(_) =>
-        helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
-          newStateAdministrationState: AdministrationState, actorName = "user", UserRegistered(identifier))
+        helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef,
+          identifier: String, newStateAdministrationState: AdministrationState, actorName = "user",
+          UserRegistered(identifier))
     }
   }
 
-  def helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
-                                 newStateAdministrationState: AdministrationState , actorName: String,
-                                 event: EventAdministration):Unit = {
+  def helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef,
+    identifier: String, newStateAdministrationState: AdministrationState, actorName: String,
+    event: EventAdministration): Unit = {
     persist(event) { _ =>
       log.info(s"Administration has Registered a $actorName with id: $identifier")
       newActorRef.forward(registerCommand)
@@ -288,19 +302,18 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   def processUpdateCommand(updateCommand: UpdateCommand, administrationState: AdministrationState): Unit = {
     val identifier: String = getIdentifierByUpdateCommand(updateCommand)
     val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByUpdateCommand(updateCommand, identifier,
-                                                                            administrationState)
+      administrationState)
     actorRefOption match {
       case Some((_, actorRef)) =>
-          actorRef.forward(updateCommand)
+        actorRef.forward(updateCommand)
 
       case None =>
-        val updateResponse: Failure[Nothing] = getUpdateResponseNotFoundExceptionByUpdateCommand(updateCommand)
-        sender() ! updateResponse
+        sender() ! getUpdateResponseNotFoundExceptionByUpdateCommand(updateCommand)
     }
   }
 
   def processUpdateCommandWithVerifyIds(updateCommand: UpdateCommand,
-                                        administrationState: AdministrationState): Unit = {
+    administrationState: AdministrationState): Unit = {
     verifyIdsOnUpdateCommand(updateCommand, administrationState) match {
       case Success(_) =>
         processUpdateCommand(updateCommand, administrationState)
@@ -313,9 +326,10 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     }
   }
 
-  def processUnregisterCommand(unregisterCommand: UnregisterCommand, administrationState: AdministrationState): Unit = {
+  def processUnregisterCommand(unregisterCommand: UnregisterCommand,
+    administrationState: AdministrationState): Unit = {
     val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByUnregisterCommand(unregisterCommand,
-                                                                                        administrationState)
+      administrationState)
     actorRefOption match {
       case Some((_, actorRef)) =>
         actorRef.forward(unregisterCommand)
