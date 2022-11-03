@@ -4,13 +4,13 @@ import akka.persistence.journal.{Tagged, WriteEventAdapter}
 
 object AbstractMessage {
   object Command {
-    abstract class GetCommand
+    trait GetCommand
 
-    abstract class RegisterCommand
+    trait RegisterCommand
 
-    abstract class UpdateCommand
+    trait UpdateCommand
 
-    abstract class UnregisterCommand
+    trait UnregisterCommand
   }
 
   object Event {
