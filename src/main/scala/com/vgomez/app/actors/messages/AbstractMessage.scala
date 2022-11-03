@@ -21,9 +21,14 @@ object AbstractMessage {
       Status: Done
       Reported by: Sebastian Oliveri.
     */
-    trait Event
+    sealed trait Event
 
-    trait EventAdministration
+    trait EventAdministration extends Event
+    sealed trait EventEntity extends Event
+
+    trait EventRestaurant extends EventEntity
+    trait EventReview extends EventEntity
+    trait EventUser extends EventEntity
 
     val TagProjection = "event-for-projection"
 
@@ -38,7 +43,7 @@ object AbstractMessage {
       override def manifest(event: Any): String = "eventProjectionAdapter"
 
       override def toJournal(event: Any): Any = event match {
-        case event: Event =>
+        case event: EventEntity =>
           Tagged(event, Set(TagProjection))
         case event => event
       }
