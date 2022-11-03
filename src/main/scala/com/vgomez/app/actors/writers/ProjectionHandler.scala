@@ -16,13 +16,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-/*
-Todo #6
-  Description: Use projections to persist events on projection-db (Postgres).
-  Action: Create a ProjectionHandler class.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[EventEntity]](){
   private var logCounter: Int = 0
   private val logInterval: Int = 25

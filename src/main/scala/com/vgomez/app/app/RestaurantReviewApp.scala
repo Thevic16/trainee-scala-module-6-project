@@ -20,8 +20,8 @@ object RestaurantReviewApp {
 
   def startHttpServer(administration: ActorRef,timeout: Timeout)(implicit system: ActorSystem): Unit = {
     implicit val scheduler: ExecutionContext = system.dispatcher
-    implicit val materializer = ActorMaterializer()
-    implicit val timeoutRouter = timeout
+    implicit val materializer: ActorMaterializer = ActorMaterializer()
+    implicit val timeoutRouter: Timeout = timeout
 
     val restaurantRouter = new RestaurantRouter(administration)
     val restaurantRoutes = restaurantRouter.routes

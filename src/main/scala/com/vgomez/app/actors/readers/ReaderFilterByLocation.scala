@@ -6,16 +6,10 @@ import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command
 import com.vgomez.app.domain.DomainModel.Location
 import com.vgomez.app.data.projectionDatabase.Operation
 import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsResponse
-import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRestaurantModels
+import com.vgomez.app.actors.readers.ReaderUtility.getRecommendationResponseBySeqRestaurantModels
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
-/*
-Todo #4
-  Description: Remove responses classes from actors.
-  Action: Remove response class from ReaderFilterByLocation Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 object ReaderFilterByLocation {
 
   // commands
@@ -63,10 +57,7 @@ class ReaderFilterByLocation(system: ActorSystem,
     case GetRestaurantModelsResponse(restaurantModels) =>
       val restaurantModelsFilterByDistance = restaurantModels.filter(model =>
         calculateDistanceInKm(Location(model.latitude, model.longitude), Some(queryLocation)) <= rangeInKm)
-
-      if (restaurantModelsFilterByDistance.nonEmpty)
-        originalSender ! Some(getListRestaurantStateBySeqRestaurantModels(restaurantModelsFilterByDistance))
-      else originalSender ! None
+      originalSender ! getRecommendationResponseBySeqRestaurantModels(restaurantModelsFilterByDistance)
 
       unstashAll()
       context.become(state())
@@ -75,13 +66,7 @@ class ReaderFilterByLocation(system: ActorSystem,
       stash()
   }
 
-  /*
-  Todo #3
-    Description: Decouple Actor eliminate halfway methods.
-    Action: Let the responsibility to get user location to other actor.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
+
   def intermediateGetUserLocationState(originalSender: ActorRef, rangeInKm: Double, pageNumber: Long,
                                         numberOfElementPerPage: Long): Receive = {
     case Some(userLocation: Location) =>

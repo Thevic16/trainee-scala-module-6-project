@@ -6,16 +6,9 @@ import akka.pattern.pipe
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command.GetUserFavoriteCategories
 import com.vgomez.app.data.projectionDatabase.Operation
 import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsResponse
-import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRestaurantModels
+import com.vgomez.app.actors.readers.ReaderUtility.getRecommendationResponseBySeqRestaurantModels
 
 
-/*
-Todo #4
-  Description: Remove responses classes from actors.
-  Action: Remove response class from ReaderFilterByCategories Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
 object ReaderFilterByCategories {
   // commands
   object Command {
@@ -30,13 +23,7 @@ object ReaderFilterByCategories {
     Props(new ReaderFilterByCategories(system, intermediateReadUserAttributes))
 }
 
-/*
-Todo #3
-  Description: Decouple Actor eliminate halfway methods.
-  Action: Add intermediateReadUserAttributes Actor.
-  Status: Done
-  Reported by: Sebastian Oliveri.
-*/
+
 class ReaderFilterByCategories(system: ActorSystem,
                                intermediateReadUserAttributes: ActorRef) extends Actor with ActorLogging with Stash {
   import ReaderFilterByCategories._
@@ -64,9 +51,7 @@ class ReaderFilterByCategories(system: ActorSystem,
   
   def getRestaurantsState(originalSender: ActorRef): Receive = {
     case GetRestaurantModelsResponse(restaurantModels) =>
-      if (restaurantModels.nonEmpty)
-        originalSender ! Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))
-      else originalSender ! None
+      originalSender ! getRecommendationResponseBySeqRestaurantModels(restaurantModels)
 
       unstashAll()
       context.become(state())
@@ -75,13 +60,6 @@ class ReaderFilterByCategories(system: ActorSystem,
       stash()
   }
 
-  /*
-  Todo #3
-    Description: Decouple Actor eliminate halfway methods.
-    Action: Let the responsibility to get user favoriteCategories to other actor.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   def intermediateGetUserFavoriteCategoriesState(originalSender: ActorRef, pageNumber: Long,
                                                              numberOfElementPerPage: Long): Receive = {
     case Some(favoriteCategories: Set[String]) =>

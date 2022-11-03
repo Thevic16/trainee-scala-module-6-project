@@ -1,5 +1,5 @@
 package com.vgomez.app.http.messages
-import spray.json.DefaultJsonProtocol
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 import com.vgomez.app.actors.Restaurant._
 import com.vgomez.app.actors.Restaurant.Command._
 import com.vgomez.app.actors.Review._
@@ -19,7 +19,8 @@ object HttpRequest{
   }
 
   trait RestaurantCreationRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val restaurantCreationRequestJson = jsonFormat9(RestaurantCreationRequest)
+    implicit val restaurantCreationRequestJson: RootJsonFormat[RestaurantCreationRequest] =
+                                                                                  jsonFormat9(RestaurantCreationRequest)
   }
 
   case class RestaurantUpdateRequest(username: String, name: String, state: String, city: String, postalCode: String,
@@ -31,7 +32,8 @@ object HttpRequest{
   }
 
   trait RestaurantUpdateRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val restaurantUpdateRequestJson = jsonFormat9(RestaurantUpdateRequest)
+    implicit val restaurantUpdateRequestJson: RootJsonFormat[RestaurantUpdateRequest] =
+                                                                                    jsonFormat9(RestaurantUpdateRequest)
   }
 
   case class ReviewCreationRequest(username: String, restaurantId: String, stars: Int, text: String, date: String) {
@@ -39,7 +41,7 @@ object HttpRequest{
   }
 
   trait ReviewCreationRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val reviewCreationRequestJson = jsonFormat5(ReviewCreationRequest)
+    implicit val reviewCreationRequestJson: RootJsonFormat[ReviewCreationRequest] = jsonFormat5(ReviewCreationRequest)
   }
 
   case class ReviewUpdateRequest(username: String, restaurantId: String, stars: Int, text: String, date: String) {
@@ -47,7 +49,7 @@ object HttpRequest{
   }
 
   trait ReviewUpdateRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val reviewUpdateRequestJson = jsonFormat5(ReviewUpdateRequest)
+    implicit val reviewUpdateRequestJson: RootJsonFormat[ReviewUpdateRequest] = jsonFormat5(ReviewUpdateRequest)
   }
 
   case class UserCreationRequest(username: String, password: String, role: String, latitude: Double, longitude: Double,
@@ -57,7 +59,7 @@ object HttpRequest{
   }
 
   trait UserCreationRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val userCreationRequestJson = jsonFormat6(UserCreationRequest)
+    implicit val userCreationRequestJson: RootJsonFormat[UserCreationRequest] = jsonFormat6(UserCreationRequest)
   }
 
   case class UserUpdateRequest(username: String, password: String, role: String, latitude: Double, longitude: Double,
@@ -67,70 +69,37 @@ object HttpRequest{
   }
 
   trait UserUpdateRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val userUpdateRequestJson = jsonFormat6(UserUpdateRequest)
+    implicit val userUpdateRequestJson: RootJsonFormat[UserUpdateRequest] = jsonFormat6(UserUpdateRequest)
   }
 
   case class GetRecommendationFilterByFavoriteCategoriesRequest(favoriteCategories: Set[String])
 
   trait GetRecommendationFilterByFavoriteCategoriesRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val getRecommendationFilterByFavoriteCategoriesRequestJsonProtocol =
+    implicit val getRecommendationFilterByFavoriteCategoriesRequestJsonProtocol:
+      RootJsonFormat[GetRecommendationFilterByFavoriteCategoriesRequest] =
                                                          jsonFormat1(GetRecommendationFilterByFavoriteCategoriesRequest)
   }
 
   case class GetRecommendationFilterByUserFavoriteCategoriesRequest(username: String)
 
   trait GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val getRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol =
-      jsonFormat1(GetRecommendationFilterByUserFavoriteCategoriesRequest)
+    implicit val getRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol:
+      RootJsonFormat[GetRecommendationFilterByUserFavoriteCategoriesRequest] =
+                                                     jsonFormat1(GetRecommendationFilterByUserFavoriteCategoriesRequest)
   }
 
   case class GetRecommendationCloseToLocationRequest(latitude: Double, longitude: Double, rangeInKm: Double)
 
   trait GetRecommendationCloseToLocationRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val getRecommendationCloseToLocationRequestJsonProtocol =
-      jsonFormat3(GetRecommendationCloseToLocationRequest)
+    implicit val getRecommendationCloseToLocationRequestJsonProtocol:
+      RootJsonFormat[GetRecommendationCloseToLocationRequest] = jsonFormat3(GetRecommendationCloseToLocationRequest)
   }
 
   case class GetRecommendationCloseToMeRequest(username: String, rangeInKm: Double)
 
   trait GetRecommendationCloseToMeRequestJsonProtocol extends DefaultJsonProtocol {
-    implicit val getRecommendationCloseToMeRequestJsonProtocol =
-      jsonFormat2(GetRecommendationCloseToMeRequest)
-  }
-
-}
-object HttpResponse{
-  // Resquest clases
-  case class RestaurantResponse(id: String, username: String, name: String, state: String, city: String,
-                                postalCode: String, latitude: Double, longitude: Double, categories: Set[String],
-                                timetable: Either[String, SimpleScheduler])
-  trait RestaurantResponseJsonProtocol extends DefaultJsonProtocol {
-    implicit val restaurantResponseJson = jsonFormat10(RestaurantResponse)
-  }
-
-  case class StarsResponse(stars: Int)
-
-  trait StarsResponseJsonProtocol extends DefaultJsonProtocol {
-    implicit val starsResponseJson = jsonFormat1(StarsResponse)
-  }
-
-  case class ReviewResponse(id: String, username: String, restaurantId: String, stars: Int, text: String, date: String)
-
-  trait ReviewResponseJsonProtocol extends DefaultJsonProtocol {
-    implicit val reviewResponseJson = jsonFormat6(ReviewResponse)
-  }
-
-  case class UserResponse(username: String, password: String, role: String, latitude: Double, longitude: Double,
-                          favoriteCategories: Set[String])
-
-  trait UserResponseJsonProtocol extends DefaultJsonProtocol {
-    implicit val userResponseJson = jsonFormat6(UserResponse)
-  }
-
-  case class FailureResponse(reason: String)
-
-  trait FailureResponseJsonProtocol extends DefaultJsonProtocol {
-    implicit val failureResponseJson = jsonFormat1(FailureResponse)
+    implicit val getRecommendationCloseToMeRequestJsonProtocol: RootJsonFormat[GetRecommendationCloseToMeRequest] =
+                                                                          jsonFormat2(GetRecommendationCloseToMeRequest)
   }
 
 }

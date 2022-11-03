@@ -1,8 +1,11 @@
 package com.vgomez.app.data.projectionDatabase
 
-import com.vgomez.app.domain.DomainModel.{Role, Schedule, Timetable}
+import com.vgomez.app.data.projectionDatabase
+import com.vgomez.app.domain.DomainModel.{Role, Timetable}
 import com.vgomez.app.domain.Transformer.FromDomainToRawData._
 import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
+import slick.ast.BaseTypedType
+import slick.jdbc.JdbcType
 
 
 object Model {
@@ -27,20 +30,19 @@ object Response {
   case class GetReviewModelsResponse(reviewModels: Seq[ReviewModel])
   case class GetUserModelsResponse(userModels: Seq[UserModel])
   case class GetReviewModelsStarsResponse(reviewModelsStars: Seq[Int])
-  case class GetSequenceReviewModelsStarsResponse(seqReviewModelsStars: Seq[Seq[Int]])
-
 }
 
 object Table {
   // Table
   import Model._
-  val api = CustomPostgresProfile.api
+  val api: projectionDatabase.CustomPostgresProfile.CustomPGAPI.type = CustomPostgresProfile.api
   import api._
 
   val schemaName: String = "reviews"
 
   class RestaurantTable(tag: Tag) extends Table[RestaurantModel](tag, Some(schemaName), "Restaurant") {
-    implicit val timetableMapper = MappedColumnType.base[Timetable, String](
+    implicit val timetableMapper: JdbcType[Timetable] with BaseTypedType[Timetable] =
+      MappedColumnType.base[Timetable, String](
       e => transformTimetableToString(e),
       s => transformTimetableStringToTimetable(s)
     )
@@ -93,7 +95,7 @@ object Table {
   lazy val reviewTable = TableQuery[ReviewTable]
 
   class UserTable(tag: Tag) extends Table[UserModel](tag, Some(schemaName), "User") {
-    implicit val roleMapper = MappedColumnType.base[Role, String](
+    implicit val roleMapper: JdbcType[Role] with BaseTypedType[Role] = MappedColumnType.base[Role, String](
       e => transformRoleToStringRole(e),
       s => transformStringRoleToRole(s)
     )

@@ -14,13 +14,6 @@ object AbstractMessage {
   }
 
   object Event {
-    /*
-    Todo #5
-      Description: Use projections to persist events on projection-db (Postgres) (Tag Events).
-      Action: Reparate Event into two type.
-      Status: Done
-      Reported by: Sebastian Oliveri.
-    */
     sealed trait Event
 
     trait EventAdministration extends Event
@@ -32,13 +25,6 @@ object AbstractMessage {
 
     val TagProjection = "event-for-projection"
 
-    /*
-    Todo #5
-      Description: Use projections to persist events on projection-db (Postgres) (Tag Events).
-      Action: Tag only normal events.
-      Status: Done
-      Reported by: Sebastian Oliveri.
-    */
     class EventProjectionAdapter extends WriteEventAdapter {
       override def manifest(event: Any): String = "eventProjectionAdapter"
 

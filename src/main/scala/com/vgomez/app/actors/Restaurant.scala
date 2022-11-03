@@ -45,22 +45,8 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
 
   override def persistenceId: String = id
 
-  /*
-  Todo #4
-    Description: Remove responses classes from actors.
-    Action: Remove response class from Restaurant Actor.
-    Status: Done
-    Reported by: Sebastian Oliveri.
-  */
   def state(restaurantState: RestaurantState): Receive = {
     case GetRestaurant(_) =>
-      /*
-      Todo #1
-        Description: Decouple restaurant.
-        Action: Omit starts and only return restaurant state.
-        Status: Done
-        Reported by: Sebastian Oliveri.
-      */
       restaurantState match {
         case restaurantState@RegisterRestaurantState(_, _, _, _, _, _, _, _, _, _) =>
           sender() ! Some(restaurantState)

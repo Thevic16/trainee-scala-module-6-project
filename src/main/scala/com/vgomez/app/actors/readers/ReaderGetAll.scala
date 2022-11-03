@@ -51,13 +51,6 @@ class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Sta
   }
   
   def getAllRestaurantState(originalSender: ActorRef): Receive = {
-    /*
-    Todo #1
-      Description: Decouple restaurant.
-      Action: Remove stars request on the database and only left restaurant models.
-      Status: Done
-      Reported by: Sebastian Oliveri.
-    */
     case GetRestaurantModelsResponse(restaurantModels) =>
       if(restaurantModels.nonEmpty)
         originalSender ! Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))
