@@ -6,7 +6,7 @@ import akka.persistence.PersistentActor
 import scala.util.{Failure, Success}
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
-import com.vgomez.app.actors.messages.AbstractMessage.Event.Event
+import com.vgomez.app.actors.messages.AbstractMessage.Event.EventUser
 import com.vgomez.app.exception.CustomException.UserUnRegisteredException
 
 
@@ -29,9 +29,9 @@ object User {
   }
 
   // events
-  case class UserRegistered(UserState: UserState) extends Event
-  case class UserUpdated(UserState: UserState) extends Event
-  case class UserUnregistered(username: String, UserState: UserState) extends Event
+  case class UserRegistered(UserState: UserState) extends EventUser
+  case class UserUpdated(UserState: UserState) extends EventUser
+  case class UserUnregistered(username: String, UserState: UserState) extends EventUser
 
   def props(username: String, index: Long): Props =  Props(new User(username, index))
 

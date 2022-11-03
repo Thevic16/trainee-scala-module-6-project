@@ -5,7 +5,7 @@ import akka.persistence.PersistentActor
 
 import scala.util.{Failure, Success}
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
-import com.vgomez.app.actors.messages.AbstractMessage.Event.Event
+import com.vgomez.app.actors.messages.AbstractMessage.Event.EventReview
 import com.vgomez.app.exception.CustomException.ReviewUnRegisteredException
 
 object Review {
@@ -27,9 +27,9 @@ object Review {
   }
 
   // events
-  case class ReviewRegistered(ReviewState: ReviewState) extends Event
-  case class ReviewUpdated(ReviewState: ReviewState) extends Event
-  case class ReviewUnregistered(id: String, ReviewState: ReviewState) extends Event
+  case class ReviewRegistered(ReviewState: ReviewState) extends EventReview
+  case class ReviewUpdated(ReviewState: ReviewState) extends EventReview
+  case class ReviewUnregistered(id: String, ReviewState: ReviewState) extends EventReview
 
   def props(id: String, index: Long): Props =  Props(new Review(id, index))
 

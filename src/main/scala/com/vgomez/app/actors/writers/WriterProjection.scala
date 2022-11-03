@@ -6,7 +6,7 @@ import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.projection.ProjectionBehavior
 import akka.projection.eventsourced.EventEnvelope
 
-import com.vgomez.app.actors.messages.AbstractMessage.Event.{Event, TagProjection}
+import com.vgomez.app.actors.messages.AbstractMessage.Event.{EventEntity, TagProjection}
 
 
 // Imports for akka projection
@@ -58,9 +58,9 @@ class WriterProjection(system: ActorSystem) extends Actor with ActorLogging{
   override def receive: Receive = state()
 
   // Methods related with akka projection
-  def getSourceProvider: SourceProvider[Offset, EventEnvelope[Event]] = {
+  def getSourceProvider: SourceProvider[Offset, EventEnvelope[EventEntity]] = {
     EventSourcedProvider
-        .eventsByTag[Event](
+        .eventsByTag[EventEntity](
           typedSystem,
           readJournalPluginId = CassandraReadJournal.Identifier,
           tag = TagProjection)

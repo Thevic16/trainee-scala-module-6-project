@@ -5,7 +5,7 @@ import scala.concurrent.ExecutionContext
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.scaladsl.Handler
 import akka.actor.typed.ActorSystem
-import com.vgomez.app.actors.messages.AbstractMessage.Event.Event
+import com.vgomez.app.actors.messages.AbstractMessage.Event.EventEntity
 import com.vgomez.app.actors.Restaurant.{RegisterRestaurantState, RestaurantRegistered, RestaurantUnregistered, RestaurantUpdated, UnregisterRestaurantState}
 import com.vgomez.app.actors.Review.{RegisterReviewState, ReviewRegistered, ReviewUnregistered, ReviewUpdated, UnregisterReviewState}
 import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState, UserRegistered, UserUnregistered, UserUpdated}
@@ -23,14 +23,14 @@ Todo #6
   Status: Done
   Reported by: Sebastian Oliveri.
 */
-class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[Event]](){
+class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[EventEntity]](){
   private var logCounter: Int = 0
   private val logInterval: Int = 25
   private val log = LoggerFactory.getLogger(getClass)
   private implicit val ec: ExecutionContext = system.executionContext
 
 
-  override def process(envelope: EventEnvelope[Event]): Future[Done] = {
+  override def process(envelope: EventEnvelope[EventEntity]): Future[Done] = {
     val processed = envelope.event match {
       // Restaurant Events
       case RestaurantRegistered(restaurantState) =>
@@ -120,8 +120,8 @@ class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[Ev
     Future.successful(Done)
   }
 
-  private def logEventCount(event: Event): Unit = event match {
-    case _: Event =>
+  private def logEventCount(event: EventEntity): Unit = event match {
+    case _: EventEntity =>
       logCounter += 1
       if (logCounter == logInterval) {
         logCounter = 0
