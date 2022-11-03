@@ -6,7 +6,7 @@ import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command
 import com.vgomez.app.domain.DomainModel.Location
 import com.vgomez.app.data.projectionDatabase.Operation
 import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsResponse
-import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRestaurantModels
+import com.vgomez.app.actors.readers.ReaderUtility.getRecommendationResponseBySeqRestaurantModels
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
 
@@ -57,10 +57,7 @@ class ReaderFilterByLocation(system: ActorSystem,
     case GetRestaurantModelsResponse(restaurantModels) =>
       val restaurantModelsFilterByDistance = restaurantModels.filter(model =>
         calculateDistanceInKm(Location(model.latitude, model.longitude), Some(queryLocation)) <= rangeInKm)
-
-      if (restaurantModelsFilterByDistance.nonEmpty)
-        originalSender ! Some(getListRestaurantStateBySeqRestaurantModels(restaurantModelsFilterByDistance))
-      else originalSender ! None
+      originalSender ! getRecommendationResponseBySeqRestaurantModels(restaurantModelsFilterByDistance)
 
       unstashAll()
       context.become(state())

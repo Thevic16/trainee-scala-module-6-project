@@ -6,7 +6,7 @@ import akka.pattern.pipe
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command.GetUserFavoriteCategories
 import com.vgomez.app.data.projectionDatabase.Operation
 import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsResponse
-import com.vgomez.app.actors.readers.ReaderUtility.getListRestaurantStateBySeqRestaurantModels
+import com.vgomez.app.actors.readers.ReaderUtility.getRecommendationResponseBySeqRestaurantModels
 
 
 object ReaderFilterByCategories {
@@ -51,9 +51,7 @@ class ReaderFilterByCategories(system: ActorSystem,
   
   def getRestaurantsState(originalSender: ActorRef): Receive = {
     case GetRestaurantModelsResponse(restaurantModels) =>
-      if (restaurantModels.nonEmpty)
-        originalSender ! Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))
-      else originalSender ! None
+      originalSender ! getRecommendationResponseBySeqRestaurantModels(restaurantModels)
 
       unstashAll()
       context.become(state())

@@ -40,4 +40,9 @@ object ReaderUtility {
     userModels.map(getUserStateByUserModel).toList
   }
 
+  def getRecommendationResponseBySeqRestaurantModels(restaurantModels: Seq[RestaurantModel]): Option[List[RestaurantState]] = {
+    if (restaurantModels.nonEmpty)
+      Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))
+    else None
+  }
 }
