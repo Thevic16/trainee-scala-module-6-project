@@ -32,7 +32,6 @@ object WriterProjection {
 
 class WriterProjection(system: ActorSystem) extends Actor with ActorLogging{
   import WriterProjection.Command._
-  import system.dispatcher
   val typedSystem: akka.actor.typed.ActorSystem[_] = system.toTyped
 
   def state(isStated: Boolean = false): Receive ={
