@@ -193,3 +193,6 @@ application.conf
 
 .attach_pid*
 
+# Ignore scala style related
+scalastyle-config.xml
+/.scannerwork

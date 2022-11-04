@@ -1,6 +1,0 @@
-projectKey=akka-restaurant-reviews
-serverUrl=http://localhost:8001
-serverVersion=9.4.0.54424
-dashboardUrl=http://localhost:8001/dashboard?id=akka-restaurant-reviews
-ceTaskId=AYRDCZaRplMCKdu_jFGT
-ceTaskUrl=http://localhost:8001/api/ce/task?id=AYRDCZaRplMCKdu_jFGT
