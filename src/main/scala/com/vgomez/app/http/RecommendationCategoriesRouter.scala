@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.http
 
 import akka.actor.{ActorRef, ActorSystem}

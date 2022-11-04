@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.actors
 import akka.Done
 import akka.actor.Props

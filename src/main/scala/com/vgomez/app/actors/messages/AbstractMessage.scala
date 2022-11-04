@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.actors.messages
 
 import akka.persistence.journal.{Tagged, WriteEventAdapter}

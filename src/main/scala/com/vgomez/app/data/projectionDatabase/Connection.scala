@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.data.projectionDatabase
 
 import com.typesafe.config.{Config, ConfigFactory}

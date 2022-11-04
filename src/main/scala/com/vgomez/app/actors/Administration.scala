@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.actors
 
 import akka.Done
@@ -196,6 +198,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
           (id -> (administrationRecoveryState.currentRestaurantIndex, restaurant)),
         currentRestaurantIndex = administrationRecoveryState.currentRestaurantIndex + 1)
 
+      context.become(recoverState(newAdministrationRecoveryState))
       context.become(state(newAdministrationRecoveryState))
 
     case ReviewRegistered(id) =>
@@ -208,6 +211,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
           (administrationRecoveryState.currentReviewIndex, review)),
         currentReviewIndex = administrationRecoveryState.currentReviewIndex + 1)
 
+      context.become(recoverState(newAdministrationRecoveryState))
       context.become(state(newAdministrationRecoveryState))
 
 
@@ -221,6 +225,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
           (username -> (administrationRecoveryState.currentUserIndex, user)),
         currentUserIndex = administrationRecoveryState.currentUserIndex + 1)
 
+      context.become(recoverState(newAdministrationRecoveryState))
       context.become(state(newAdministrationRecoveryState))
   }
 

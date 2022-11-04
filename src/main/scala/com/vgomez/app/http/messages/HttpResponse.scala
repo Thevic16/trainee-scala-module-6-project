@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.http.messages
 
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}

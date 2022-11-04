@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.actors.readers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
