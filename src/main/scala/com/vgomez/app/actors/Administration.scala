@@ -91,10 +91,6 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   val writerProjectionScheduler: Cancellable = context.system.scheduler.scheduleWithFixedDelay(Duration.Zero,
     delay = 5 seconds, writerProjection, WriterProjection.Command.StartProjection)
 
-  // for state recovery
-  var administrationRecoveryState: AdministrationState = AdministrationState(restaurants = Map(),
-    reviews = Map(), users = Map(), currentRestaurantIndex = 0, currentReviewIndex = 0, currentUserIndex = 0)
-
   override def persistenceId: String = "administration"
 
   def state(administrationState: AdministrationState): Receive = {
@@ -186,32 +182,33 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Projection process has stated successfully")
   }
 
-  override def receiveCommand: Receive = state(administrationRecoveryState)
+  override def receiveCommand: Receive = state(AdministrationState(restaurants = Map(),
+    reviews = Map(), users = Map(), currentRestaurantIndex = 0, currentReviewIndex = 0, currentUserIndex = 0))
 
-  override def receiveRecover: Receive = {
+  def recoverState(administrationRecoveryState: AdministrationState): Receive = {
     case RestaurantRegistered(id) =>
       log.info(s"Administration has recovered a restaurant with id: $id")
       val restaurant = context.child(id).getOrElse(context.actorOf(Restaurant.props(id,
         administrationRecoveryState.currentRestaurantIndex), id))
 
-      administrationRecoveryState = administrationRecoveryState.copy(
+      val newAdministrationRecoveryState: AdministrationState = administrationRecoveryState.copy(
         restaurants = administrationRecoveryState.restaurants +
           (id -> (administrationRecoveryState.currentRestaurantIndex, restaurant)),
         currentRestaurantIndex = administrationRecoveryState.currentRestaurantIndex + 1)
 
-      context.become(state(administrationRecoveryState))
+      context.become(state(newAdministrationRecoveryState))
 
     case ReviewRegistered(id) =>
       log.info(s"Administration has recovered a review with id: $id")
       val review = context.child(id).getOrElse(context.actorOf(Review.props(id,
         administrationRecoveryState.currentReviewIndex), id))
 
-      administrationRecoveryState = administrationRecoveryState.copy(
+      val newAdministrationRecoveryState: AdministrationState = administrationRecoveryState.copy(
         reviews = administrationRecoveryState.reviews + (id ->
           (administrationRecoveryState.currentReviewIndex, review)),
         currentReviewIndex = administrationRecoveryState.currentReviewIndex + 1)
 
-      context.become(state(administrationRecoveryState))
+      context.become(state(newAdministrationRecoveryState))
 
 
     case UserRegistered(username) =>
@@ -219,13 +216,16 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       val user = context.child(username).getOrElse(context.actorOf(User.props(username,
         administrationRecoveryState.currentUserIndex), username))
 
-      administrationRecoveryState = administrationRecoveryState.copy(
+      val newAdministrationRecoveryState: AdministrationState = administrationRecoveryState.copy(
         users = administrationRecoveryState.users +
           (username -> (administrationRecoveryState.currentUserIndex, user)),
         currentUserIndex = administrationRecoveryState.currentUserIndex + 1)
 
-      context.become(state(administrationRecoveryState))
+      context.become(state(newAdministrationRecoveryState))
   }
+
+  override def receiveRecover: Receive = recoverState(AdministrationState(restaurants = Map(),
+    reviews = Map(), users = Map(), currentRestaurantIndex = 0, currentReviewIndex = 0, currentUserIndex = 0))
 
 
   // Methods to process CRUD Commands

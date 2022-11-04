@@ -18,8 +18,6 @@ import scala.util.{Failure, Success}
 
 
 class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[EventEntity]](){
-  private var logCounter: Int = 0
-  private val logInterval: Int = 25
   private val log = LoggerFactory.getLogger(getClass)
   private implicit val ec: ExecutionContext = system.executionContext
 
@@ -116,11 +114,7 @@ class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[Ev
 
   private def logEventCount(event: EventEntity): Unit = event match {
     case _: EventEntity =>
-      logCounter += 1
-      if (logCounter == logInterval) {
-        logCounter = 0
-        log.info(s"#$logInterval new events have been projected to projection database.")
-      }
+      log.info(s"A new event have been projected to projection database.")
     case _ => ()
   }
 
