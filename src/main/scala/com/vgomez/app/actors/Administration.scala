@@ -12,7 +12,8 @@ import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Event._
 import com.vgomez.app.actors.AdministrationUtility._
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes
-import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll, ReaderStarsByRestaurant}
+import com.vgomez.app.actors.readers.{ReaderFilterByCategories, ReaderFilterByLocation, ReaderGetAll,
+  ReaderStarsByRestaurant}
 import com.vgomez.app.actors.writers.WriterProjection
 import com.vgomez.app.domain.DomainModel.Location
 
@@ -96,7 +97,18 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
   override def persistenceId: String = "administration"
 
+  override def receiveCommand: Receive = state(administrationRecoveryState)
+
+  override def receiveRecover: Receive = recoverState
+
+  // States
   def state(administrationState: AdministrationState): Receive = {
+    restaurantState(administrationState).orElse(reviewState(administrationState)).
+      orElse(userState(administrationState)).orElse(recommendationState(administrationState)).
+      orElse(confirmationState)
+  }
+
+  def restaurantState(administrationState: AdministrationState): Receive = {
     // Restaurants Commands
     case getCommand@GetRestaurant(_) =>
       processGetCommand(getCommand, administrationState)
@@ -117,7 +129,9 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
     case unregisterCommand@UnregisterRestaurant(_) =>
       processUnregisterCommand(unregisterCommand, administrationState)
+  }
 
+  def reviewState(administrationState: AdministrationState): Receive = {
     // Reviews Commands
     case getCommand@GetReview(_) =>
       processGetCommand(getCommand, administrationState)
@@ -135,7 +149,9 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
     case unregisterCommand@UnregisterReview(_) =>
       log.info("Administration has receive a UnregisterReview command.")
       processUnregisterCommand(unregisterCommand, administrationState)
+  }
 
+  def userState(administrationState: AdministrationState): Receive = {
     // Users Commands
     case getCommand@GetUser(_) =>
       processGetCommand(getCommand, administrationState)
@@ -152,7 +168,16 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
 
     case unregisterCommand@UnregisterUser(_) =>
       processUnregisterCommand(unregisterCommand, administrationState)
+  }
 
+  def confirmationState: Receive = {
+    // Confirmation projection process has stated successfully
+    case Done =>
+      writerProjectionScheduler.cancel() // Cancelling the scheduler
+      log.info("Projection process has stated successfully")
+  }
+
+  def recommendationState(administrationState: AdministrationState): Receive = {
     // Recommendations By Categories Commands
     case GetRecommendationFilterByFavoriteCategories(favoriteCategories, pageNumber,
     numberOfElementPerPage) => log.info("Administration has receive a " +
@@ -178,14 +203,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       log.info("Administration has receive a GetRecommendationCloseToMe command.")
       readerFilterByLocation.forward(ReaderFilterByLocation.Command.GetRecommendationCloseToMe(username,
         rangeInKm, pageNumber, numberOfElementPerPage))
-
-    // Confirmation projection process has stated successfully
-    case Done =>
-      writerProjectionScheduler.cancel() // Cancelling the scheduler
-      log.info("Projection process has stated successfully")
   }
-
-  override def receiveCommand: Receive = state(administrationRecoveryState)
 
   def recoverState: Receive = {
     case RestaurantRegistered(id) =>
@@ -223,9 +241,8 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
       context.become(state(administrationRecoveryState))
   }
 
-  override def receiveRecover: Receive = recoverState
 
-
+  // Methods to reduce code on API process
   def processGetCommand(getCommand: GetCommand, administrationState: AdministrationState): Unit = {
     val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByGetCommand(getCommand,
       administrationState)
