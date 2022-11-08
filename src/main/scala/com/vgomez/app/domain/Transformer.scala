@@ -1,19 +1,21 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.domain
+
 import spray.json._
 
 import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
-
+import DomainModel._
 
 case class SimpleScheduler(monday: String, tuesday: String, wednesday: String, thursday: String,
-                             friday: String, saturday: String, sunday: String)
+  friday: String, saturday: String, sunday: String)
 
 trait SimpleSchedulerJsonProtocol extends DefaultJsonProtocol {
-  implicit val SimpleSchedulerFormat: RootJsonFormat[SimpleScheduler] = jsonFormat7(SimpleScheduler)
+  implicit val simpleSchedulerFormat: RootJsonFormat[SimpleScheduler] = jsonFormat7(SimpleScheduler)
 }
 
-object Transformer extends SimpleSchedulerJsonProtocol{
-  import DomainModel._
+object Transformer extends SimpleSchedulerJsonProtocol {
 
   object FromRawDataToDomain {
     def transformStringRoleToRole(stringRole: String): Role = {
@@ -30,18 +32,22 @@ object Transformer extends SimpleSchedulerJsonProtocol{
         val fromJsonScheduler = scheduleStringFormatted.parseJson.convertTo[SimpleScheduler]
         transformSimpleSchedulerToSchedule(fromJsonScheduler)
       }
-      else
+      else {
         UnavailableTimetable
+      }
     }
 
     def scheduleStringFormatter(scheduleString: String): String = {
-      val scheduleStringJsonFormat = scheduleString.stripMargin.replace("'", "\"").toLowerCase
+      val scheduleStringJsonFormat = scheduleString.stripMargin.replace("'",
+        "\"").toLowerCase
 
       val dayWeekList = List("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
       @tailrec
       def go(dayWeekList: List[String], scheduleStringJsonFormat: String): String = {
-        if (dayWeekList.isEmpty) scheduleStringJsonFormat
+        if (dayWeekList.isEmpty) {
+          scheduleStringJsonFormat
+        }
         else {
           if (!scheduleStringJsonFormat.contains(dayWeekList.head)) {
             val newScheduleStringJsonFormat = scheduleStringJsonFormat.replace(
@@ -49,7 +55,9 @@ object Transformer extends SimpleSchedulerJsonProtocol{
 
             go(dayWeekList.tail, newScheduleStringJsonFormat)
           }
-          else go(dayWeekList.tail, scheduleStringJsonFormat)
+          else {
+            go(dayWeekList.tail, scheduleStringJsonFormat)
+          }
         }
       }
 
@@ -73,7 +81,9 @@ object Transformer extends SimpleSchedulerJsonProtocol{
         val mondayHashMapHour = transformHoursStringToHashMapHour(scheduleDay)
         ScheduleDay(dayWeek, mondayHashMapHour("startHour"), mondayHashMapHour("endHour"))
       }
-      else ScheduleDay(dayWeek, Hour(0, 0), Hour(0, 0))
+      else {
+        ScheduleDay(dayWeek, Hour(hr = 0, minutes = 0), Hour(hr = 0, minutes = 0))
+      }
     }
 
     def transformHoursStringToHashMapHour(hours: String): HashMap[String, Hour] = {
@@ -118,7 +128,8 @@ object Transformer extends SimpleSchedulerJsonProtocol{
     def transformTimetableToString(timetable: Timetable): String = {
       timetable match {
         case schedule@Schedule(_) =>
-          val simpleScheduler = SimpleScheduler(monday = transformScheduleDayToString(schedule.schedulesForDays(Monday)),
+          val simpleScheduler = SimpleScheduler(monday = transformScheduleDayToString(schedule
+            .schedulesForDays(Monday)),
             tuesday = transformScheduleDayToString(schedule.schedulesForDays(Tuesday)),
             wednesday = transformScheduleDayToString(schedule.schedulesForDays(Wednesday)),
             thursday = transformScheduleDayToString(schedule.schedulesForDays(Thursday)),

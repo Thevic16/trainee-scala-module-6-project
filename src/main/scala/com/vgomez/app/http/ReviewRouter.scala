@@ -1,30 +1,32 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.http
+
 import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern.ask
-import akka.util.Timeout
-import akka.http.scaladsl.model.headers.Location
-
-import scala.concurrent.{ExecutionContext, Future}
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.vgomez.app.actors.Review.Command._
-import com.vgomez.app.http.messages.HttpRequest._
-import com.vgomez.app.http.messages.HttpResponse._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.pattern.ask
+import akka.util.Timeout
 import com.vgomez.app.actors.Administration.Command.GetAllReview
+import com.vgomez.app.actors.Review.Command._
 import com.vgomez.app.actors.Review.{RegisterReviewState, ReviewState, UnregisterReviewState}
 import com.vgomez.app.exception.CustomException.ValidationFailException
 import com.vgomez.app.http.RouterUtility.getReviewResponseByReviewState
+import com.vgomez.app.http.messages.HttpRequest._
+import com.vgomez.app.http.messages.HttpResponse._
 import com.vgomez.app.http.validators._
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 // Review Router.
 class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, implicit val timeout: Timeout)
   extends ReviewCreationRequestJsonProtocol with ReviewUpdateRequestJsonProtocol
-    with ReviewResponseJsonProtocol with FailureResponseJsonProtocol with SprayJsonSupport{
+    with ReviewResponseJsonProtocol with FailureResponseJsonProtocol with SprayJsonSupport {
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
 
@@ -35,7 +37,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
     (administration ? reviewCreationRequest.toCommand).mapTo[Try[String]]
 
   def updateReview(id: String,
-                   reviewUpdateRequest: ReviewUpdateRequest): Future[Try[Done]] =
+    reviewUpdateRequest: ReviewUpdateRequest): Future[Try[Done]] =
     (administration ? reviewUpdateRequest.toCommand(id)).mapTo[Try[Done]]
 
   def unregisterReview(id: String): Future[Try[Done]] =
@@ -45,7 +47,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
     (administration ? GetAllReview(pageNumber, numberOfElementPerPage)).mapTo[Option[List[ReviewState]]]
 
   val routes: Route =
-    pathPrefix("api" / "reviews"){
+    pathPrefix("api" / "reviews") {
       path(Segment) { id =>
         get {
           onSuccess(getReview(id)) {
@@ -89,10 +91,10 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
                 complete(StatusCodes.NotFound, FailureResponse(s"Review $id cannot be found"))
             }
           }
-      }~
+      } ~
         pathEndOrSingleSlash {
           post {
-            entity(as[ReviewCreationRequest]){ request =>
+            entity(as[ReviewCreationRequest]) { request =>
               ValidatorReviewRequest(request.username, request.restaurantId, request.stars,
                 request.text, request.date).run() match {
                 case Success(_) =>
@@ -111,7 +113,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
           } ~
             get {
               parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long,
-                                                                                   numberOfElementPerPage: Long) =>
+                numberOfElementPerPage: Long) =>
                 ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
                   case Success(_) =>
                     onSuccess(getAllReview(pageNumber, numberOfElementPerPage)) {
@@ -120,7 +122,8 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
                         listReviewState.map(getReviewResponseByReviewState)
                       }
                       case None =>
-                        complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                        complete(StatusCodes.NotFound, FailureResponse("There are not element in this" +
+                          " pageNumber."))
                     }
                   case Failure(e: ValidationFailException) =>
                     complete(StatusCodes.BadRequest, FailureResponse(e.message))

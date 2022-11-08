@@ -1,47 +1,57 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.actors
+
 import akka.Done
 import akka.actor.Props
 import akka.persistence.PersistentActor
-
-import scala.util.{Failure, Success}
-import com.vgomez.app.domain.DomainModel._
+import com.vgomez.app.actors.Restaurant.Command._
+import com.vgomez.app.actors.Restaurant._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Event.EventRestaurant
+import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 
+import scala.util.{Failure, Success}
+
 object Restaurant {
-  case class RestaurantInfo(username: String, name: String, state: String, city: String, postalCode: String,
-                            location: Location, categories: Set[String], timetable: Timetable)
+  def props(id: String, index: Long): Props = Props(new Restaurant(id, index))
 
   // state
   sealed trait RestaurantState
 
-  case class RegisterRestaurantState(id: String, index: Long,  username: String,  name: String, state: String, city: String,
-                             postalCode: String, location: Location, categories: Set[String], timetable: Timetable)
-                              extends RestaurantState
+  case class RestaurantInfo(username: String, name: String, state: String, city: String, postalCode: String,
+    location: Location, categories: Set[String], timetable: Timetable)
+
+  case class RegisterRestaurantState(id: String, index: Long, username: String, name: String, state: String,
+    city: String, postalCode: String, location: Location,
+    categories: Set[String], timetable: Timetable)
+    extends RestaurantState
+
+  // events
+  case class RestaurantRegistered(restaurantState: RestaurantState) extends EventRestaurant
+
+  case class RestaurantUpdated(restaurantState: RestaurantState) extends EventRestaurant
+
+  case class RestaurantUnregistered(id: String, restaurantState: RestaurantState) extends EventRestaurant
 
   case object UnregisterRestaurantState extends RestaurantState
 
   // commands
   object Command {
     case class GetRestaurant(id: String) extends GetCommand
-    case class RegisterRestaurant(maybeId: Option[String], restaurantInfo: RestaurantInfo) extends RegisterCommand
+
+    case class RegisterRestaurant(maybeId: Option[String], restaurantInfo: RestaurantInfo)
+      extends RegisterCommand
+
     case class UpdateRestaurant(id: String, restaurantInfo: RestaurantInfo) extends UpdateCommand
+
     case class UnregisterRestaurant(id: String) extends UnregisterCommand
   }
-
-  // events
-  case class RestaurantRegistered(restaurantState: RestaurantState) extends EventRestaurant
-  case class RestaurantUpdated(restaurantState: RestaurantState) extends EventRestaurant
-  case class RestaurantUnregistered(id:String, restaurantState: RestaurantState) extends EventRestaurant
-
-  def props(id: String, index: Long): Props =  Props(new Restaurant(id, index))
 
 }
 
 class Restaurant(id: String, index: Long) extends PersistentActor {
-  import Restaurant._
-  import Command._
 
   override def persistenceId: String = id
 
@@ -57,7 +67,7 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
     case RegisterRestaurant(_, restaurantInfo) =>
       val newState: RestaurantState = getNewState(restaurantInfo)
 
-      persist(RestaurantRegistered(newState)){_ =>
+      persist(RestaurantRegistered(newState)) { _ =>
         sender() ! Success(id)
         context.become(state(newState))
       }
@@ -104,10 +114,12 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
       context.become(state(restaurantState))
   }
 
-  def getState(username: String = "", name:String = "", state: String = "",
-               city: String = "", postalCode: String = "", location: Location = Location(0, 0),
-               categories: Set[String] = Set(), timetable: Timetable = UnavailableTimetable): RestaurantState = {
-    RegisterRestaurantState(id, index, username, name, state, city, postalCode, location, categories, timetable)
+  def getState(username: String = "", name: String = "", state: String = "",
+    city: String = "", postalCode: String = "", location: Location = Location(latitude = 0, longitude = 0),
+    categories: Set[String] = Set(),
+    timetable: Timetable = UnavailableTimetable): RestaurantState = {
+    RegisterRestaurantState(id, index, username, name, state, city, postalCode, location, categories,
+      timetable)
   }
 
   def getNewState(restaurantInfo: RestaurantInfo): RestaurantState = {

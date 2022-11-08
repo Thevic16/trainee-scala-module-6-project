@@ -1,24 +1,24 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.actors.readers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
-import com.vgomez.app.data.projectionDatabase.Operation
-import com.vgomez.app.data.projectionDatabase.Response.GetReviewModelsStarsResponse
-
+import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Command._
+import com.vgomez.app.data.projection.Operation
+import com.vgomez.app.data.projection.Response.GetReviewModelsStarsResponse
 
 object ReaderStarsByRestaurant {
+  def props(system: ActorSystem): Props = Props(new ReaderStarsByRestaurant(system))
+
   // commands
   object Command {
     case class GetStarsByRestaurant(restaurantId: String)
   }
-
-  def props(system: ActorSystem): Props =  Props(new ReaderStarsByRestaurant(system))
 }
 
 class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLogging with Stash {
 
-  import ReaderStarsByRestaurant._
-  import Command._
   import system.dispatcher
 
   def state(): Receive = {
@@ -31,14 +31,16 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLoggi
     case _ =>
       stash()
   }
-  
+
   def getStartByRestaurantState(originalSender: ActorRef): Receive = {
 
     case GetReviewModelsStarsResponse(reviewModelsStars) =>
-      if(reviewModelsStars.nonEmpty)
+      if (reviewModelsStars.nonEmpty) {
         originalSender ! Some(reviewModelsStars.sum / reviewModelsStars.length)
-      else
+      }
+      else {
         originalSender ! None
+      }
 
       unstashAll()
       context.become(state())

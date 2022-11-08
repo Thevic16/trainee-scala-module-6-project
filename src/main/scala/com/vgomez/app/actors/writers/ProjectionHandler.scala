@@ -1,25 +1,24 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.actors.writers
 
 import akka.Done
-import scala.concurrent.ExecutionContext
+import akka.actor.typed.ActorSystem
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.scaladsl.Handler
-import akka.actor.typed.ActorSystem
+import com.vgomez.app.actors.Restaurant._
+import com.vgomez.app.actors.Review._
+import com.vgomez.app.actors.User._
 import com.vgomez.app.actors.messages.AbstractMessage.Event.EventEntity
-import com.vgomez.app.actors.Restaurant.{RegisterRestaurantState, RestaurantRegistered, RestaurantUnregistered, RestaurantUpdated, UnregisterRestaurantState}
-import com.vgomez.app.actors.Review.{RegisterReviewState, ReviewRegistered, ReviewUnregistered, ReviewUpdated, UnregisterReviewState}
-import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState, UserRegistered, UserUnregistered, UserUpdated}
-import com.vgomez.app.data.projectionDatabase.Operation._
 import com.vgomez.app.actors.writers.ProjectionHandlerUtility._
+import com.vgomez.app.data.projection.Operation._
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 
-class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[EventEntity]](){
-  private var logCounter: Int = 0
-  private val logInterval: Int = 25
+class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[EventEntity]]() {
   private val log = LoggerFactory.getLogger(getClass)
   private implicit val ec: ExecutionContext = system.executionContext
 
@@ -102,9 +101,10 @@ class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[Ev
         }
     }
 
-    processed.onComplete{
+    processed.onComplete {
       case Success(_) => logEventCount(envelope.event)
-      case Failure(e) => log.error(s"A Error has happen during projection processed with message: ${e.getMessage}")
+      case Failure(e) => log.error(s"A Error has happen during projection processed with message: ${e
+        .getMessage}")
     }
 
     processed
@@ -116,11 +116,7 @@ class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[Ev
 
   private def logEventCount(event: EventEntity): Unit = event match {
     case _: EventEntity =>
-      logCounter += 1
-      if (logCounter == logInterval) {
-        logCounter = 0
-        log.info(s"#$logInterval new events have been projected to projection database.")
-      }
+      log.info("A new event have been projected to projection database.")
     case _ => ()
   }
 

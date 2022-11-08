@@ -1,10 +1,13 @@
-package com.vgomez.app.data.projectionDatabase
+
+// Copyright (C) 2022 Víctor Gómez.
+package com.vgomez.app.data.projection
+
+import com.vgomez.app.data.projection.Connection._
+import com.vgomez.app.data.projection.Table.api._
 
 import scala.concurrent.Future
 
 object DataSetup {
-  import Table.api._
-  import Connection._
 
   def deleteData: Future[Seq[Int]] = {
     val combinedDelQueries = DBIO.sequence(Table.tables.map(_.delete))

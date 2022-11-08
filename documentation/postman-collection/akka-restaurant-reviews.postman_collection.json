@@ -45,7 +45,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\" : \"{{username}}\",\n    \"name\": \"restaurant-modify\",\n    \"state\": \"BO\",\n    \"city\": \"BOSTONN\",\n    \"postalCode\":\"51000\",\n    \"latitude\": 25.25,\n    \"longitude\": -33.25,\n    \"categories\": [\"Sushi\", \"Chicken\"],\n    \"schedule\": {\n        \"monday\": \"01:30-05:01\",\n        \"tuesday\": \"01:30-05:00\",\n        \"wednesday\": \"01:30-05:00\",\n        \"thursday\": \"01:30-05:05\",\n        \"friday\": \"01:30-05:00\",\n        \"saturday\": \"01:30-05:00\",\n        \"sunday\": \"01:30-09:00\"\n    }\n}",
+							"raw": "{\n    \"username\" : \"{{username}}\",\n    \"name\": \"restaurant-modify\",\n    \"state\": \"BO\",\n    \"city\": \"BOSTONN\",\n    \"postalCode\":\"51000\",\n    \"latitude\": 25.25,\n    \"longitude\": -33.25,\n    \"categories\": [\"Sushi\", \"Chicken\", \"Pizza\"],\n    \"schedule\": {\n        \"monday\": \"01:30-05:01\",\n        \"tuesday\": \"01:30-05:00\",\n        \"wednesday\": \"01:30-05:00\",\n        \"thursday\": \"01:30-05:05\",\n        \"friday\": \"01:30-05:00\",\n        \"saturday\": \"01:30-05:00\",\n        \"sunday\": \"01:30-09:00\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -69,12 +69,12 @@
 					"response": []
 				},
 				{
-					"name": "get restaurant by id",
+					"name": "get restaurant state by id",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/restaurants/{{id_restaurant}}",
+							"raw": "http://localhost:8080/api/restaurants/{{id_restaurant}}?service=get-state",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -84,6 +84,39 @@
 								"api",
 								"restaurants",
 								"{{id_restaurant}}"
+							],
+							"query": [
+								{
+									"key": "service",
+									"value": "get-state"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get restaurant stars by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/restaurants/{{id_restaurant}}?service=get-stars",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"restaurants",
+								"{{id_restaurant}}"
+							],
+							"query": [
+								{
+									"key": "service",
+									"value": "get-stars"
+								}
 							]
 						}
 					},
@@ -319,7 +352,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\" : \"{{username}}\",\n    \"password\": \"ldnflaskdflasdlfasllksdmflasdlfk\",\n    \"role\": \"normal\",\n    \"latitude\":24.45,\n    \"longitude\":-29.63,\n    \"favoriteCategories\": [\"Sushi\", \"Rice\", \"Pizza\"]\n}",
+							"raw": "{\n    \"username\" : \"{{username}}\",\n    \"password\": \"ldnflaskdflasdlfasllksdmflasdlfk\",\n    \"role\": \"normal\",\n    \"latitude\":24.45,\n    \"longitude\":-29.63,\n    \"favoriteCategories\": [\"Sushi\", \"Rice\", \"Pizza\", \"Soup\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -369,7 +402,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/users?pageNumber=0&numberOfElementPerPage=10",
+							"raw": "http://localhost:8080/api/users?pageNumber=2&numberOfElementPerPage=10",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -382,7 +415,7 @@
 							"query": [
 								{
 									"key": "pageNumber",
-									"value": "0"
+									"value": "2"
 								},
 								{
 									"key": "numberOfElementPerPage",
@@ -419,51 +452,6 @@
 		{
 			"name": "recommendations",
 			"item": [
-				{
-					"name": "post filter-by-user-categories",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"username\" : \"{{username}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8080/api/recommendations/categories/?service=filter-by-user-categories&pageNumber=0&numberOfElementPerPage=10",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"api",
-								"recommendations",
-								"categories",
-								""
-							],
-							"query": [
-								{
-									"key": "service",
-									"value": "filter-by-user-categories"
-								},
-								{
-									"key": "pageNumber",
-									"value": "0"
-								},
-								{
-									"key": "numberOfElementPerPage",
-									"value": "10"
-								}
-							]
-						}
-					},
-					"response": []
-				},
 				{
 					"name": "post filter-by-categories",
 					"request": {
@@ -508,6 +496,51 @@
 								{
 									"key": "service",
 									"value": "filter-by-categories"
+								},
+								{
+									"key": "pageNumber",
+									"value": "0"
+								},
+								{
+									"key": "numberOfElementPerPage",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "post filter-by-user-categories",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\" : \"{{username}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/recommendations/categories/?service=filter-by-user-categories&pageNumber=0&numberOfElementPerPage=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"recommendations",
+								"categories",
+								""
+							],
+							"query": [
+								{
+									"key": "service",
+									"value": "filter-by-user-categories"
 								},
 								{
 									"key": "pageNumber",
@@ -574,7 +607,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"{{username}}\",\n    \"rangeInKm\": 1000\n}",
+							"raw": "{\n    \"username\": \"{{username}}\",\n    \"rangeInKm\": 10000\n}",
 							"options": {
 								"raw": {
 									"language": "json"

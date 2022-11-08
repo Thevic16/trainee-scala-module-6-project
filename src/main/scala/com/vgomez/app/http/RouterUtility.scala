@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.http
 
 import com.vgomez.app.actors.Restaurant.{RegisterRestaurantState, RestaurantState}
@@ -13,13 +15,14 @@ object RouterUtility {
   def getRestaurantResponseByRestaurantState(restaurantState: RestaurantState): RestaurantResponse = {
 
     restaurantState match {
-      case RegisterRestaurantState(id, _, username, name, state, city, postalCode, location, categories, timetable) =>
+      case RegisterRestaurantState(id, _, username, name, state, city, postalCode, location, categories,
+      timetable) =>
         val timetableRawData: Either[String, SimpleScheduler] = timetable match {
           case schedule@Schedule(_) => Right(transformScheduleToSimpleScheduler(schedule))
           case UnavailableTimetable => Left("NULL")
         }
 
-          RestaurantResponse(id, username, name,
+        RestaurantResponse(id, username, name,
           state, city, postalCode,
           location.latitude, location.longitude, categories, timetableRawData)
     }
@@ -35,8 +38,8 @@ object RouterUtility {
   def getUserResponseByUserState(userState: UserState): UserResponse = {
     userState match {
       case RegisterUserState(username, _, password, role, location, favoriteCategories) =>
-        UserResponse(username, password, transformRoleToStringRole(role), location.latitude, location.longitude,
-          favoriteCategories)
+        UserResponse(username, password, transformRoleToStringRole(role), location.latitude,
+          location.longitude, favoriteCategories)
     }
   }
 

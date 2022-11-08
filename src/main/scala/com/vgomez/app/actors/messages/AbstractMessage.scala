@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.actors.messages
 
 import akka.persistence.journal.{Tagged, WriteEventAdapter}
@@ -14,16 +16,19 @@ object AbstractMessage {
   }
 
   object Event {
+    val TagProjection = "event-for-projection"
+
     sealed trait Event
 
-    trait EventAdministration extends Event
     sealed trait EventEntity extends Event
 
-    trait EventRestaurant extends EventEntity
-    trait EventReview extends EventEntity
-    trait EventUser extends EventEntity
+    trait EventAdministration extends Event
 
-    val TagProjection = "event-for-projection"
+    trait EventRestaurant extends EventEntity
+
+    trait EventReview extends EventEntity
+
+    trait EventUser extends EventEntity
 
     class EventProjectionAdapter extends WriteEventAdapter {
       override def manifest(event: Any): String = "eventProjectionAdapter"
