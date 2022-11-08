@@ -14,7 +14,7 @@ object ReaderStarsByRestaurant {
     case class GetStarsByRestaurant(restaurantId: String)
   }
 
-  def props(system: ActorSystem): Props =  Props(new ReaderStarsByRestaurant(system))
+  def props(system: ActorSystem): Props = Props(new ReaderStarsByRestaurant(system))
 }
 
 class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLogging with Stash {
@@ -33,14 +33,16 @@ class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLoggi
     case _ =>
       stash()
   }
-  
+
   def getStartByRestaurantState(originalSender: ActorRef): Receive = {
 
     case GetReviewModelsStarsResponse(reviewModelsStars) =>
-      if(reviewModelsStars.nonEmpty)
+      if (reviewModelsStars.nonEmpty) {
         originalSender ! Some(reviewModelsStars.sum / reviewModelsStars.length)
-      else
+      }
+      else {
         originalSender ! None
+      }
 
       unstashAll()
       context.become(state())

@@ -19,10 +19,13 @@ object AbstractMessage {
     sealed trait Event
 
     trait EventAdministration extends Event
+
     sealed trait EventEntity extends Event
 
     trait EventRestaurant extends EventEntity
+
     trait EventReview extends EventEntity
+
     trait EventUser extends EventEntity
 
     val TagProjection = "event-for-projection"

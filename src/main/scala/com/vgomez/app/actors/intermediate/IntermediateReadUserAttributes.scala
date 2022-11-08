@@ -7,26 +7,28 @@ import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
 
 
-
-
 object IntermediateReadUserAttributes {
   // commands
   object Command {
     case class GetUserFavoriteCategories(username: String)
+
     case class GetUserLocation(username: String)
   }
 
   object ChooseAttribute {
     trait UserAttribute
+
     case object UserFavoriteCategories extends UserAttribute
+
     case object UserLocation extends UserAttribute
   }
 
 }
 
-class IntermediateReadUserAttributes extends Actor with Stash{
-  import IntermediateReadUserAttributes.Command._
+class IntermediateReadUserAttributes extends Actor with Stash {
+
   import IntermediateReadUserAttributes.ChooseAttribute._
+  import IntermediateReadUserAttributes.Command._
 
   override def receive: Receive = {
     case GetUserFavoriteCategories(username) =>

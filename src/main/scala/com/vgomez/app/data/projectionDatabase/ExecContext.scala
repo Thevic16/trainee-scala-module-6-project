@@ -6,5 +6,6 @@ import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 object ExecContext {
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newWorkStealingPool(4))
+  implicit val ec: ExecutionContextExecutor =
+    ExecutionContext.fromExecutor(Executors.newWorkStealingPool(4))
 }

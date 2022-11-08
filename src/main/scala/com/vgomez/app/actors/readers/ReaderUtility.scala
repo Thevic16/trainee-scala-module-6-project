@@ -18,8 +18,8 @@ object ReaderUtility {
   }
 
   def getReviewStateByReviewModel(reviewModel: ReviewModel): ReviewState = {
-    RegisterReviewState(reviewModel.id, reviewModel.index.getOrElse(0L), reviewModel.username, reviewModel.restaurantId,
-      reviewModel.stars, reviewModel.text, reviewModel.date)
+    RegisterReviewState(reviewModel.id, reviewModel.index.getOrElse(0L), reviewModel.username,
+      reviewModel.restaurantId, reviewModel.stars, reviewModel.text, reviewModel.date)
   }
 
   def getUserStateByUserModel(userModel: UserModel): UserState = {
@@ -42,9 +42,12 @@ object ReaderUtility {
     userModels.map(getUserStateByUserModel).toList
   }
 
-  def getRecommendationResponseBySeqRestaurantModels(restaurantModels: Seq[RestaurantModel]): Option[List[RestaurantState]] = {
-    if (restaurantModels.nonEmpty)
+  def getRecommendationResponseBySeqRestaurantModels(restaurantModels:
+                                                     Seq[RestaurantModel]): Option[List[RestaurantState]] = {
+    if (restaurantModels.nonEmpty) {
       Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))
-    else None
+    } else {
+      None
+    }
   }
 }

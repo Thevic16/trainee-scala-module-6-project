@@ -1,3 +1,5 @@
+
+// Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.http.validators
 
 import com.vgomez.app.domain.SimpleScheduler
@@ -14,20 +16,38 @@ object Validator {
 
   def validateSimpleScheduler(schedule: SimpleScheduler): Boolean = {
     val regex: String = "[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]"
-    if (schedule.monday.matches(regex) && schedule.tuesday.matches(regex) && schedule.wednesday.matches(regex) &&
-      schedule.thursday.matches(regex) && schedule.friday.matches(regex) && schedule.saturday.matches(regex) &&
-      schedule.sunday.matches(regex)) false
-    else true
+    if (schedule.monday.matches(regex) && schedule.tuesday.matches(regex) && schedule.wednesday.matches(regex)
+      && schedule.thursday.matches(regex) && schedule.friday.matches(regex) &&
+      schedule.saturday.matches(regex) && schedule.sunday.matches(regex)) {
+      false
+    }
+    else {
+      true
+    }
   }
 
   def conditionLatitude(latitude: Double): Boolean ={
-    if(latitude >= -90 && latitude <= 90) false
-    else true
+    val lowLimit: Int = -90
+    val highLimit: Int = 90
+
+    if(latitude >= lowLimit && latitude <= highLimit) {
+      false
+    }
+    else {
+      true
+    }
   }
 
   def conditionLongitude(longitude: Double): Boolean = {
-    if (longitude >= -180 && longitude <= 180) false
-    else true
+    val lowLimit: Int = -180
+    val highLimit: Int = 180
+
+    if (longitude >= lowLimit && longitude <= highLimit) {
+      false
+    }
+    else {
+      true
+    }
   }
 }
 
@@ -47,9 +67,9 @@ abstract class Validator {
   }
 }
 
-case class ValidatorRestaurantRequest(username: String, name: String, state: String, city: String, postalCode: String,
-                                      latitude: Double, longitude: Double, categories: Set[String],
-                                      schedule: SimpleScheduler) extends Validator {
+case class ValidatorRestaurantRequest(username: String, name: String, state: String, city: String,
+  postalCode: String, latitude: Double, longitude: Double, categories: Set[String],
+  schedule: SimpleScheduler) extends Validator {
   import Validator._
 
   override def conditions(): Try[Valid] = {
@@ -63,8 +83,8 @@ case class ValidatorRestaurantRequest(username: String, name: String, state: Str
     validation(conditionLatitude(latitude), "latitude should be in the range of -90 to 90.")
     validation(conditionLongitude(longitude), "longitude should be in the range of -180 to 180.")
     validation(categories.isEmpty, "categories should no be empty.")
-    validation(validateSimpleScheduler(schedule), "all members of schedule should follow the format: " +
-        "[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]")
+    validation(validateSimpleScheduler(schedule), "all members of schedule should follow the " +
+      "format: [0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]")
 
     Success(Valid("Restaurant Request has been validated"))
   }
@@ -110,14 +130,17 @@ case class ValidatorRequestWithPagination(pageNumber: Long, numberOfElementPerPa
 
   override def conditions(): Try[Valid] = {
     validation(pageNumber < 0, "pageNumber parameter should be a positive number.")
-    validation(numberOfElementPerPage < 0, "numberOfElementPerPage parameter should be a positive number.")
-    validation(numberOfElementPerPage > 100, "numberOfElementPerPage parameter should be greater than 100.")
+    validation(numberOfElementPerPage < 0, "numberOfElementPerPage parameter should be a positive " +
+      "number.")
+    validation(numberOfElementPerPage > 100, "numberOfElementPerPage parameter should be greater " +
+      "than 100.")
 
     Success(Valid("GetAllRequest has been validated"))
   }
 }
 
-case class ValidatorGetRecommendationFilterByFavoriteCategoriesRequest(favoriteCategories: Set[String]) extends Validator {
+case class ValidatorGetRecommendationFilterByFavoriteCategoriesRequest(favoriteCategories: Set[String])
+  extends Validator {
   import Validator._
 
   override def conditions(): Try[Valid] = {
@@ -138,7 +161,8 @@ case class ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest(usern
 
 }
 
-case class ValidatorGetRecommendationCloseToLocationRequest(latitude: Double, longitude: Double, rangeInKm: Double)
+case class ValidatorGetRecommendationCloseToLocationRequest(latitude: Double, longitude: Double,
+  rangeInKm: Double)
   extends Validator {
   import Validator._
 

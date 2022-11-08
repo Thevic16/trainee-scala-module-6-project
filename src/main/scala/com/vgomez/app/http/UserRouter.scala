@@ -1,33 +1,33 @@
 
 // Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.http
+
 import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern.ask
-import akka.util.Timeout
-import akka.http.scaladsl.model.headers.Location
-
-import scala.concurrent.{ExecutionContext, Future}
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.vgomez.app.actors.User.Command._
-import com.vgomez.app.http.messages.HttpRequest._
-import com.vgomez.app.http.messages.HttpResponse._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.pattern.ask
+import akka.util.Timeout
 import com.vgomez.app.actors.Administration.Command.GetAllUser
+import com.vgomez.app.actors.User.Command._
 import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState, UserState}
 import com.vgomez.app.domain.Transformer.FromDomainToRawData._
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.http.validators._
 import com.vgomez.app.http.RouterUtility._
+import com.vgomez.app.http.messages.HttpRequest._
+import com.vgomez.app.http.messages.HttpResponse._
+import com.vgomez.app.http.validators._
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 // User Router.
 class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implicit val timeout: Timeout)
   extends UserCreationRequestJsonProtocol with UserUpdateRequestJsonProtocol
-    with UserResponseJsonProtocol with FailureResponseJsonProtocol with SprayJsonSupport{
+    with UserResponseJsonProtocol with FailureResponseJsonProtocol with SprayJsonSupport {
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
 
@@ -47,7 +47,7 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
     (administration ? GetAllUser(pageNumber, numberOfElementPerPage)).mapTo[Option[List[UserState]]]
 
   val routes: Route =
-    pathPrefix("api" / "users"){
+    pathPrefix("api" / "users") {
       path(Segment) { username =>
         get {
           onSuccess(getUser(username)) {
@@ -68,8 +68,8 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
         } ~
           put {
             entity(as[UserUpdateRequest]) { request =>
-              ValidatorUserRequest(request.username, request.password, request.role, request.latitude, request.longitude,
-                request.favoriteCategories).run() match {
+              ValidatorUserRequest(request.username, request.password, request.role, request.latitude,
+                request.longitude, request.favoriteCategories).run() match {
                 case Success(_) =>
                   onSuccess(updateUser(request)) {
                     case Success(Done) =>
@@ -92,12 +92,12 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
                 complete(StatusCodes.NotFound, FailureResponse(s"User $username cannot be found"))
             }
           }
-      }~
+      } ~
         pathEndOrSingleSlash {
           post {
-            entity(as[UserCreationRequest]){ request =>
-              ValidatorUserRequest(request.username, request.password, request.role, request.latitude, request.longitude,
-                request.favoriteCategories).run() match {
+            entity(as[UserCreationRequest]) { request =>
+              ValidatorUserRequest(request.username, request.password, request.role, request.latitude,
+                request.longitude, request.favoriteCategories).run() match {
                 case Success(_) =>
                   onSuccess(registerUser(request)) {
                     case Success(id) =>
@@ -114,7 +114,7 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
           } ~
             get {
               parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long,
-                                                                                   numberOfElementPerPage: Long) =>
+                numberOfElementPerPage: Long) =>
                 ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
                   case Success(_) =>
                     onSuccess(getAllUser(pageNumber, numberOfElementPerPage)) {
@@ -124,7 +124,8 @@ class UserRouter(administration: ActorRef)(implicit system: ActorSystem, implici
                       }
 
                       case None =>
-                        complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                        complete(StatusCodes.NotFound, FailureResponse("There are not element in this" +
+                          " pageNumber."))
                     }
                   case Failure(e: ValidationFailException) =>
                     complete(StatusCodes.BadRequest, FailureResponse(e.message))

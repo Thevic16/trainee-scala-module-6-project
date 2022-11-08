@@ -2,15 +2,16 @@
 // Copyright (C) 2022 Víctor Gómez.
 
 package com.vgomez.app.actors
+
 import akka.Done
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
-
-import scala.util.{Failure, Success}
-import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Event.EventUser
+import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.exception.CustomException.UserUnRegisteredException
+
+import scala.util.{Failure, Success}
 
 
 object User {
@@ -19,28 +20,36 @@ object User {
 
   // state
   sealed abstract class UserState
-  case class RegisterUserState(username: String, index: Long, password: String, role: Role, location: Location,
-                       favoriteCategories: Set[String]) extends UserState
+
+  case class RegisterUserState(username: String, index: Long, password: String, role: Role,
+                               location: Location, favoriteCategories: Set[String]) extends UserState
+
   case object UnregisterUserState extends UserState
 
   // commands
   object Command {
     case class GetUser(username: String) extends GetCommand
+
     case class RegisterUser(userInfo: UserInfo) extends RegisterCommand
+
     case class UpdateUser(userInfo: UserInfo) extends UpdateCommand
+
     case class UnregisterUser(username: String) extends UnregisterCommand
   }
 
   // events
   case class UserRegistered(UserState: UserState) extends EventUser
+
   case class UserUpdated(UserState: UserState) extends EventUser
+
   case class UserUnregistered(username: String, UserState: UserState) extends EventUser
 
-  def props(username: String, index: Long): Props =  Props(new User(username, index))
+  def props(username: String, index: Long): Props = Props(new User(username, index))
 
 }
 
-class User(username: String, index: Long) extends PersistentActor with ActorLogging{
+class User(username: String, index: Long) extends PersistentActor with ActorLogging {
+
   import User._
   import Command._
 
@@ -104,11 +113,12 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
   }
 
   def getState(username: String = username, password: String = "", role: Role = Normal,
-               location: Location = Location(0,0), favoriteCategories: Set[String] = Set()): UserState = {
-      RegisterUserState(username, index, password, role, location, favoriteCategories)
+               location: Location = Location(0, 0), favoriteCategories: Set[String] = Set()): UserState = {
+    RegisterUserState(username, index, password, role, location, favoriteCategories)
   }
 
   def getNewState(userInfo: UserInfo): UserState = {
-    getState(userInfo.username, userInfo.password, userInfo.role, userInfo.location, userInfo.favoriteCategories)
+    getState(userInfo.username, userInfo.password, userInfo.role, userInfo.location,
+      userInfo.favoriteCategories)
   }
 }

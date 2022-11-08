@@ -20,29 +20,31 @@ import java.io.File
 import java.util.UUID
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
-object LoadDataset{
+
+object LoadDataset {
   def convertRowToMapCommands(row: Map[String, String]): Map[String, Product] = {
     val locationField: Location = Location(row.getOrElse("latitude", "0").toDouble,
       row.getOrElse("longitude", "0").toDouble)
 
     val categoriesField: Set[String] = row.getOrElse("categories", "").split(",").map(
-                                                                                        category => category.trim).toSet
+      category => category.trim).toSet
     val restaurantId: String = row.getOrElse("business_id", UUID.randomUUID().toString)
     val reviewId: String = row.getOrElse("review_id", UUID.randomUUID().toString)
     val username: String = row.getOrElse("user_id", UUID.randomUUID().toString)
 
 
     val registerUserCommand = getRegisterUserCommand(row, locationField, categoriesField)
-    val registerRestaurantCommand = getRegisterRestaurantCommand(row, locationField, categoriesField, restaurantId,
-                                                              username)
+    val registerRestaurantCommand = getRegisterRestaurantCommand(row, locationField, categoriesField,
+      restaurantId, username)
     val registerReviewCommand = getRegisterReviewCommand(row, restaurantId, reviewId, username)
 
-    Map("registerUserCommand" -> registerUserCommand, "registerRestaurantCommand" -> registerRestaurantCommand,
+    Map("registerUserCommand" -> registerUserCommand,
+      "registerRestaurantCommand" -> registerRestaurantCommand,
       "registerReviewCommand" -> registerReviewCommand)
   }
 
   def getRegisterUserCommand(row: Map[String, String], locationField: Location,
-                           categoriesField: Set[String]): RegisterUser = {
+                             categoriesField: Set[String]): RegisterUser = {
     RegisterUser(UserInfo(username = row.getOrElse("user_id", UUID.randomUUID().toString),
       password = UUID.randomUUID().toString,
       role = Normal,
@@ -51,8 +53,8 @@ object LoadDataset{
   }
 
   def getRegisterRestaurantCommand(row: Map[String, String], locationField: Location,
-                                 categoriesField: Set[String], restaurantId: String,
-                                 username: String): RegisterRestaurant = {
+                                   categoriesField: Set[String], restaurantId: String,
+                                   username: String): RegisterRestaurant = {
     val defaultHours: String = "{'Monday': '0:0-0:0'}"
 
     RegisterRestaurant(maybeId = Some(restaurantId), RestaurantInfo(
@@ -65,7 +67,7 @@ object LoadDataset{
   }
 
   def getRegisterReviewCommand(row: Map[String, String], restaurantId: String, reviewId: String,
-                             username: String): RegisterReview = {
+                               username: String): RegisterReview = {
     RegisterReview(maybeId = Some(reviewId),
       ReviewInfo(username = username, restaurantId = restaurantId,
         stars = row.getOrElse("customer_stars", "0").toInt, text = row.getOrElse("text_", "No text"),
@@ -76,10 +78,12 @@ object LoadDataset{
 
 class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administration: ActorRef,
                   implicit val system: ActorSystem, implicit val timeout: Timeout) {
-    import LoadDataset._
-    // Use Akka Stream to process the data
-    implicit val materializer: ActorMaterializer = ActorMaterializer()
-    implicit val scheduler: ExecutionContext = system.dispatcher
+
+  import LoadDataset._
+
+  // Use Akka Stream to process the data
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val scheduler: ExecutionContext = system.dispatcher
 
 
   def runLoadDataSetGraph(): Unit = {
@@ -87,7 +91,9 @@ class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administratio
 
     @tailrec
     def go(readerStream: Stream[Map[String, String]], counterRow: Int = 0): Unit = {
-      if (readerStream.isEmpty) println(s"All the data ($counterRow rows) have be loaded.")
+      if (readerStream.isEmpty) {
+        println(s"All the data ($counterRow rows) have be loaded.")
+      }
       else if (counterRow >= maxAmountRow && maxAmountRow != -1) {
         println(s"The specify amount of data ($counterRow rows) have be loaded.")
       }

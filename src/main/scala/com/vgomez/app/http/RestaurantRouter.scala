@@ -1,33 +1,33 @@
 
 // Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.http
+
 import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern.ask
-import akka.util.Timeout
-import akka.http.scaladsl.model.headers.Location
-
-import scala.concurrent.{ExecutionContext, Future}
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.vgomez.app.actors.Restaurant.Command._
-import com.vgomez.app.http.messages.HttpRequest._
-import com.vgomez.app.http.messages.HttpResponse._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.pattern.ask
+import akka.util.Timeout
 import com.vgomez.app.actors.Administration.Command.{GetAllRestaurant, GetStarsByRestaurant}
+import com.vgomez.app.actors.Restaurant.Command._
 import com.vgomez.app.actors.Restaurant.RestaurantState
 import com.vgomez.app.exception.CustomException.ValidationFailException
-import com.vgomez.app.http.validators._
 import com.vgomez.app.http.RouterUtility._
+import com.vgomez.app.http.messages.HttpRequest._
+import com.vgomez.app.http.messages.HttpResponse._
+import com.vgomez.app.http.validators._
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 // Restaurant Router.
 class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, implicit val timeout: Timeout)
   extends RestaurantCreationRequestJsonProtocol with RestaurantUpdateRequestJsonProtocol
     with RestaurantResponseJsonProtocol with StarsResponseJsonProtocol with FailureResponseJsonProtocol
-    with SprayJsonSupport{
+    with SprayJsonSupport {
 
   implicit val dispatcher: ExecutionContext = system.dispatcher
 
@@ -47,12 +47,14 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
   def unregisterRestaurant(id: String): Future[Try[Done]] =
     (administration ? UnregisterRestaurant(id)).mapTo[Try[Done]]
 
-  def getAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long): Future[Option[List[RestaurantState]]] =
-    (administration ? GetAllRestaurant(pageNumber, numberOfElementPerPage)).mapTo[Option[List[RestaurantState]]]
+  def getAllRestaurant(pageNumber: Long,
+    numberOfElementPerPage: Long): Future[Option[List[RestaurantState]]] =
+    (administration ? GetAllRestaurant(pageNumber,
+      numberOfElementPerPage)).mapTo[Option[List[RestaurantState]]]
 
 
   val routes: Route =
-    pathPrefix("api" / "restaurants"){
+    pathPrefix("api" / "restaurants") {
       path(Segment) { id =>
         get {
           parameter('service.as[String]) {
@@ -76,20 +78,21 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
                   }
 
                 case None =>
-                  complete(StatusCodes.NotFound, FailureResponse(s"There are not reviews for the restaurant " +
+                  complete(StatusCodes.NotFound, FailureResponse("There are not reviews for the restaurant " +
                     s"with id $id"))
               }
 
             case _ =>
-              complete(StatusCodes.BadRequest, FailureResponse(s"The specify service parameter hasn't been found!"))
+              complete(StatusCodes.BadRequest, FailureResponse("The specify service parameter hasn't been" +
+                " found!"))
           }
 
         } ~
           put {
             entity(as[RestaurantUpdateRequest]) { request =>
-              ValidatorRestaurantRequest(request.username, request.name, request.state, request.city, request.postalCode,
-                                          request.latitude, request.longitude, request.categories,
-                                            request.schedule).run() match {
+              ValidatorRestaurantRequest(request.username, request.name, request.state, request.city,
+                request.postalCode, request.latitude, request.longitude, request.categories,
+                request.schedule).run() match {
                 case Success(_) =>
                   onSuccess(updateRestaurant(id, request)) {
                     case Success(Done) =>
@@ -112,45 +115,46 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
                 complete(StatusCodes.NotFound, FailureResponse(s"Restaurant $id cannot be found"))
             }
           }
-      }~
-      pathEndOrSingleSlash {
-        post {
-          entity(as[RestaurantCreationRequest]){ request =>
-            ValidatorRestaurantRequest(request.username, request.name, request.state, request.city, request.postalCode,
-              request.latitude, request.longitude, request.categories,
-              request.schedule).run() match {
-              case Success(_) =>
-                onSuccess(registerRestaurant(request)) {
-                  case Success(id) =>
-                    respondWithHeader(Location(s"/restaurants/$id")) {
-                      complete(StatusCodes.Created)
-                    }
-                  case Failure(e: RuntimeException) =>
-                    complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
-                }
-              case Failure(e: ValidationFailException) =>
-                complete(StatusCodes.BadRequest, FailureResponse(e.message))
-            }
-          }
-        }~
-          get {
-            parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long,
-                                                                                 numberOfElementPerPage: Long) =>
-              ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
+      } ~
+        pathEndOrSingleSlash {
+          post {
+            entity(as[RestaurantCreationRequest]) { request =>
+              ValidatorRestaurantRequest(request.username, request.name, request.state, request.city,
+                request.postalCode, request.latitude, request.longitude, request.categories,
+                request.schedule).run() match {
                 case Success(_) =>
-                  onSuccess(getAllRestaurant(pageNumber, numberOfElementPerPage)) {
-
-                    case Some(listRestaurantState) => complete {
-                      listRestaurantState.map(getRestaurantResponseByRestaurantState)
-                    }
-                    case None =>
-                      complete(StatusCodes.NotFound, FailureResponse(s"There are not element in this pageNumber."))
+                  onSuccess(registerRestaurant(request)) {
+                    case Success(id) =>
+                      respondWithHeader(Location(s"/restaurants/$id")) {
+                        complete(StatusCodes.Created)
+                      }
+                    case Failure(e: RuntimeException) =>
+                      complete(StatusCodes.BadRequest, FailureResponse(e.getMessage))
                   }
                 case Failure(e: ValidationFailException) =>
                   complete(StatusCodes.BadRequest, FailureResponse(e.message))
               }
             }
-          }
-      }
+          } ~
+            get {
+              parameter('pageNumber.as[Long], 'numberOfElementPerPage.as[Long]) { (pageNumber: Long,
+                numberOfElementPerPage: Long) =>
+                ValidatorRequestWithPagination(pageNumber, numberOfElementPerPage).run() match {
+                  case Success(_) =>
+                    onSuccess(getAllRestaurant(pageNumber, numberOfElementPerPage)) {
+
+                      case Some(listRestaurantState) => complete {
+                        listRestaurantState.map(getRestaurantResponseByRestaurantState)
+                      }
+                      case None =>
+                        complete(StatusCodes.NotFound, FailureResponse("There are not element in this " +
+                          "pageNumber."))
+                    }
+                  case Failure(e: ValidationFailException) =>
+                    complete(StatusCodes.BadRequest, FailureResponse(e.message))
+                }
+              }
+            }
+        }
     }
 }

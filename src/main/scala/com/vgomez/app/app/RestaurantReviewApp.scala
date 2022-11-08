@@ -3,24 +3,22 @@
 package com.vgomez.app.app
 
 import akka.actor.{ActorRef, ActorSystem}
-import com.vgomez.app.http.{RecommendationCategoriesRouter, RecommendationLocationsRouter,
-                            RestaurantRouter, ReviewRouter, UserRouter}
-
-import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import com.typesafe.config.ConfigFactory
 import com.vgomez.app.actors.Administration
+import com.vgomez.app.data.dataset.RunLoadDataSetGraph
+import com.vgomez.app.http._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
-import akka.http.scaladsl.server.Directives._
-import com.typesafe.config.ConfigFactory
-import com.vgomez.app.data.dataset.RunLoadDataSetGraph
 
 object RestaurantReviewApp {
 
-  def startHttpServer(administration: ActorRef,timeout: Timeout)(implicit system: ActorSystem): Unit = {
+  def startHttpServer(administration: ActorRef, timeout: Timeout)(implicit system: ActorSystem): Unit = {
     implicit val scheduler: ExecutionContext = system.dispatcher
     implicit val materializer: ActorMaterializer = ActorMaterializer()
     implicit val timeoutRouter: Timeout = timeout
@@ -41,7 +39,7 @@ object RestaurantReviewApp {
     val recommendationLocationsRoutes = recommendationLocationsRouter.routes
 
     val allRoutes = restaurantRoutes ~ reviewRoutes ~ userRoutes ~ recommendationCategoriesRoutes ~
-                    recommendationLocationsRoutes
+      recommendationLocationsRoutes
 
     val bindingFuture = Http().bindAndHandle(allRoutes, "localhost", 8080)
 
@@ -59,7 +57,7 @@ object RestaurantReviewApp {
   def main(args: Array[String]): Unit = {
     val conf = ConfigFactory.load()
     implicit val system: ActorSystem = ActorSystem("RestaurantReviewsApp", ConfigFactory.load().getConfig(
-                                                                      conf.getString("actor-system-config.path")))
+      conf.getString("actor-system-config.path")))
 
     val timeout: Timeout = Timeout(conf.getInt("actor-system-config.timeout").seconds)
 
@@ -67,7 +65,7 @@ object RestaurantReviewApp {
 
     val runLoadDataSetGraph: Boolean = conf.getBoolean("load-dataset.run")
 
-    if(runLoadDataSetGraph){
+    if (runLoadDataSetGraph) {
       val filePath: String = conf.getString("load-dataset.path-csv")
       val chuck: Int = conf.getInt("load-dataset.chuck")
       val maxAmountRow: Int = conf.getInt("load-dataset.max-amount-row")
