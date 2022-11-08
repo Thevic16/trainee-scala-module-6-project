@@ -41,7 +41,7 @@ class RestaurantRouter(administration: ActorRef)(implicit system: ActorSystem, i
     (administration ? restaurantCreationRequest.toCommand).mapTo[Try[String]]
 
   def updateRestaurant(id: String,
-                       restaurantUpdateRequest: RestaurantUpdateRequest): Future[Try[Done]] =
+    restaurantUpdateRequest: RestaurantUpdateRequest): Future[Try[Done]] =
     (administration ? restaurantUpdateRequest.toCommand(id)).mapTo[Try[Done]]
 
   def unregisterRestaurant(id: String): Future[Try[Done]] =

@@ -12,6 +12,9 @@ import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsRespon
 
 
 object ReaderFilterByCategories {
+  def props(system: ActorSystem, intermediateReadUserAttributes: ActorRef): Props =
+    Props(new ReaderFilterByCategories(system, intermediateReadUserAttributes))
+
   // commands
   object Command {
     // Recommendations Categories
@@ -21,9 +24,6 @@ object ReaderFilterByCategories {
     case class GetRecommendationFilterByUserFavoriteCategories(username: String, pageNumber: Long,
       numberOfElementPerPage: Long)
   }
-
-  def props(system: ActorSystem, intermediateReadUserAttributes: ActorRef): Props =
-    Props(new ReaderFilterByCategories(system, intermediateReadUserAttributes))
 }
 
 

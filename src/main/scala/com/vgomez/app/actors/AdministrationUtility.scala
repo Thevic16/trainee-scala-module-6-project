@@ -17,7 +17,7 @@ object AdministrationUtility {
 
   // Get Commands relate
   def getActorRefOptionByGetCommand(getCommand: GetCommand,
-                                    administrationState: AdministrationState): Option[(Long, ActorRef)] = {
+    administrationState: AdministrationState): Option[(Long, ActorRef)] = {
     getCommand match {
       case GetRestaurant(id) => administrationState.restaurants.get(id)
       case GetReview(id) => administrationState.reviews.get(id)
@@ -36,7 +36,7 @@ object AdministrationUtility {
   }
 
   def getActorRefOptionByRegisterCommand(registerCommand: RegisterCommand, identifier: String,
-                                         administrationState: AdministrationState): Option[(Long,
+    administrationState: AdministrationState): Option[(Long,
     ActorRef)] = {
     registerCommand match {
       case RegisterRestaurant(_, _) => administrationState.restaurants.get(identifier)
@@ -46,8 +46,8 @@ object AdministrationUtility {
   }
 
   def getNewStateByRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef,
-                                   identifier: String,
-                                   administrationState: AdministrationState): AdministrationState = {
+    identifier: String,
+    administrationState: AdministrationState): AdministrationState = {
     registerCommand match {
       case RegisterRestaurant(_, _) => administrationState.copy(
         restaurants = administrationState.restaurants +
@@ -65,7 +65,7 @@ object AdministrationUtility {
   }
 
   def getNewActorRefByRegisterCommand(context: ActorContext, administrationState: AdministrationState,
-                                      registerCommand: RegisterCommand, identifier: String): ActorRef = {
+    registerCommand: RegisterCommand, identifier: String): ActorRef = {
     registerCommand match {
       case RegisterRestaurant(_, _) => context.actorOf(Restaurant.props(identifier,
         administrationState.currentRestaurantIndex), identifier)
@@ -98,7 +98,7 @@ object AdministrationUtility {
   }
 
   def getActorRefOptionByUpdateCommand(updateCommand: UpdateCommand, identifier: String,
-                                       administrationState: AdministrationState): Option[(Long, ActorRef)] = {
+    administrationState: AdministrationState): Option[(Long, ActorRef)] = {
     updateCommand match {
       case UpdateRestaurant(_, _) => administrationState.restaurants.get(identifier)
       case UpdateReview(_, _) => administrationState.reviews.get(identifier)
@@ -115,7 +115,7 @@ object AdministrationUtility {
   }
 
   def getUpdateResponseNotFoundExceptionByUpdateCommandWithMessage(updateCommand: UpdateCommand,
-                                                                   message: String): Failure[Nothing] = {
+    message: String): Failure[Nothing] = {
     updateCommand match {
       case UpdateRestaurant(_, _) => Failure(RestaurantNotFoundException(message))
       case UpdateReview(_, _) => Failure(ReviewNotFoundException(message))
@@ -126,8 +126,8 @@ object AdministrationUtility {
 
   // Unregister Command related.
   def getActorRefOptionByUnregisterCommand(unregisterCommand: UnregisterCommand,
-                                           administrationState:
-                                           AdministrationState): Option[(Long, ActorRef)] = {
+    administrationState:
+    AdministrationState): Option[(Long, ActorRef)] = {
     unregisterCommand match {
       case UnregisterRestaurant(id) => administrationState.restaurants.get(id)
       case UnregisterReview(id) => administrationState.reviews.get(id)
@@ -136,7 +136,7 @@ object AdministrationUtility {
   }
 
   def getUnregisterResponseNotFoundExceptionByUnregisterCommand(unregisterCommand:
-                                                                UnregisterCommand): Failure[Nothing] = {
+  UnregisterCommand): Failure[Nothing] = {
     unregisterCommand match {
       case UnregisterRestaurant(_) => Failure(RestaurantNotFoundException())
       case UnregisterReview(_) => Failure(ReviewNotFoundException())
@@ -146,7 +146,7 @@ object AdministrationUtility {
 
   // Verify Ids query commands related
   def verifyIdsOnRegisterCommand(registerCommand: RegisterCommand,
-                                 administrationState: AdministrationState): Try[RegisterCommand] = {
+    administrationState: AdministrationState): Try[RegisterCommand] = {
     registerCommand match {
       case RegisterRestaurant(_, restaurantInfo) =>
         if (usernameExist(restaurantInfo.username, administrationState)) {
@@ -168,22 +168,8 @@ object AdministrationUtility {
     }
   }
 
-  def usernameExist(username: String, administrationState: AdministrationState): Boolean = {
-    administrationState.users.get(username) match {
-      case Some(_) => true
-      case None => false
-    }
-  }
-
-  def restaurantExist(restaurant: String, administrationState: AdministrationState): Boolean = {
-    administrationState.restaurants.get(restaurant) match {
-      case Some(_) => true
-      case None => false
-    }
-  }
-
   def verifyIdsOnUpdateCommand(updateCommand: UpdateCommand,
-                               administrationState: AdministrationState): Try[UpdateCommand] = {
+    administrationState: AdministrationState): Try[UpdateCommand] = {
     updateCommand match {
       case UpdateRestaurant(_, restaurantInfo) =>
         if (usernameExist(restaurantInfo.username, administrationState)) {
@@ -202,6 +188,20 @@ object AdministrationUtility {
         }
 
       case UpdateUser(_) => Success(updateCommand)
+    }
+  }
+
+  def usernameExist(username: String, administrationState: AdministrationState): Boolean = {
+    administrationState.users.get(username) match {
+      case Some(_) => true
+      case None => false
+    }
+  }
+
+  def restaurantExist(restaurant: String, administrationState: AdministrationState): Boolean = {
+    administrationState.restaurants.get(restaurant) match {
+      case Some(_) => true
+      case None => false
     }
   }
 

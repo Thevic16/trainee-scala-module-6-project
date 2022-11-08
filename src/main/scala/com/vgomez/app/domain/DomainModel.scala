@@ -5,9 +5,19 @@ package com.vgomez.app.domain
 import scala.annotation.tailrec
 
 object DomainModel {
-  case class Location(latitude: Double, longitude: Double)
+  sealed trait Timetable
+
+  sealed trait Role
 
   sealed class DayWeek
+
+  case class Location(latitude: Double, longitude: Double)
+
+  case class Hour(hr: Int, minutes: Int)
+
+  case class ScheduleDay(dayWeek: DayWeek, startHour: Hour, endHour: Hour)
+
+  case class Schedule(schedulesForDays: Map[DayWeek, ScheduleDay]) extends Timetable
 
   case object Monday extends DayWeek
 
@@ -23,18 +33,7 @@ object DomainModel {
 
   case object Sunday extends DayWeek
 
-  case class Hour(hr: Int, minutes: Int)
-
-  case class ScheduleDay(dayWeek: DayWeek, startHour: Hour, endHour: Hour)
-
-  sealed trait Timetable
-
-  case class Schedule(schedulesForDays: Map[DayWeek, ScheduleDay]) extends Timetable
-
   case object UnavailableTimetable extends Timetable
-
-
-  sealed trait Role
 
   case object Normal extends Role
 
@@ -45,10 +44,6 @@ object DomainModelFactory {
 
   import DomainModel._
 
-  def generateSchedulesForDaysElement(dayWeek: DayWeek): (DayWeek, ScheduleDay) = {
-    (dayWeek, ScheduleDay(dayWeek, Hour(0, 0), Hour(0, 0)))
-  }
-
   def generateNewEmptySchedule(): Schedule = {
     Schedule(Map(generateSchedulesForDaysElement(Monday),
       generateSchedulesForDaysElement(Tuesday),
@@ -58,6 +53,10 @@ object DomainModelFactory {
       generateSchedulesForDaysElement(Saturday),
       generateSchedulesForDaysElement(Sunday),
     ))
+  }
+
+  def generateSchedulesForDaysElement(dayWeek: DayWeek): (DayWeek, ScheduleDay) = {
+    (dayWeek, ScheduleDay(dayWeek, Hour(0, 0), Hour(0, 0)))
   }
 
   @tailrec

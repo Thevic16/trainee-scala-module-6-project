@@ -13,16 +13,25 @@ import com.vgomez.app.exception.CustomException.RestaurantUnRegisteredException
 import scala.util.{Failure, Success}
 
 object Restaurant {
-  case class RestaurantInfo(username: String, name: String, state: String, city: String, postalCode: String,
-                            location: Location, categories: Set[String], timetable: Timetable)
+  def props(id: String, index: Long): Props = Props(new Restaurant(id, index))
 
   // state
   sealed trait RestaurantState
 
+  case class RestaurantInfo(username: String, name: String, state: String, city: String, postalCode: String,
+    location: Location, categories: Set[String], timetable: Timetable)
+
   case class RegisterRestaurantState(id: String, index: Long, username: String, name: String, state: String,
-                                     city: String, postalCode: String, location: Location,
-                                     categories: Set[String], timetable: Timetable)
+    city: String, postalCode: String, location: Location,
+    categories: Set[String], timetable: Timetable)
     extends RestaurantState
+
+  // events
+  case class RestaurantRegistered(restaurantState: RestaurantState) extends EventRestaurant
+
+  case class RestaurantUpdated(restaurantState: RestaurantState) extends EventRestaurant
+
+  case class RestaurantUnregistered(id: String, restaurantState: RestaurantState) extends EventRestaurant
 
   case object UnregisterRestaurantState extends RestaurantState
 
@@ -37,15 +46,6 @@ object Restaurant {
 
     case class UnregisterRestaurant(id: String) extends UnregisterCommand
   }
-
-  // events
-  case class RestaurantRegistered(restaurantState: RestaurantState) extends EventRestaurant
-
-  case class RestaurantUpdated(restaurantState: RestaurantState) extends EventRestaurant
-
-  case class RestaurantUnregistered(id: String, restaurantState: RestaurantState) extends EventRestaurant
-
-  def props(id: String, index: Long): Props = Props(new Restaurant(id, index))
 
 }
 
@@ -116,9 +116,9 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
   }
 
   def getState(username: String = "", name: String = "", state: String = "",
-               city: String = "", postalCode: String = "", location: Location = Location(0, 0),
-               categories: Set[String] = Set(),
-               timetable: Timetable = UnavailableTimetable): RestaurantState = {
+    city: String = "", postalCode: String = "", location: Location = Location(0, 0),
+    categories: Set[String] = Set(),
+    timetable: Timetable = UnavailableTimetable): RestaurantState = {
     RegisterRestaurantState(id, index, username, name, state, city, postalCode, location, categories,
       timetable)
   }

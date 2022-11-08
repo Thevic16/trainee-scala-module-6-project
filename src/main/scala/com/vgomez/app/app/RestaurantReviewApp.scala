@@ -18,6 +18,28 @@ import scala.util.{Failure, Success}
 
 object RestaurantReviewApp {
 
+  def main(args: Array[String]): Unit = {
+    val conf = ConfigFactory.load()
+    implicit val system: ActorSystem = ActorSystem("RestaurantReviewsApp", ConfigFactory.load().getConfig(
+      conf.getString("actor-system-config.path")))
+
+    val timeout: Timeout = Timeout(conf.getInt("actor-system-config.timeout").seconds)
+
+    val administration = system.actorOf(Administration.props(system), "administration-system")
+
+    val runLoadDataSetGraph: Boolean = conf.getBoolean("load-dataset.run")
+
+    if (runLoadDataSetGraph) {
+      val filePath: String = conf.getString("load-dataset.path-csv")
+      val chuck: Int = conf.getInt("load-dataset.chuck")
+      val maxAmountRow: Int = conf.getInt("load-dataset.max-amount-row")
+
+      new RunLoadDataSetGraph(filePath, chuck, maxAmountRow, administration, system, timeout).run()
+    }
+
+    startHttpServer(administration, timeout)
+  }
+
   def startHttpServer(administration: ActorRef, timeout: Timeout)(implicit system: ActorSystem): Unit = {
     implicit val scheduler: ExecutionContext = system.dispatcher
     implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -52,27 +74,5 @@ object RestaurantReviewApp {
         system.log.error(s"Failed to bing HTTP server, because: $exception")
         system.terminate()
     }
-  }
-
-  def main(args: Array[String]): Unit = {
-    val conf = ConfigFactory.load()
-    implicit val system: ActorSystem = ActorSystem("RestaurantReviewsApp", ConfigFactory.load().getConfig(
-      conf.getString("actor-system-config.path")))
-
-    val timeout: Timeout = Timeout(conf.getInt("actor-system-config.timeout").seconds)
-
-    val administration = system.actorOf(Administration.props(system), "administration-system")
-
-    val runLoadDataSetGraph: Boolean = conf.getBoolean("load-dataset.run")
-
-    if (runLoadDataSetGraph) {
-      val filePath: String = conf.getString("load-dataset.path-csv")
-      val chuck: Int = conf.getInt("load-dataset.chuck")
-      val maxAmountRow: Int = conf.getInt("load-dataset.max-amount-row")
-
-      new RunLoadDataSetGraph(filePath, chuck, maxAmountRow, administration, system, timeout).run()
-    }
-
-    startHttpServer(administration, timeout)
   }
 }

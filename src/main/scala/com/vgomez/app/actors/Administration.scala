@@ -20,10 +20,19 @@ import scala.util.{Failure, Success}
 
 
 object Administration {
+  def props(system: ActorSystem): Props = Props(new Administration(system))
+
   // state
   case class AdministrationState(restaurants: Map[String, (Long, ActorRef)], reviews: Map[String,
-    (Long, ActorRef)], users: Map[String, (Long, ActorRef)], currentRestaurantIndex: Long,
-                                 currentReviewIndex: Long, currentUserIndex: Long)
+  (Long, ActorRef)], users: Map[String, (Long, ActorRef)], currentRestaurantIndex: Long,
+    currentReviewIndex: Long, currentUserIndex: Long)
+
+  // events
+  case class RestaurantRegistered(id: String) extends EventAdministration
+
+  case class ReviewRegistered(id: String) extends EventAdministration
+
+  case class UserRegistered(username: String) extends EventAdministration
 
   // commands
   object Command {
@@ -37,27 +46,18 @@ object Administration {
 
     // Recommendations Categories
     case class GetRecommendationFilterByFavoriteCategories(favoriteCategories: Set[String], pageNumber: Long,
-                                                           numberOfElementPerPage: Long)
+      numberOfElementPerPage: Long)
 
     case class GetRecommendationFilterByUserFavoriteCategories(username: String, pageNumber: Long,
-                                                               numberOfElementPerPage: Long)
+      numberOfElementPerPage: Long)
 
     // Recommendations Location
     case class GetRecommendationCloseToLocation(location: Location, rangeInKm: Double, pageNumber: Long,
-                                                numberOfElementPerPage: Long)
+      numberOfElementPerPage: Long)
 
     case class GetRecommendationCloseToMe(username: String, rangeInKm: Double, pageNumber: Long,
-                                          numberOfElementPerPage: Long)
+      numberOfElementPerPage: Long)
   }
-
-  // events
-  case class RestaurantRegistered(id: String) extends EventAdministration
-
-  case class ReviewRegistered(id: String) extends EventAdministration
-
-  case class UserRegistered(username: String) extends EventAdministration
-
-  def props(system: ActorSystem): Props = Props(new Administration(system))
 }
 
 class Administration(system: ActorSystem) extends PersistentActor with ActorLogging {
@@ -255,7 +255,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   }
 
   def processRegisterCommand(registerCommand: RegisterCommand,
-                             administrationState: AdministrationState): Unit = {
+    administrationState: AdministrationState): Unit = {
     val identifier: String = getIdentifierByRegisterCommand(registerCommand)
     val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByRegisterCommand(registerCommand,
       identifier, administrationState)
@@ -273,7 +273,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   }
 
   def processRegisterCommandWithVerifyIds(registerCommand: RegisterCommand,
-                                          administrationState: AdministrationState): Unit = {
+    administrationState: AdministrationState): Unit = {
     verifyIdsOnRegisterCommand(registerCommand, administrationState) match {
       case Success(_) =>
         processRegisterCommand(registerCommand, administrationState)
@@ -283,7 +283,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   }
 
   def persistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef, identifier: String,
-                             newStateAdministrationState: AdministrationState): Unit = {
+    newStateAdministrationState: AdministrationState): Unit = {
     registerCommand match {
       case RegisterRestaurant(_, _) =>
         helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef,
@@ -303,8 +303,8 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   }
 
   def helperPersistRegisterCommand(registerCommand: RegisterCommand, newActorRef: ActorRef,
-                                   identifier: String, newStateAdministrationState: AdministrationState,
-                                   actorName: String, event: EventAdministration): Unit = {
+    identifier: String, newStateAdministrationState: AdministrationState,
+    actorName: String, event: EventAdministration): Unit = {
     persist(event) { _ =>
       log.info(s"Administration has Registered a $actorName with id: $identifier")
       newActorRef.forward(registerCommand)
@@ -326,7 +326,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   }
 
   def processUpdateCommandWithVerifyIds(updateCommand: UpdateCommand,
-                                        administrationState: AdministrationState): Unit = {
+    administrationState: AdministrationState): Unit = {
     verifyIdsOnUpdateCommand(updateCommand, administrationState) match {
       case Success(_) =>
         processUpdateCommand(updateCommand, administrationState)
@@ -340,7 +340,7 @@ class Administration(system: ActorSystem) extends PersistentActor with ActorLogg
   }
 
   def processUnregisterCommand(unregisterCommand: UnregisterCommand,
-                               administrationState: AdministrationState): Unit = {
+    administrationState: AdministrationState): Unit = {
     val actorRefOption: Option[(Long, ActorRef)] = getActorRefOptionByUnregisterCommand(unregisterCommand,
       administrationState)
     actorRefOption match {

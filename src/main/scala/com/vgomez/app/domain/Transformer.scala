@@ -40,7 +40,8 @@ object Transformer extends SimpleSchedulerJsonProtocol {
     }
 
     def scheduleStringFormatter(scheduleString: String): String = {
-      val scheduleStringJsonFormat = scheduleString.stripMargin.replace("'", "\"").toLowerCase
+      val scheduleStringJsonFormat = scheduleString.stripMargin.replace("'",
+        "\"").toLowerCase
 
       val dayWeekList = List("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
@@ -129,7 +130,8 @@ object Transformer extends SimpleSchedulerJsonProtocol {
     def transformTimetableToString(timetable: Timetable): String = {
       timetable match {
         case schedule@Schedule(_) =>
-          val simpleScheduler = SimpleScheduler(monday = transformScheduleDayToString(schedule.schedulesForDays(Monday)),
+          val simpleScheduler = SimpleScheduler(monday = transformScheduleDayToString(schedule
+            .schedulesForDays(Monday)),
             tuesday = transformScheduleDayToString(schedule.schedulesForDays(Tuesday)),
             wednesday = transformScheduleDayToString(schedule.schedulesForDays(Wednesday)),
             thursday = transformScheduleDayToString(schedule.schedulesForDays(Thursday)),

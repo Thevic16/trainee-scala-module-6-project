@@ -9,7 +9,9 @@ trait CustomPostgresProfile extends ExPostgresProfile with PgArraySupport {
   override val api = CustomPGAPI
 
   object CustomPGAPI extends API with ArrayImplicits {
-    implicit val strListTypeMapper: DriverJdbcType[List[String]] = new SimpleArrayJdbcType[String]("text").to(_.toList)
+    implicit val strListTypeMapper: DriverJdbcType[List[String]] = new SimpleArrayJdbcType[String](
+      "text")
+      .to(_.toList)
   }
 }
 

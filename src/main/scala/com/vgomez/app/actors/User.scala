@@ -15,14 +15,23 @@ import scala.util.{Failure, Success}
 
 
 object User {
-  case class UserInfo(username: String, password: String, role: Role, location: Location,
-                      favoriteCategories: Set[String])
+  def props(username: String, index: Long): Props = Props(new User(username, index))
 
   // state
   sealed abstract class UserState
 
+  case class UserInfo(username: String, password: String, role: Role, location: Location,
+    favoriteCategories: Set[String])
+
   case class RegisterUserState(username: String, index: Long, password: String, role: Role,
-                               location: Location, favoriteCategories: Set[String]) extends UserState
+    location: Location, favoriteCategories: Set[String]) extends UserState
+
+  // events
+  case class UserRegistered(UserState: UserState) extends EventUser
+
+  case class UserUpdated(UserState: UserState) extends EventUser
+
+  case class UserUnregistered(username: String, UserState: UserState) extends EventUser
 
   case object UnregisterUserState extends UserState
 
@@ -36,15 +45,6 @@ object User {
 
     case class UnregisterUser(username: String) extends UnregisterCommand
   }
-
-  // events
-  case class UserRegistered(UserState: UserState) extends EventUser
-
-  case class UserUpdated(UserState: UserState) extends EventUser
-
-  case class UserUnregistered(username: String, UserState: UserState) extends EventUser
-
-  def props(username: String, index: Long): Props = Props(new User(username, index))
 
 }
 
@@ -113,7 +113,7 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
   }
 
   def getState(username: String = username, password: String = "", role: Role = Normal,
-               location: Location = Location(0, 0), favoriteCategories: Set[String] = Set()): UserState = {
+    location: Location = Location(0, 0), favoriteCategories: Set[String] = Set()): UserState = {
     RegisterUserState(username, index, password, role, location, favoriteCategories)
   }
 

@@ -37,7 +37,7 @@ class ReviewRouter(administration: ActorRef)(implicit system: ActorSystem, impli
     (administration ? reviewCreationRequest.toCommand).mapTo[Try[String]]
 
   def updateReview(id: String,
-                   reviewUpdateRequest: ReviewUpdateRequest): Future[Try[Done]] =
+    reviewUpdateRequest: ReviewUpdateRequest): Future[Try[Done]] =
     (administration ? reviewUpdateRequest.toCommand(id)).mapTo[Try[Done]]
 
   def unregisterReview(id: String): Future[Try[Done]] =

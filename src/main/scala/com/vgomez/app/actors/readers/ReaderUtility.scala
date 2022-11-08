@@ -10,11 +10,9 @@ import com.vgomez.app.domain.DomainModel.Location
 
 object ReaderUtility {
 
-  def getRestaurantStateByRestaurantModel(restaurantModel: RestaurantModel): RestaurantState = {
-    RegisterRestaurantState(restaurantModel.id, restaurantModel.index.getOrElse(0L), restaurantModel.username,
-      restaurantModel.name, restaurantModel.state, restaurantModel.city, restaurantModel.postalCode,
-      Location(restaurantModel.latitude, restaurantModel.longitude), restaurantModel.categories.toSet,
-      restaurantModel.timetable)
+  def getListReviewStateBySeqReviewModels(reviewModels: Seq[ReviewModel]):
+  List[ReviewState] = {
+    reviewModels.map(getReviewStateByReviewModel).toList
   }
 
   def getReviewStateByReviewModel(reviewModel: ReviewModel): ReviewState = {
@@ -22,9 +20,23 @@ object ReaderUtility {
       reviewModel.restaurantId, reviewModel.stars, reviewModel.text, reviewModel.date)
   }
 
+  def getListUserStateBySeqReviewModels(userModels: Seq[UserModel]):
+  List[UserState] = {
+    userModels.map(getUserStateByUserModel).toList
+  }
+
   def getUserStateByUserModel(userModel: UserModel): UserState = {
     RegisterUserState(userModel.username, userModel.index.getOrElse(0L), userModel.password, userModel.role,
       Location(userModel.latitude, userModel.longitude), userModel.favoriteCategories.toSet)
+  }
+
+  def getRecommendationResponseBySeqRestaurantModels(restaurantModels:
+  Seq[RestaurantModel]): Option[List[RestaurantState]] = {
+    if (restaurantModels.nonEmpty) {
+      Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))
+    } else {
+      None
+    }
   }
 
   def getListRestaurantStateBySeqRestaurantModels(restaurantModels: Seq[RestaurantModel]):
@@ -32,22 +44,10 @@ object ReaderUtility {
     restaurantModels.map(getRestaurantStateByRestaurantModel).toList
   }
 
-  def getListReviewStateBySeqReviewModels(reviewModels: Seq[ReviewModel]):
-  List[ReviewState] = {
-    reviewModels.map(getReviewStateByReviewModel).toList
-  }
-
-  def getListUserStateBySeqReviewModels(userModels: Seq[UserModel]):
-  List[UserState] = {
-    userModels.map(getUserStateByUserModel).toList
-  }
-
-  def getRecommendationResponseBySeqRestaurantModels(restaurantModels:
-                                                     Seq[RestaurantModel]): Option[List[RestaurantState]] = {
-    if (restaurantModels.nonEmpty) {
-      Some(getListRestaurantStateBySeqRestaurantModels(restaurantModels))
-    } else {
-      None
-    }
+  def getRestaurantStateByRestaurantModel(restaurantModel: RestaurantModel): RestaurantState = {
+    RegisterRestaurantState(restaurantModel.id, restaurantModel.index.getOrElse(0L), restaurantModel.username,
+      restaurantModel.name, restaurantModel.state, restaurantModel.city, restaurantModel.postalCode,
+      Location(restaurantModel.latitude, restaurantModel.longitude), restaurantModel.categories.toSet,
+      restaurantModel.timetable)
   }
 }

@@ -9,12 +9,12 @@ import com.vgomez.app.data.projectionDatabase.Response.GetReviewModelsStarsRespo
 
 
 object ReaderStarsByRestaurant {
+  def props(system: ActorSystem): Props = Props(new ReaderStarsByRestaurant(system))
+
   // commands
   object Command {
     case class GetStarsByRestaurant(restaurantId: String)
   }
-
-  def props(system: ActorSystem): Props = Props(new ReaderStarsByRestaurant(system))
 }
 
 class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLogging with Stash {

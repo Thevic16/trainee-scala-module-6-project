@@ -28,7 +28,7 @@ import scala.util.{Failure, Success}
 
 
 class RecommendationCategoriesRouter(administration: ActorRef)(implicit system: ActorSystem,
-                                                               implicit val timeout: Timeout)
+  implicit val timeout: Timeout)
   extends GetRecommendationFilterByFavoriteCategoriesRequestJsonProtocol
     with GetRecommendationFilterByUserFavoriteCategoriesRequestJsonProtocol
     with RestaurantResponseJsonProtocol

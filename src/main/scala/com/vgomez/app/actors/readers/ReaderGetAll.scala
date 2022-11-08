@@ -7,10 +7,13 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import com.vgomez.app.actors.readers.ReaderUtility._
 import com.vgomez.app.data.projectionDatabase.Operation
-import com.vgomez.app.data.projectionDatabase.Response.{GetRestaurantModelsResponse, GetReviewModelsResponse, GetUserModelsResponse}
+import com.vgomez.app.data.projectionDatabase.Response.{GetRestaurantModelsResponse,
+  GetReviewModelsResponse, GetUserModelsResponse}
 
 
 object ReaderGetAll {
+  def props(system: ActorSystem): Props = Props(new ReaderGetAll(system))
+
   // commands
   object Command {
     case class GetAllRestaurant(pageNumber: Long, numberOfElementPerPage: Long)
@@ -19,8 +22,6 @@ object ReaderGetAll {
 
     case class GetAllUser(pageNumber: Long, numberOfElementPerPage: Long)
   }
-
-  def props(system: ActorSystem): Props = Props(new ReaderGetAll(system))
 
 }
 

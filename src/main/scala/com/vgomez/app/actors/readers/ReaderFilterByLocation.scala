@@ -14,6 +14,10 @@ import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
 
 object ReaderFilterByLocation {
 
+  def props(system: ActorSystem,
+    intermediateReadUserAttributes: ActorRef): Props = Props(new ReaderFilterByLocation(system,
+    intermediateReadUserAttributes))
+
   // commands
   object Command {
     // Recommendations Location
@@ -23,10 +27,6 @@ object ReaderFilterByLocation {
     case class GetRecommendationCloseToMe(username: String, rangeInKm: Double, pageNumber: Long,
       numberOfElementPerPage: Long)
   }
-
-  def props(system: ActorSystem,
-    intermediateReadUserAttributes: ActorRef): Props = Props(new ReaderFilterByLocation(system,
-    intermediateReadUserAttributes))
 
 }
 

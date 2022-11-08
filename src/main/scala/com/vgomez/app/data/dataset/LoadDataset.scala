@@ -44,7 +44,7 @@ object LoadDataset {
   }
 
   def getRegisterUserCommand(row: Map[String, String], locationField: Location,
-                             categoriesField: Set[String]): RegisterUser = {
+    categoriesField: Set[String]): RegisterUser = {
     RegisterUser(UserInfo(username = row.getOrElse("user_id", UUID.randomUUID().toString),
       password = UUID.randomUUID().toString,
       role = Normal,
@@ -53,8 +53,8 @@ object LoadDataset {
   }
 
   def getRegisterRestaurantCommand(row: Map[String, String], locationField: Location,
-                                   categoriesField: Set[String], restaurantId: String,
-                                   username: String): RegisterRestaurant = {
+    categoriesField: Set[String], restaurantId: String,
+    username: String): RegisterRestaurant = {
     val defaultHours: String = "{'Monday': '0:0-0:0'}"
 
     RegisterRestaurant(maybeId = Some(restaurantId), RestaurantInfo(
@@ -67,7 +67,7 @@ object LoadDataset {
   }
 
   def getRegisterReviewCommand(row: Map[String, String], restaurantId: String, reviewId: String,
-                               username: String): RegisterReview = {
+    username: String): RegisterReview = {
     RegisterReview(maybeId = Some(reviewId),
       ReviewInfo(username = username, restaurantId = restaurantId,
         stars = row.getOrElse("customer_stars", "0").toInt, text = row.getOrElse("text_", "No text"),
@@ -77,7 +77,7 @@ object LoadDataset {
 }
 
 class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administration: ActorRef,
-                  implicit val system: ActorSystem, implicit val timeout: Timeout) {
+  implicit val system: ActorSystem, implicit val timeout: Timeout) {
 
   import LoadDataset._
 

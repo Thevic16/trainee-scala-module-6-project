@@ -89,7 +89,7 @@ object Operation {
   }
 
   def getRestaurantsModelByCategories(categories: List[String], pageNumber: Long,
-                                      numberOfElementPerPage: Long): Future[GetRestaurantModelsResponse] = {
+    numberOfElementPerPage: Long): Future[GetRestaurantModelsResponse] = {
     val query = Table.restaurantTable.filter(_.categories @& categories.bind).
       drop(pageNumber * numberOfElementPerPage).take(numberOfElementPerPage).result
     db.run(query).map(GetRestaurantModelsResponse)
