@@ -116,7 +116,7 @@ class Restaurant(id: String, index: Long) extends PersistentActor {
   }
 
   def getState(username: String = "", name: String = "", state: String = "",
-    city: String = "", postalCode: String = "", location: Location = Location(0, 0),
+    city: String = "", postalCode: String = "", location: Location = Location(latitude = 0, longitude = 0),
     categories: Set[String] = Set(),
     timetable: Timetable = UnavailableTimetable): RestaurantState = {
     RegisterRestaurantState(id, index, username, name, state, city, postalCode, location, categories,

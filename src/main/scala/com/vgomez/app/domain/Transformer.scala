@@ -6,7 +6,7 @@ import spray.json._
 
 import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
-
+import DomainModel._
 
 case class SimpleScheduler(monday: String, tuesday: String, wednesday: String, thursday: String,
   friday: String, saturday: String, sunday: String)
@@ -16,8 +16,6 @@ trait SimpleSchedulerJsonProtocol extends DefaultJsonProtocol {
 }
 
 object Transformer extends SimpleSchedulerJsonProtocol {
-
-  import DomainModel._
 
   object FromRawDataToDomain {
     def transformStringRoleToRole(stringRole: String): Role = {
@@ -84,7 +82,7 @@ object Transformer extends SimpleSchedulerJsonProtocol {
         ScheduleDay(dayWeek, mondayHashMapHour("startHour"), mondayHashMapHour("endHour"))
       }
       else {
-        ScheduleDay(dayWeek, Hour(0, 0), Hour(0, 0))
+        ScheduleDay(dayWeek, Hour(hr = 0, minutes = 0), Hour(hr = 0, minutes = 0))
       }
     }
 

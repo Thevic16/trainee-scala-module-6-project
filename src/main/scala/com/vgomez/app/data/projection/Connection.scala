@@ -1,6 +1,6 @@
 
 // Copyright (C) 2022 Víctor Gómez.
-package com.vgomez.app.data.projectionDatabase
+package com.vgomez.app.data.projection
 
 import com.typesafe.config.{Config, ConfigFactory}
 import slick.jdbc.PostgresProfile.api._

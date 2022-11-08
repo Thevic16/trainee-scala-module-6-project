@@ -1,19 +1,18 @@
 
 // Copyright (C) 2022 Víctor Gómez.
-package com.vgomez.app.data.projectionDatabase
+package com.vgomez.app.data.projection
 
 import akka.Done
-import com.vgomez.app.data.projectionDatabase.ExecContext._
-import com.vgomez.app.data.projectionDatabase.Model._
-import com.vgomez.app.data.projectionDatabase.Response._
-import com.vgomez.app.data.projectionDatabase.Table.RestaurantTable
+import com.vgomez.app.data.projection.ExecContext._
+import com.vgomez.app.data.projection.Model._
+import com.vgomez.app.data.projection.Response._
+import com.vgomez.app.data.projection.Table.RestaurantTable
+import com.vgomez.app.data.projection.Table.api._
 import com.vgomez.app.domain.DomainModelOperation.rangeInKmToDegrees
 
 import scala.concurrent.Future
 
 object Operation {
-
-  import Table.api._
 
   val db = Connection.db
 

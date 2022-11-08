@@ -1,14 +1,14 @@
 
 // Copyright (C) 2022 Víctor Gómez.
-package com.vgomez.app.data.projectionDatabase
+package com.vgomez.app.data.projection
 
-import com.vgomez.app.data.projectionDatabase
+import com.vgomez.app.data.projection
+import com.vgomez.app.data.projection.Model._
 import com.vgomez.app.domain.DomainModel.{Role, Timetable}
 import com.vgomez.app.domain.Transformer.FromDomainToRawData._
 import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType
-
 
 object Model {
   // Models
@@ -25,9 +25,6 @@ object Model {
 }
 
 object Response {
-
-  import Model._
-
   case class GetRestaurantModelsResponse(restaurantModels: Seq[RestaurantModel])
 
   case class GetReviewModelsResponse(reviewModels: Seq[ReviewModel])
@@ -39,10 +36,8 @@ object Response {
 
 object Table {
   // Table
+  val api: projection.CustomPostgresProfile.CustomPGAPI.type = CustomPostgresProfile.api
 
-  import Model._
-
-  val api: projectionDatabase.CustomPostgresProfile.CustomPGAPI.type = CustomPostgresProfile.api
   import api._
 
   val schemaName: String = "reviews"

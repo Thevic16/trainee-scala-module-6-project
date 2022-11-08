@@ -63,7 +63,8 @@ object RestaurantReviewApp {
     val allRoutes = restaurantRoutes ~ reviewRoutes ~ userRoutes ~ recommendationCategoriesRoutes ~
       recommendationLocationsRoutes
 
-    val bindingFuture = Http().bindAndHandle(allRoutes, "localhost", 8080)
+    val port: Int = 8080
+    val bindingFuture = Http().bindAndHandle(allRoutes, interface = "localhost", port)
 
     bindingFuture.onComplete {
       case Success(binding) =>

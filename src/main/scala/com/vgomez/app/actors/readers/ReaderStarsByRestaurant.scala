@@ -4,9 +4,9 @@ package com.vgomez.app.actors.readers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
-import com.vgomez.app.data.projectionDatabase.Operation
-import com.vgomez.app.data.projectionDatabase.Response.GetReviewModelsStarsResponse
-
+import com.vgomez.app.actors.readers.ReaderStarsByRestaurant.Command._
+import com.vgomez.app.data.projection.Operation
+import com.vgomez.app.data.projection.Response.GetReviewModelsStarsResponse
 
 object ReaderStarsByRestaurant {
   def props(system: ActorSystem): Props = Props(new ReaderStarsByRestaurant(system))
@@ -19,8 +19,6 @@ object ReaderStarsByRestaurant {
 
 class ReaderStarsByRestaurant(system: ActorSystem) extends Actor with ActorLogging with Stash {
 
-  import ReaderStarsByRestaurant._
-  import Command._
   import system.dispatcher
 
   def state(): Receive = {

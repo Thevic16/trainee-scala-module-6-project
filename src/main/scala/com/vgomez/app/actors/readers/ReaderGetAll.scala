@@ -5,11 +5,11 @@ package com.vgomez.app.actors.readers
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
+import com.vgomez.app.actors.readers.ReaderGetAll.Command._
 import com.vgomez.app.actors.readers.ReaderUtility._
-import com.vgomez.app.data.projectionDatabase.Operation
-import com.vgomez.app.data.projectionDatabase.Response.{GetRestaurantModelsResponse,
+import com.vgomez.app.data.projection.Operation
+import com.vgomez.app.data.projection.Response.{GetRestaurantModelsResponse,
   GetReviewModelsResponse, GetUserModelsResponse}
-
 
 object ReaderGetAll {
   def props(system: ActorSystem): Props = Props(new ReaderGetAll(system))
@@ -27,8 +27,6 @@ object ReaderGetAll {
 
 class ReaderGetAll(system: ActorSystem) extends Actor with ActorLogging with Stash {
 
-  import ReaderGetAll._
-  import Command._
   import system.dispatcher
 
 

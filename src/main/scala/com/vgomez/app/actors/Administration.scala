@@ -5,6 +5,7 @@ package com.vgomez.app.actors
 import akka.Done
 import akka.actor.{ActorLogging, ActorRef, ActorSystem, Cancellable, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import com.vgomez.app.actors.Administration._
 import com.vgomez.app.actors.AdministrationUtility._
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
@@ -17,6 +18,12 @@ import com.vgomez.app.exception.CustomException._
 
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
+
+// Commands
+import com.vgomez.app.actors.Administration.Command._
+import com.vgomez.app.actors.Restaurant.Command._
+import com.vgomez.app.actors.Review.Command._
+import com.vgomez.app.actors.User.Command._
 
 
 object Administration {
@@ -62,13 +69,6 @@ object Administration {
 
 class Administration(system: ActorSystem) extends PersistentActor with ActorLogging {
 
-  import Administration._
-
-  // Commands
-  import Command._
-  import Restaurant.Command._
-  import Review.Command._
-  import User.Command._
   import context.dispatcher
 
   // intermediates

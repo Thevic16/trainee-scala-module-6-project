@@ -5,7 +5,8 @@ package com.vgomez.app.actors.intermediate
 import akka.actor.{Actor, ActorRef, Stash}
 import com.vgomez.app.actors.User.Command.GetUser
 import com.vgomez.app.actors.User.{RegisterUserState, UnregisterUserState}
-
+import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.ChooseAttribute._
+import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command._
 
 object IntermediateReadUserAttributes {
   // commands
@@ -26,10 +27,6 @@ object IntermediateReadUserAttributes {
 }
 
 class IntermediateReadUserAttributes extends Actor with Stash {
-
-  import IntermediateReadUserAttributes.ChooseAttribute._
-  import IntermediateReadUserAttributes.Command._
-
   override def receive: Receive = {
     case GetUserFavoriteCategories(username) =>
       context.parent ! GetUser(username)

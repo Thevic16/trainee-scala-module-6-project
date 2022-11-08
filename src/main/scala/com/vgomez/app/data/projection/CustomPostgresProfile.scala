@@ -1,6 +1,6 @@
 
 // Copyright (C) 2022 Víctor Gómez.
-package com.vgomez.app.data.projectionDatabase
+package com.vgomez.app.data.projection
 
 import com.github.tminglei.slickpg._
 

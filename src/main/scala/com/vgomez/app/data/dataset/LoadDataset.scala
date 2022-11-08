@@ -13,6 +13,7 @@ import com.vgomez.app.actors.Review.Command.RegisterReview
 import com.vgomez.app.actors.Review.ReviewInfo
 import com.vgomez.app.actors.User.Command.RegisterUser
 import com.vgomez.app.actors.User.UserInfo
+import com.vgomez.app.data.dataset.LoadDataset._
 import com.vgomez.app.domain.DomainModel.{Location, Normal}
 import com.vgomez.app.domain.Transformer.FromRawDataToDomain._
 
@@ -78,8 +79,6 @@ object LoadDataset {
 
 class LoadDataset(filePath: String, chuck: Int, maxAmountRow: Int, administration: ActorRef,
   implicit val system: ActorSystem, implicit val timeout: Timeout) {
-
-  import LoadDataset._
 
   // Use Akka Stream to process the data
   implicit val materializer: ActorMaterializer = ActorMaterializer()

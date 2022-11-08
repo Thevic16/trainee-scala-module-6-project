@@ -6,13 +6,14 @@ package com.vgomez.app.actors
 import akka.Done
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
+import com.vgomez.app.actors.User.Command._
+import com.vgomez.app.actors.User._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Event.EventUser
 import com.vgomez.app.domain.DomainModel._
 import com.vgomez.app.exception.CustomException.UserUnRegisteredException
 
 import scala.util.{Failure, Success}
-
 
 object User {
   def props(username: String, index: Long): Props = Props(new User(username, index))
@@ -49,10 +50,6 @@ object User {
 }
 
 class User(username: String, index: Long) extends PersistentActor with ActorLogging {
-
-  import User._
-  import Command._
-
   override def persistenceId: String = username
 
   def state(userState: UserState): Receive = {
@@ -113,7 +110,8 @@ class User(username: String, index: Long) extends PersistentActor with ActorLogg
   }
 
   def getState(username: String = username, password: String = "", role: Role = Normal,
-    location: Location = Location(0, 0), favoriteCategories: Set[String] = Set()): UserState = {
+    location: Location = Location(latitude = 0, longitude = 0),
+    favoriteCategories: Set[String] = Set()): UserState = {
     RegisterUserState(username, index, password, role, location, favoriteCategories)
   }
 

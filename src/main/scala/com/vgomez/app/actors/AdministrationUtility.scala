@@ -136,7 +136,7 @@ object AdministrationUtility {
   }
 
   def getUnregisterResponseNotFoundExceptionByUnregisterCommand(unregisterCommand:
-  UnregisterCommand): Failure[Nothing] = {
+    UnregisterCommand): Failure[Nothing] = {
     unregisterCommand match {
       case UnregisterRestaurant(_) => Failure(RestaurantNotFoundException())
       case UnregisterReview(_) => Failure(ReviewNotFoundException())

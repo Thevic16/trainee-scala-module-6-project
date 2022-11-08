@@ -5,12 +5,12 @@ package com.vgomez.app.actors.readers
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Stash}
 import akka.pattern.pipe
 import com.vgomez.app.actors.intermediate.IntermediateReadUserAttributes.Command.GetUserLocation
+import com.vgomez.app.actors.readers.ReaderFilterByLocation.Command._
 import com.vgomez.app.actors.readers.ReaderUtility.getRecommendationResponseBySeqRestaurantModels
-import com.vgomez.app.data.projectionDatabase.Operation
-import com.vgomez.app.data.projectionDatabase.Response.GetRestaurantModelsResponse
+import com.vgomez.app.data.projection.Operation
+import com.vgomez.app.data.projection.Response.GetRestaurantModelsResponse
 import com.vgomez.app.domain.DomainModel.Location
 import com.vgomez.app.domain.DomainModelOperation.calculateDistanceInKm
-
 
 object ReaderFilterByLocation {
 
@@ -33,8 +33,6 @@ object ReaderFilterByLocation {
 class ReaderFilterByLocation(system: ActorSystem,
   intermediateReadUserAttributes: ActorRef) extends Actor with ActorLogging with Stash {
 
-  import ReaderFilterByLocation._
-  import Command._
   import system.dispatcher
 
   def state(): Receive = {

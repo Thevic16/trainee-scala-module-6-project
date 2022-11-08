@@ -5,6 +5,8 @@ package com.vgomez.app.actors
 import akka.Done
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
+import com.vgomez.app.actors.Review.Command._
+import com.vgomez.app.actors.Review._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Event.EventReview
 import com.vgomez.app.exception.CustomException.ReviewUnRegisteredException
@@ -45,9 +47,6 @@ object Review {
 }
 
 class Review(id: String, index: Long) extends PersistentActor with ActorLogging {
-
-  import Review._
-  import Command._
 
   override def persistenceId: String = id
 
