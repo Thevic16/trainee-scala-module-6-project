@@ -5,6 +5,8 @@ package com.vgomez.app.actors
 import akka.Done
 import akka.actor.Props
 import akka.persistence.PersistentActor
+import com.vgomez.app.actors.Restaurant.Command._
+import com.vgomez.app.actors.Restaurant._
 import com.vgomez.app.actors.messages.AbstractMessage.Command._
 import com.vgomez.app.actors.messages.AbstractMessage.Event.EventRestaurant
 import com.vgomez.app.domain.DomainModel._
@@ -50,9 +52,6 @@ object Restaurant {
 }
 
 class Restaurant(id: String, index: Long) extends PersistentActor {
-
-  import Restaurant._
-  import Command._
 
   override def persistenceId: String = id
 

@@ -116,7 +116,7 @@ class ProjectionHandler(system: ActorSystem[_]) extends Handler[EventEnvelope[Ev
 
   private def logEventCount(event: EventEntity): Unit = event match {
     case _: EventEntity =>
-      log.info(s"A new event have been projected to projection database.")
+      log.info("A new event have been projected to projection database.")
     case _ => ()
   }
 

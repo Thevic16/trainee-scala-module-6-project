@@ -2,6 +2,8 @@
 // Copyright (C) 2022 Víctor Gómez.
 package com.vgomez.app.domain
 
+import com.vgomez.app.domain.DomainModel._
+
 import scala.annotation.tailrec
 
 object DomainModel {
@@ -56,7 +58,7 @@ object DomainModelFactory {
   }
 
   def generateSchedulesForDaysElement(dayWeek: DayWeek): (DayWeek, ScheduleDay) = {
-    (dayWeek, ScheduleDay(dayWeek, Hour(0, 0), Hour(0, 0)))
+    (dayWeek, ScheduleDay(dayWeek, Hour(hr = 0, minutes = 0), Hour(hr = 0, minutes = 0)))
   }
 
   @tailrec
@@ -73,9 +75,7 @@ object DomainModelFactory {
 
 object DomainModelOperation {
 
-  import DomainModel._
-
-  private val AVERAGE_RADIUS_OF_EARTH_KM = 6371
+  private val averageRadiusOfEarthKm: Int = 6371
 
   // Haversine formula.
   def calculateDistanceInKm(location1: Location, location2Option: Option[Location]): Double = {
@@ -100,12 +100,12 @@ object DomainModelOperation {
 
     val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
-    AVERAGE_RADIUS_OF_EARTH_KM * c
+    averageRadiusOfEarthKm * c
   }
 
   def rangeInKmToDegrees(rangeInKm: Double): Double = {
-    val OneDegreesInKm = 111
-    rangeInKm / OneDegreesInKm
+    val oneDegreesInKm = 111
+    rangeInKm / oneDegreesInKm
   }
 
 }

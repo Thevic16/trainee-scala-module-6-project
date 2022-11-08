@@ -12,7 +12,7 @@ case class SimpleScheduler(monday: String, tuesday: String, wednesday: String, t
   friday: String, saturday: String, sunday: String)
 
 trait SimpleSchedulerJsonProtocol extends DefaultJsonProtocol {
-  implicit val SimpleSchedulerFormat: RootJsonFormat[SimpleScheduler] = jsonFormat7(SimpleScheduler)
+  implicit val simpleSchedulerFormat: RootJsonFormat[SimpleScheduler] = jsonFormat7(SimpleScheduler)
 }
 
 object Transformer extends SimpleSchedulerJsonProtocol {

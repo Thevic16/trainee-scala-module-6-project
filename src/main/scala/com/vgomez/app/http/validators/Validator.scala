@@ -4,9 +4,9 @@ package com.vgomez.app.http.validators
 
 import com.vgomez.app.domain.SimpleScheduler
 import com.vgomez.app.exception.CustomException.ValidationFailException
+import com.vgomez.app.http.validators.Validator._
 
 import scala.util.{Failure, Success, Try}
-
 
 object Validator {
   case class Valid(description: String)
@@ -17,44 +17,32 @@ object Validator {
 
   def validateSimpleScheduler(schedule: SimpleScheduler): Boolean = {
     val regex: String = "[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]"
-    if (schedule.monday.matches(regex) && schedule.tuesday.matches(regex) && schedule.wednesday.matches(regex)
-      && schedule.thursday.matches(regex) && schedule.friday.matches(regex) &&
-      schedule.saturday.matches(regex) && schedule.sunday.matches(regex)) {
-      false
-    }
-    else {
-      true
-    }
+    val condition: Boolean = (schedule.monday.matches(regex) && schedule.tuesday.matches(regex)
+      && schedule.wednesday.matches(regex)
+      && schedule.thursday.matches(regex) && schedule.friday.matches(regex)
+      && schedule.saturday.matches(regex) && schedule.sunday.matches(regex))
+
+    !condition
   }
 
   def conditionLatitude(latitude: Double): Boolean = {
     val lowLimit: Int = -90
     val highLimit: Int = 90
 
-    if (latitude >= lowLimit && latitude <= highLimit) {
-      false
-    }
-    else {
-      true
-    }
+    val condition: Boolean = latitude >= lowLimit && latitude <= highLimit
+    !condition
   }
 
   def conditionLongitude(longitude: Double): Boolean = {
     val lowLimit: Int = -180
     val highLimit: Int = 180
 
-    if (longitude >= lowLimit && longitude <= highLimit) {
-      false
-    }
-    else {
-      true
-    }
+    val condition: Boolean = longitude >= lowLimit && longitude <= highLimit
+    !condition
   }
 }
 
 abstract class Validator {
-
-  import Validator._
 
   def conditions(): Try[Valid]
 
@@ -73,7 +61,6 @@ case class ValidatorRestaurantRequest(username: String, name: String, state: Str
   postalCode: String, latitude: Double, longitude: Double, categories: Set[String],
   schedule: SimpleScheduler) extends Validator {
 
-  import Validator._
 
   override def conditions(): Try[Valid] = {
     validation(username.length < 5, "username length has to be greater than 5.")
@@ -97,8 +84,6 @@ case class ValidatorRestaurantRequest(username: String, name: String, state: Str
 case class ValidatorReviewRequest(username: String, restaurantId: String, stars: Int, text: String,
   date: String) extends Validator {
 
-  import Validator._
-
   override def conditions(): Try[Valid] = {
     validation(username.length < 5, "username length has to be greater than 5.")
     validation(restaurantId.length < 5, "restaurantId length has to be greater than 5.")
@@ -115,8 +100,6 @@ case class ValidatorReviewRequest(username: String, restaurantId: String, stars:
 case class ValidatorUserRequest(username: String, password: String, role: String, latitude: Double,
   longitude: Double, favoriteCategories: Set[String]) extends Validator {
 
-  import Validator._
-
   override def conditions(): Try[Valid] = {
     validation(username.length < 5, "username length has to be greater than 5.")
     validation(password.length < 8, "password length has to be greater than 8.")
@@ -130,8 +113,6 @@ case class ValidatorUserRequest(username: String, password: String, role: String
 }
 
 case class ValidatorRequestWithPagination(pageNumber: Long, numberOfElementPerPage: Long) extends Validator {
-
-  import Validator._
 
   override def conditions(): Try[Valid] = {
     validation(pageNumber < 0, "pageNumber parameter should be a positive number.")
@@ -147,8 +128,6 @@ case class ValidatorRequestWithPagination(pageNumber: Long, numberOfElementPerPa
 case class ValidatorGetRecommendationFilterByFavoriteCategoriesRequest(favoriteCategories: Set[String])
   extends Validator {
 
-  import Validator._
-
   override def conditions(): Try[Valid] = {
     validation(favoriteCategories.isEmpty, "favoriteCategories should no be empty.")
     Success(Valid("User GetRecommendationFilterByFavoriteCategoriesRequest has been validated"))
@@ -158,8 +137,6 @@ case class ValidatorGetRecommendationFilterByFavoriteCategoriesRequest(favoriteC
 
 case class ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest(username: String)
   extends Validator {
-
-  import Validator._
 
   override def conditions(): Try[Valid] = {
     validation(username.length < 5, "username length has to be greater than 5.")
@@ -171,8 +148,6 @@ case class ValidatorGetRecommendationFilterByUserFavoriteCategoriesRequest(usern
 case class ValidatorGetRecommendationCloseToLocationRequest(latitude: Double, longitude: Double,
   rangeInKm: Double)
   extends Validator {
-
-  import Validator._
 
   override def conditions(): Try[Valid] = {
     validation(conditionLatitude(latitude), "latitude should be in the range of -90 to 90.")
@@ -186,7 +161,6 @@ case class ValidatorGetRecommendationCloseToLocationRequest(latitude: Double, lo
 case class ValidatorGetRecommendationCloseToMeRequest(username: String, rangeInKm: Double)
   extends Validator {
 
-  import Validator._
 
   override def conditions(): Try[Valid] = {
     validation(username.length < 5, "username length has to be greater than 5.")
