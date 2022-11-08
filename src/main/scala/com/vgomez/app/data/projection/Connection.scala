@@ -8,5 +8,5 @@ import slick.jdbc.PostgresProfile.api._
 object Connection {
   val conf: Config = ConfigFactory.load()
 
-  val db = Database.forConfig(conf.getString("index-database.path"))
+  val db = Database.forConfig(conf.getString("projection-database.path"))
 }
