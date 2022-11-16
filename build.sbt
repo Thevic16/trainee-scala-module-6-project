@@ -1,6 +1,16 @@
+
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
 ThisBuild / scalaVersion := "2.12.8"
+
+ThisBuild / scapegoatVersion := "1.3.9"
+
+scapegoatReports := Seq("xml")
+
+Scapegoat / scalacOptions += "-P:scapegoat:overrideLevels:all=Warning"
+
+ThisBuild / scalaBinaryVersion := "2.12"
+
 
 val akkaVersion = "2.7.0"
 val akkaHttpVersion = "10.4.0"
