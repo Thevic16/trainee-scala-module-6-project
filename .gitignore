@@ -181,6 +181,7 @@ project/plugins/project/
 # Remove all intellij setting files
 .idea
 
+
 # Remove CSV files
 *.csv
 
@@ -196,3 +197,4 @@ application.conf
 # Ignore scala style related
 scalastyle-config.xml
 /.scannerwork
+
