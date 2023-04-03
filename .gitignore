@@ -180,3 +180,21 @@ project/plugins/project/
 
 # Remove all intellij setting files
 .idea
+
+
+# Remove CSV files
+*.csv
+
+# Ignoring Playground files
+*Playground.scala
+*playground.sql
+
+# Ignore Application.conf
+application.conf
+
+.attach_pid*
+
+# Ignore scala style related
+scalastyle-config.xml
+/.scannerwork
+
