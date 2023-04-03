@@ -68,7 +68,18 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.github.tminglei" %% "slick-pg" % "0.20.3",
   "com.github.tminglei" %% "slick-pg_play-json" % "0.20.3",
 
+  // Cinnamon
+  Cinnamon.library.cinnamonAkka,
+  Cinnamon.library.cinnamonAkkaHttp,
+  Cinnamon.library.cinnamonJvmMetricsProducer,
+  Cinnamon.library.cinnamonPrometheus,
+  Cinnamon.library.cinnamonPrometheusHttpServer
 )
+
+enablePlugins(Cinnamon)
+
+cinnamon in run := true
+cinnamon in test := true
 
 lazy val root = (project in file("."))
   .settings(
