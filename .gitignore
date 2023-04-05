@@ -196,3 +196,6 @@ application.conf
 # Ignore scala style related
 scalastyle-config.xml
 /.scannerwork
+
+# Ignore lightbend credencials
+lightbend.sbt

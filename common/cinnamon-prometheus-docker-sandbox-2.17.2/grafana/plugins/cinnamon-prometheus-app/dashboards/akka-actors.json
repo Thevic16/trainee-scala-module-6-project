@@ -1,6 +1,6 @@
 {
   "id": null,
-  "title": "Akka Remote Actors",
+  "title": "Akka Actors",
   "tags": [],
   "style": "dark",
   "timezone": "browser",
@@ -14,245 +14,6 @@
       "editable": true,
       "height": "250px",
       "panels": [
-        {
-          "aliasColors": {},
-          "bars": false,
-          "datasource": "Cinnamon Prometheus",
-          "editable": true,
-          "error": false,
-          "fill": 1,
-          "grid": {
-            "threshold1": null,
-            "threshold1Color": "rgba(216, 200, 27, 0.27)",
-            "threshold2": null,
-            "threshold2Color": "rgba(234, 112, 112, 0.22)"
-          },
-          "id": 1,
-          "interval": "10s",
-          "isNew": true,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": false,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 2,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "span": 6,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "irate(akka_actor_remote_sent_messages{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$RemoteActors\"}[1m])",
-              "format": "time_series",
-              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}}"
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Remote Messages Sent: 1 min",
-          "description": "",
-          "tooltip": {
-            "msResolution": false,
-            "shared": true,
-            "value_type": "cumulative",
-            "sort": 2
-          },
-          "type": "graph",
-          "xaxis": {
-            "show": true
-          },
-          "yaxes": [
-            {
-              "format": "ops",
-              "label": "messages/second",
-              "logBase": 1,
-              "max": null,
-              "min": 0,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "datasource": "Cinnamon Prometheus",
-          "editable": true,
-          "error": false,
-          "fill": 1,
-          "grid": {
-            "threshold1": null,
-            "threshold1Color": "rgba(216, 200, 27, 0.27)",
-            "threshold2": null,
-            "threshold2Color": "rgba(234, 112, 112, 0.22)"
-          },
-          "id": 2,
-          "interval": "10s",
-          "isNew": true,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": false,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 2,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "span": 6,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "irate(akka_actor_remote_received_messages{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$RemoteActors\"}[1m])",
-              "format": "time_series",
-              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}}"
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Remote Messages Received: 1 min",
-          "description": "",
-          "tooltip": {
-            "msResolution": false,
-            "shared": true,
-            "value_type": "cumulative",
-            "sort": 2
-          },
-          "type": "graph",
-          "xaxis": {
-            "show": true
-          },
-          "yaxes": [
-            {
-              "format": "ops",
-              "label": "messages/second",
-              "logBase": 1,
-              "max": null,
-              "min": 0,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "",
-      "collapse": false,
-      "editable": true,
-      "height": "250px",
-      "panels": [
-        {
-          "aliasColors": {},
-          "bars": false,
-          "datasource": "Cinnamon Prometheus",
-          "editable": true,
-          "error": false,
-          "fill": 1,
-          "grid": {
-            "threshold1": null,
-            "threshold1Color": "rgba(216, 200, 27, 0.27)",
-            "threshold2": null,
-            "threshold2Color": "rgba(234, 112, 112, 0.22)"
-          },
-          "id": 5,
-          "interval": "10s",
-          "isNew": true,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": false,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 2,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "span": 6,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "akka_actor_remote_sent_message_size{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$RemoteActors\", quantile=~\"$Quantile\"}",
-              "format": "time_series",
-              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}}"
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Remote Sent Message Size ($Quantile quantile)",
-          "description": "Note: message size includes payload size plus Akka / Telemetry metadata size.",
-          "tooltip": {
-            "msResolution": false,
-            "shared": true,
-            "value_type": "cumulative",
-            "sort": 2
-          },
-          "type": "graph",
-          "xaxis": {
-            "show": true
-          },
-          "yaxes": [
-            {
-              "format": "bytes",
-              "label": "",
-              "logBase": 1,
-              "max": null,
-              "min": 0,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ]
-        },
         {
           "aliasColors": {},
           "bars": false,
@@ -292,15 +53,15 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "akka_actor_remote_received_message_size{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$RemoteActors\", quantile=~\"$Quantile\"}",
+              "expr": "akka_actor_running_actors{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$Actors\"}",
               "format": "time_series",
               "legendFormat": "{{host}} / {{dispatcher}} / {{actor}}"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Remote Received Message Size ($Quantile quantile)",
-          "description": "Note: message size includes payload size plus Akka / Telemetry metadata size.",
+          "title": "Running actors",
+          "description": "",
           "tooltip": {
             "msResolution": false,
             "shared": true,
@@ -313,8 +74,8 @@
           },
           "yaxes": [
             {
-              "format": "bytes",
-              "label": "",
+              "format": "short",
+              "label": null,
               "logBase": 1,
               "max": null,
               "min": 0,
@@ -329,15 +90,7 @@
               "show": true
             }
           ]
-        }
-      ]
-    },
-    {
-      "title": "",
-      "collapse": false,
-      "editable": true,
-      "height": "250px",
-      "panels": [
+        },
         {
           "aliasColors": {},
           "bars": false,
@@ -351,7 +104,7 @@
             "threshold2": null,
             "threshold2Color": "rgba(234, 112, 112, 0.22)"
           },
-          "id": 6,
+          "id": 1,
           "interval": "10s",
           "isNew": true,
           "legend": {
@@ -377,15 +130,15 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "akka_actor_remote_serialization_time_ns{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$RemoteActors\", quantile=~\"$Quantile\"}",
+              "expr": "irate(akka_message_sent_messages{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$Actors\", message=~\"$Messages\"}[1m])",
               "format": "time_series",
-              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}}"
+              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}} / {{message}}"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Remote Serialization Time ($Quantile quantile)",
-          "description": "Statistics for the time that serialization takes.",
+          "title": "Sent messages: 1min rate",
+          "description": "",
           "tooltip": {
             "msResolution": false,
             "shared": true,
@@ -398,8 +151,162 @@
           },
           "yaxes": [
             {
-              "format": "ns",
-              "label": "",
+              "format": "ops",
+              "label": "messages/second",
+              "logBase": 1,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": "Cinnamon Prometheus",
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 7,
+          "interval": "10s",
+          "isNew": true,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": false,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 6,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "irate(akka_actor_dropped_messages{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$Actors\"}[1m])",
+              "format": "time_series",
+              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}}"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Dropped messages: 1min rate",
+          "description": "",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "value_type": "cumulative",
+            "sort": 2
+          },
+          "type": "graph",
+          "xaxis": {
+            "show": true
+          },
+          "yaxes": [
+            {
+              "format": "ops",
+              "label": "messages/second",
+              "logBase": 1,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": "Cinnamon Prometheus",
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 8,
+          "interval": "10s",
+          "isNew": true,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": false,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 6,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "irate(akka_message_processed_messages{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$Actors\", message=~\"$Messages\"}[1m])",
+              "format": "time_series",
+              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}} / {{message}}"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Processed messages: 1min rate",
+          "description": "",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "value_type": "cumulative",
+            "sort": 2
+          },
+          "type": "graph",
+          "xaxis": {
+            "show": true
+          },
+          "yaxes": [
+            {
+              "format": "ops",
+              "label": "messages/second",
               "logBase": 1,
               "max": null,
               "min": 0,
@@ -454,15 +361,15 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "akka_actor_remote_deserialization_time_ns{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$RemoteActors\", quantile=~\"$Quantile\"}",
+              "expr": "akka_actor_mailbox_time_ns{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$Actors\", quantile=~\"$Quantile\"}",
               "format": "time_series",
               "legendFormat": "{{host}} / {{dispatcher}} / {{actor}}"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Remote Deserialization Time ($Quantile quantile)",
-          "description": "Statistics for the time that deserialization takes.",
+          "title": "Mailbox time ($Quantile quantile)",
+          "description": "",
           "tooltip": {
             "msResolution": false,
             "shared": true,
@@ -476,7 +383,238 @@
           "yaxes": [
             {
               "format": "ns",
-              "label": "",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": "Cinnamon Prometheus",
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 5,
+          "interval": "10s",
+          "isNew": true,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": false,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 6,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "akka_message_processing_time_ns{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$Actors\", message=~\"$Messages\", quantile=~\"$Quantile\"}",
+              "format": "time_series",
+              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}} / {{message}}"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Processing time ($Quantile quantile)",
+          "description": "",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "value_type": "cumulative",
+            "sort": 2
+          },
+          "type": "graph",
+          "xaxis": {
+            "show": true
+          },
+          "yaxes": [
+            {
+              "format": "ns",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": "Cinnamon Prometheus",
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 6,
+          "interval": "10s",
+          "isNew": true,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": false,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 6,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "akka_actor_mailbox_size{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$Actors\", quantile=~\"$Quantile\"}",
+              "format": "time_series",
+              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}}"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Mailbox size ($Quantile quantile)",
+          "description": "",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "value_type": "cumulative",
+            "sort": 2
+          },
+          "type": "graph",
+          "xaxis": {
+            "show": true
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": "Cinnamon Prometheus",
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {
+            "threshold1": null,
+            "threshold1Color": "rgba(216, 200, 27, 0.27)",
+            "threshold2": null,
+            "threshold2Color": "rgba(234, 112, 112, 0.22)"
+          },
+          "id": 2,
+          "interval": "10s",
+          "isNew": true,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": false,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 2,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 6,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "akka_actor_stash_size{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$Actors\", quantile=~\"$Quantile\"}",
+              "format": "time_series",
+              "legendFormat": "{{host}} / {{dispatcher}} / {{actor}}"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Stash size ($Quantile quantile)",
+          "description": "",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "value_type": "cumulative",
+            "sort": 2
+          },
+          "type": "graph",
+          "xaxis": {
+            "show": true
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
               "logBase": 1,
               "max": null,
               "min": 0,
@@ -492,7 +630,9 @@
             }
           ]
         }
-      ]
+      ],
+      "repeat": "Applications",
+      "title": "$Applications"
     }
   ],
   "time": {
@@ -601,9 +741,26 @@
           "includeAll": true,
           "allValue": ".*",
           "multi": true,
-          "name": "RemoteActors",
+          "name": "Actors",
           "options": [],
           "query": "label_values(akka_actor_running_actors{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\"}, actor)",
+          "refresh": 2,
+          "regex": "",
+          "tagValuesQuery": "",
+          "tagsQuery": "name",
+          "type": "query",
+          "useTags": false
+      },
+      {
+          "current": {},
+          "datasource": "Cinnamon Prometheus",
+          "hide": 0,
+          "includeAll": true,
+          "allValue": ".*",
+          "multi": true,
+          "name": "Messages",
+          "options": [],
+          "query": "label_values(akka_message_sent_messages{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", actor=~\"$Actors\"}, message)",
           "refresh": 2,
           "regex": "",
           "tagValuesQuery": "",
@@ -620,7 +777,7 @@
           "multi": false,
           "name": "Quantile",
           "options": [],
-          "query": "label_values(akka_actor_remote_sent_message_size, quantile)",
+          "query": "label_values(akka_actor_mailbox_size, quantile)",
           "refresh": 2,
           "regex": "",
           "tagValuesQuery": "",

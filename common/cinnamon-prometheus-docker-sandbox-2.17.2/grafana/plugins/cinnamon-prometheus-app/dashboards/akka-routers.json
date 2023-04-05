@@ -53,9 +53,9 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(akka_router_router_routed_messages{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", router=~\"$Routers\"}[1m])",
+              "expr": "irate(akka_message_router_routed_messages{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", router=~\"$Routers\", message=~\"$Messages\"}[1m])",
               "format": "time_series",
-              "legendFormat": "{{host}} / {{dispatcher}} / {{router}}"
+              "legendFormat": "{{host}} / {{dispatcher}} / {{router}} / {{message}}"
             }
           ],
           "timeFrom": null,
@@ -130,9 +130,9 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "akka_router_router_processing_time_ns{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", router=~\"$Routers\", quantile=~\"$Quantile\"}",
+              "expr": "akka_message_router_processing_time_ns{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", router=~\"$Routers\", message=~\"$Messages\", quantile=~\"$Quantile\"}",
               "format": "time_series",
-              "legendFormat": "{{host}} / {{dispatcher}} / {{router}}"
+              "legendFormat": "{{host}} / {{dispatcher}} / {{router}} / {{message}}"
             }
           ],
           "timeFrom": null,
@@ -291,12 +291,29 @@
           "current": {},
           "datasource": "Cinnamon Prometheus",
           "hide": 0,
+          "includeAll": true,
+          "allValue": ".*",
+          "multi": true,
+          "name": "Messages",
+          "options": [],
+          "query": "label_values(akka_message_router_routed_messages{host=~\"$Servers\", application=~\"$Applications\", actor_system=~\"$ActorSystems\", dispatcher=~\"$Dispatchers\", router=~\"$Routers\"}, message)",
+          "refresh": 2,
+          "regex": "",
+          "tagValuesQuery": "",
+          "tagsQuery": "name",
+          "type": "query",
+          "useTags": false
+      },
+      {
+          "current": {},
+          "datasource": "Cinnamon Prometheus",
+          "hide": 0,
           "includeAll": false,
           "allValue": ".*",
           "multi": false,
           "name": "Quantile",
           "options": [],
-          "query": "label_values(akka_router_router_processing_time_ns, quantile)",
+          "query": "label_values(akka_message_router_processing_time_ns, quantile)",
           "refresh": 2,
           "regex": "",
           "tagValuesQuery": "",

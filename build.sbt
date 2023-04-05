@@ -68,18 +68,19 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.github.tminglei" %% "slick-pg" % "0.20.3",
   "com.github.tminglei" %% "slick-pg_play-json" % "0.20.3",
 
-  // Cinnamon
+  Cinnamon.library.cinnamonPrometheus,
+  Cinnamon.library.cinnamonPrometheusHttpServer,
   Cinnamon.library.cinnamonAkka,
   Cinnamon.library.cinnamonAkkaHttp,
-  Cinnamon.library.cinnamonJvmMetricsProducer,
-  Cinnamon.library.cinnamonPrometheus,
-  Cinnamon.library.cinnamonPrometheusHttpServer
+  Cinnamon.library.cinnamonJvmMetricsProducer
 )
 
+// Enable the Lightbend Telemetry (Cinnamon) sbt plugin
 enablePlugins(Cinnamon)
 
-cinnamon in run := true
-cinnamon in test := true
+// Add the Cinnamon Agent for run and test
+run / cinnamon := true
+test / cinnamon := true
 
 lazy val root = (project in file("."))
   .settings(
