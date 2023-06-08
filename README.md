@@ -7,7 +7,7 @@ In this case, the selected dataset was a restaurant dataset that analyzed review
 
 From the previously mentioned dataset, it was required to create API REST that allows registering users, and restaurants and also creating reviews about the restaurants. Additionally, other services that were indispensable were the recommendations of restaurants by categories, by favorite categories of a specific user, and also by location.
 
-Project Solution.
+# Project Solution.
 The solution of the project was implemented in Scala language using the Akka toolkit as the base core to come up with the final outcome.
 
 The Actors are divided into readers and writers which allows them to separate responsibilities for better performance.
