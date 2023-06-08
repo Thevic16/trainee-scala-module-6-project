@@ -10,6 +10,12 @@ From the previously mentioned dataset, it was required to create API REST that a
 Project Solution.
 The solution of the project was implemented in Scala language using the Akka toolkit as the base core to come up with the final outcome.
 
+The Actors are divided into readers and writers which allows them to separate responsibilities for better performance.
+
+Another important decision that was taken was to use Akka Stream to load the data from the dataset to the application, as the library is designed to process elements (in this case the rows from the dataset) in an asynchronous, non-blocking backpressure way, this was considered the right tool for the job.
+
+One of the most important aspects to highlight is the use of akka projection to project the events in an index database (in this case PostgreSQL) so when the users request information about the restaurant is more efficient to take the information from this database than looking and filter the events from the Cassandra database.
+
 # Dataset.
 Description: This dataset contains reviews made by users of restaurants in all parts of the world.
 
