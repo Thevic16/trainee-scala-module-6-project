@@ -1,5 +1,15 @@
 # Project Akka Restaurant Reviews.
 
+# Project Task/Challenge.
+As a big data project, the challenge was to select a dataset with a least 1 Gb of information and 15 columns and with good business logic to work with.
+ 
+In this case, the selected dataset was a restaurant dataset that analyzed reviews of users of restaurants before and after covid-19 pandemic.
+
+From the previously mentioned dataset, it was required to create API REST that allows registering users, and restaurants and also creating reviews about the restaurants. Additionally, other services that were indispensable were the recommendations of restaurants by categories, by favorite categories of a specific user, and also by location.
+
+Project Solution.
+The solution of the project was implemented in Scala language using the Akka toolkit as the base core to come up with the final outcome.
+
 # Dataset.
 Description: This dataset contains reviews made by users of restaurants in all parts of the world.
 
